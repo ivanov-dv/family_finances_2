@@ -22,4 +22,4 @@ WORKDIR /app
 COPY poetry.lock pyproject.toml ./
 RUN poetry install $( [ "$YOUR_ENV" = "production" ] && echo "--only=main" ) --no-interaction --no-ansi
 
-COPY src /app
+COPY src /app/src
