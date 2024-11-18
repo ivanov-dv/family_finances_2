@@ -38,10 +38,12 @@ class UserSerializer(serializers.ModelSerializer):
         password = self.initial_data.get('password')
         if telegram_only is True and not id_telegram:
             raise serializers.ValidationError(
-                {'id_telegram': 'This field is required, if field telegram_only is True'}
+                {'id_telegram': 'This field is required, '
+                                'if field telegram_only is True'}
             )
         if telegram_only is False and not password:
             raise serializers.ValidationError(
-                {'password': 'This field is required, if field telegram_only is False'}
+                {'password': 'This field is required, '
+                             'if field telegram_only is False'}
             )
         return telegram_only
