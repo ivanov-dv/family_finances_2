@@ -21,11 +21,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 WORKDIR /app
 COPY poetry.lock pyproject.toml ./
 
-RUN if [ "$YOUR_ENV" = "production" ]; then \
-      poetry install --only=main --no-interaction --no-ansi; \
-    else \
-      poetry install --no-interaction --no-ansi; \
-    fi
+RUN poetry install $( [ "$YOUR_ENV" = "production" ] && echo "--only=main" ) --no-interaction --no-ansi
 
 COPY src /app
 
