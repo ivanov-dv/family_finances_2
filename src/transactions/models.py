@@ -25,7 +25,10 @@ class Basename(CreatedUpdatedModel):
 
     class Meta:
         constraints = [
-            UniqueConstraint(fields=('user', 'basename'), name='unique_basename_user')
+            UniqueConstraint(
+                fields=('user', 'basename'),
+                name='unique_basename_user'
+            )
         ]
         default_related_name = 'basenames'
 
@@ -61,13 +64,3 @@ class Summary(CreatedUpdatedModel):
         ordering = ('-updated_at', '-created_at')
         verbose_name = 'свод'
         verbose_name_plural = 'своды'
-
-
-class JointChat(CreatedUpdatedModel):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    chat_id = models.CharField()
-
-    class Meta:
-        default_related_name = 'joint_chat'
-        verbose_name = 'связанный чат'
-        verbose_name_plural = 'связанные чаты'
