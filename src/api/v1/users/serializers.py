@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from transactions.models import Basename
-from users.models import User, TelegramSettings
+from users.models import User, TelegramSettings, CoreSettings
 
 
 class TelegramSettingsSerializer(serializers.ModelSerializer):
@@ -17,6 +19,21 @@ class TelegramSettingsSerializer(serializers.ModelSerializer):
             'id_telegram',
             'telegram_only',
             'joint_chat'
+        )
+
+
+class CoreSettingsSerializer(serializers.ModelSerializer):
+    current_basename = serializers.SlugRelatedField(
+        slug_field='basename',
+        read_only=True,
+    )
+
+    class Meta:
+        model = CoreSettings
+        fields = (
+            'current_basename',
+            'current_month',
+            'current_year'
         )
 
 
@@ -39,6 +56,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             ),
         )
     )
+    core_settings = CoreSettingsSerializer(read_only=True)
     telegram_settings = TelegramSettingsSerializer(read_only=True)
 
     class Meta:
@@ -53,6 +71,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'last_login',
             'telegram_only',
             'id_telegram',
+            'core_settings',
             'telegram_settings'
         )
         model = User
@@ -70,7 +89,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
             telegram_only=telegram_only,
             id_telegram=id_telegram
         )
-        Basename.objects.create(user=user, basename=user.username)
+        basename = Basename.objects.create(user=user, basename=user.username)
+        dt = datetime.now()
+        CoreSettings.objects.create(
+            user=user,
+            current_basename=basename,
+            current_month=dt.month,
+            current_year=dt.year
+        )
         return user
 
     def validate(self, data):
@@ -88,6 +114,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
 
 class UserDetailSerializer(serializers.ModelSerializer):
     telegram_settings = TelegramSettingsSerializer(read_only=True)
+    core_settings = CoreSettingsSerializer(read_only=True)
     linked_users = serializers.SlugRelatedField(
         read_only=True,
         many=True,
@@ -109,6 +136,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'last_name',
             'date_joined',
             'last_login',
+            'core_settings',
             'telegram_settings',
             'linked_users',
             'basenames'

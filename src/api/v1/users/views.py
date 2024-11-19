@@ -1,8 +1,12 @@
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.generics import get_object_or_404
+from rest_framework.mixins import UpdateModelMixin, RetrieveModelMixin, \
+    ListModelMixin
+from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from api.v1.users.serializers import UserCreateSerializer, \
-    TelegramSettingsSerializer, UserDetailSerializer
-from users.models import User
+    TelegramSettingsSerializer, UserDetailSerializer, CoreSettingsSerializer
+from users.models import User, CoreSettings
 
 
 class UserViewSet(ModelViewSet):
@@ -16,9 +20,50 @@ class UserViewSet(ModelViewSet):
         return UserDetailSerializer
 
 
-class TelegramSettingsViewSet(ModelViewSet):
-    """CRUD for Telegram settings."""
+class CoreSettingsViewSet(
+    ListModelMixin,
+    UpdateModelMixin,
+    GenericViewSet
+):
+    """Update user settings."""
 
-    queryset = User.objects.select_related('telegram_settings').all()
+    serializer_class = CoreSettingsSerializer
+
+    def get_queryset(self):
+        return get_object_or_404(User, pk=self.kwargs['user_id']).core_settings
+
+    def get_object(self):
+        return get_object_or_404(
+            User,
+            pk=self.kwargs['user_id']
+        ).core_settings
+
+    def list(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_queryset())
+        return Response(serializer.data)
+
+
+class TelegramSettingsViewSet(
+    ListModelMixin,
+    UpdateModelMixin,
+    GenericViewSet
+):
+    """Update telegram settings."""
+
     serializer_class = TelegramSettingsSerializer
 
+    def get_queryset(self):
+        return get_object_or_404(
+            User,
+            pk=self.kwargs['user_id']
+        ).telegram_settings
+
+    def get_object(self):
+        return get_object_or_404(
+            User,
+            pk=self.kwargs['user_id']
+        ).telegram_settings
+
+    def list(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_queryset())
+        return Response(serializer.data)

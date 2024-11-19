@@ -10,7 +10,6 @@ class User(AbstractUser):
     )
 
 
-
 class LinkedUser(models.Model):
     user = models.ForeignKey(
         User,
@@ -31,19 +30,22 @@ class LinkedUser(models.Model):
         ]
 
 
-class Settings(models.Model):
+class CoreSettings(models.Model):
     user = models.OneToOneField(
         User,
-        on_delete=models.CASCADE,
-        related_name='settings'
+        on_delete=models.CASCADE
     )
-    current_basename = models.CharField(max_length=255)
+    current_basename = models.OneToOneField(
+        'transactions.Basename',
+        on_delete=models.CASCADE
+    )
     current_month = models.IntegerField()
     current_year = models.IntegerField()
 
     class Meta:
-        verbose_name = "Settings"
-        verbose_name_plural = "Settings"
+        default_related_name ='core_settings'
+        verbose_name = "core settings"
+        verbose_name_plural = "core settings"
 
 
 class TelegramSettings(models.Model):
@@ -62,5 +64,5 @@ class TelegramSettings(models.Model):
     )
 
     class Meta:
-        verbose_name = "Telegram Settings"
-        verbose_name_plural = "Telegram Settings"
+        verbose_name = "telegram settings"
+        verbose_name_plural = "telegram settings"
