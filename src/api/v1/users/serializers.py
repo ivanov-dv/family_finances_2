@@ -2,6 +2,7 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from transactions.models import Basename
 from users.models import User, TelegramSettings
 
 
@@ -69,6 +70,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             telegram_only=telegram_only,
             id_telegram=id_telegram
         )
+        Basename.objects.create(user=user, basename=user.username)
         return user
 
     def validate(self, data):
@@ -91,6 +93,11 @@ class UserDetailSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='username'
     )
+    basenames = serializers.SlugRelatedField(
+        read_only=True,
+        many=True,
+        slug_field='basename'
+    )
 
     class Meta:
         model = User
@@ -103,5 +110,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'date_joined',
             'last_login',
             'telegram_settings',
-            'linked_users'
+            'linked_users',
+            'basenames'
         )

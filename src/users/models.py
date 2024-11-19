@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import UniqueConstraint
 
 
 class User(AbstractUser):
@@ -7,6 +8,7 @@ class User(AbstractUser):
         'User',
         through='LinkedUser',
     )
+
 
 
 class LinkedUser(models.Model):
@@ -19,6 +21,29 @@ class LinkedUser(models.Model):
         on_delete=models.CASCADE,
         related_name='authors'
     )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=('user', 'linked_user'),
+                name='unique_user_linked_user'
+            )
+        ]
+
+
+class Settings(models.Model):
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name='settings'
+    )
+    current_basename = models.CharField(max_length=255)
+    current_month = models.IntegerField()
+    current_year = models.IntegerField()
+
+    class Meta:
+        verbose_name = "Settings"
+        verbose_name_plural = "Settings"
 
 
 class TelegramSettings(models.Model):
