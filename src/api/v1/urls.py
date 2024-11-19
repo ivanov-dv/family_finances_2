@@ -23,7 +23,7 @@ urlpatterns = [
     ),
 path(
         'users/<int:user_id>/telegram-settings/',
-        user_views.CoreSettingsViewSet.as_view(
+        user_views.TelegramSettingsViewSet.as_view(
             {'put': 'update', 'get': 'list', 'patch': 'partial_update'}
         )
     )
