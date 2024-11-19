@@ -9,6 +9,11 @@ class User(AbstractUser):
         through='LinkedUser',
     )
 
+    def save(self, *args, **kwargs):
+        if self.username:
+            self.username = self.username.lower()
+        super().save(*args, **kwargs)
+
 
 class LinkedUser(models.Model):
     user = models.ForeignKey(
