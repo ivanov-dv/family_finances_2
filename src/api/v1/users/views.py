@@ -1,12 +1,15 @@
 from rest_framework.generics import get_object_or_404
-from rest_framework.mixins import UpdateModelMixin, RetrieveModelMixin, \
-    ListModelMixin
+from rest_framework.mixins import UpdateModelMixin, ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-from api.v1.users.serializers import UserCreateSerializer, \
-    TelegramSettingsSerializer, UserDetailSerializer, CoreSettingsSerializer
-from users.models import User, CoreSettings
+from api.v1.users.serializers import (
+    UserCreateSerializer,
+    TelegramSettingsSerializer,
+    UserDetailSerializer,
+    CoreSettingsSerializer
+)
+from users.models import User
 
 
 class UserViewSet(ModelViewSet):
