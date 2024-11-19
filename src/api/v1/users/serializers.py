@@ -12,10 +12,15 @@ class TelegramSettingsSerializer(serializers.ModelSerializer):
     joint_chat = serializers.CharField(
         required=False
     )
+    user = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
 
     class Meta:
         model = TelegramSettings
         fields = (
+            'user',
             'id_telegram',
             'telegram_only',
             'joint_chat'
@@ -27,10 +32,15 @@ class CoreSettingsSerializer(serializers.ModelSerializer):
         slug_field='basename',
         read_only=True,
     )
+    user = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True
+    )
 
     class Meta:
         model = CoreSettings
         fields = (
+            'user',
             'current_basename',
             'current_month',
             'current_year'
@@ -80,6 +90,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
         password = validated_data.pop('password', None)
         telegram_only = validated_data.pop('telegram_only', None)
         id_telegram = validated_data.pop('id_telegram', None)
+        validated_data['username'] = validated_data['username'].lower()
         user = User.objects.create(**validated_data)
         if password:
             user.set_password(password)
@@ -98,6 +109,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             current_year=dt.year
         )
         return user
+
+    def validate_username(self, username):
+        return username.lower()
 
     def validate(self, data):
         errors = {}
