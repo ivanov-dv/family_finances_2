@@ -1,6 +1,9 @@
+from datetime import datetime
+
 import pytest
 
-from users.models import User, TelegramSettings
+from transactions.models import Basename
+from users.models import User, TelegramSettings, CoreSettings
 
 
 @pytest.fixture
@@ -24,5 +27,12 @@ def user_2_tg_only():
         id_telegram=1234567890,
         telegram_only=True
     )
-    user.refresh_from_db()
+    basename = Basename.objects.create(user=user, basename=user.username)
+    dt = datetime.now()
+    CoreSettings.objects.create(
+        user=user,
+        current_basename=basename,
+        current_month=dt.month,
+        current_year=dt.year
+    )
     return user

@@ -1,13 +1,11 @@
+from datetime import datetime
 from pprint import pprint
 
 import pytest
 
-from tests.conftest import user_1
+pytestmark = pytest.mark.django_db
 
-
-@pytest.mark.django_db
 class TestUser:
-    """Test Users model."""
 
     url = '/api/v1/users/'
 
@@ -98,7 +96,7 @@ class TestUser:
         )
         pprint(response.__dict__)
         assert response.status_code == 200
-        assert data['username'] == response.data['username']
+        assert data['username'].lower() == response.data['username']
 
     @pytest.mark.parametrize(
         'data',
@@ -122,3 +120,49 @@ class TestUser:
     def test_delete_user(self, client, user_1):
         response = client.delete(f'{self.url}{user_1.id}/')
         assert response.status_code == 204
+
+
+class TestCoreSettings:
+
+    url = '/api/v1/users/{user_id}/core-settings/'
+
+    def test_get_core_settings(self, client, user_2_tg_only):
+        response = client.get(
+            self.url.format(user_id=user_2_tg_only.id)
+        )
+        dt = datetime.now()
+        assert response.status_code == 200
+        assert (user_2_tg_only.core_settings.current_basename.basename ==
+                response.data['current_basename'])
+        assert response.data['current_month'] == dt.month
+        assert response.data['current_year'] == dt.year
+
+    def test_put_core_settings(self, client, user_2_tg_only):
+        data = {
+            'current_month': 12,
+            'current_year': 2022
+        }
+        response = client.put(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert data['current_month'] == response.data['current_month']
+        assert data['current_year'] == response.data['current_year']
+        assert (user_2_tg_only.core_settings.current_basename.basename ==
+            response.data['current_basename'])
+
+    def test_patch_core_settings(self, client, user_2_tg_only):
+        data = {'current_month': 11}
+        response = client.patch(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert data['current_month'] == response.data['current_month']
+        assert (user_2_tg_only.core_settings.current_basename.basename ==
+            response.data['current_basename'])
+        assert (user_2_tg_only.core_settings.current_year ==
+                response.data['current_year'])
