@@ -1,21 +1,44 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
+from rest_framework.validators import UniqueValidator
 
-from users.models import User
+from users.models import User, TelegramSettings
 
 
-class UserSerializer(serializers.ModelSerializer):
-    linked_users = serializers.SlugRelatedField(
-        required=False,
-        queryset=User.objects.all(),
-        many=True,
-        slug_field='username'
+class TelegramSettingsSerializer(serializers.ModelSerializer):
+    joint_chat = serializers.CharField(
+        required=False
     )
+
+    class Meta:
+        model = TelegramSettings
+        fields = (
+            'id_telegram',
+            'telegram_only',
+            'joint_chat'
+        )
+
+
+class UserCreateSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
         write_only=True,
         required=False,
         validators=(validate_password,)
     )
+    telegram_only = serializers.BooleanField(
+        write_only=True
+    )
+    id_telegram = serializers.IntegerField(
+        write_only=True,
+        required=False,
+        validators=(
+            UniqueValidator(
+                queryset=TelegramSettings.objects.all(),
+                message='Пользователь с таким Telegram ID уже существует.'
+            ),
+        )
+    )
+    telegram_settings = TelegramSettingsSerializer(read_only=True)
 
     class Meta:
         fields = (
@@ -25,25 +48,60 @@ class UserSerializer(serializers.ModelSerializer):
             'email',
             'first_name',
             'last_name',
-            'id_telegram',
-            'telegram_only',
             'date_joined',
             'last_login',
-            'linked_users'
+            'telegram_only',
+            'id_telegram',
+            'telegram_settings'
         )
         model = User
 
-    def validate_telegram_only(self, telegram_only):
-        id_telegram = self.initial_data.get('id_telegram')
-        password = self.initial_data.get('password')
-        if telegram_only is True and not id_telegram:
-            raise serializers.ValidationError(
-                {'id_telegram': 'This field is required, '
-                                'if field telegram_only is True'}
-            )
-        if telegram_only is False and not password:
-            raise serializers.ValidationError(
-                {'password': 'This field is required, '
-                             'if field telegram_only is False'}
-            )
-        return telegram_only
+    def create(self, validated_data):
+        password = validated_data.pop('password', None)
+        telegram_only = validated_data.pop('telegram_only', None)
+        id_telegram = validated_data.pop('id_telegram', None)
+        user = User.objects.create(**validated_data)
+        if password:
+            user.set_password(password)
+            user.save()
+        TelegramSettings.objects.create(
+            user=user,
+            telegram_only=telegram_only,
+            id_telegram=id_telegram
+        )
+        return user
+
+    def validate(self, data):
+        errors = {}
+        if data['telegram_only'] is True and not data.get('id_telegram'):
+            errors['id_telegram'] = ('This field is required, '
+                                     'if telegram_only is True.')
+        if data['telegram_only'] is False and not data.get('password'):
+            errors['password'] = ('This field is required, '
+                                  'if telegram_only is False.')
+        if errors:
+            raise serializers.ValidationError(errors)
+        return data
+
+
+class UserDetailSerializer(serializers.ModelSerializer):
+    telegram_settings = TelegramSettingsSerializer(read_only=True)
+    linked_users = serializers.SlugRelatedField(
+        read_only=True,
+        many=True,
+        slug_field='username'
+    )
+
+    class Meta:
+        model = User
+        fields = (
+            'id',
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+            'date_joined',
+            'last_login',
+            'telegram_settings',
+            'linked_users'
+        )
