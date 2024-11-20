@@ -1,36 +1,55 @@
 from rest_framework import serializers
 
+from .validators import PeriodYearValidator, PeriodMonthValidator
 from family_finances import constants
-from transactions.models import Transaction, Summary
+from transactions.models import Transaction, Summary, Basename
 
 
 class TransactionSerializer(serializers.ModelSerializer):
     type_transaction = serializers.ChoiceField(
         choices=constants.CHOICE_TYPE_TRANSACTION
     )
+    period_year = serializers.IntegerField(
+        validators=(PeriodYearValidator(),)
+    )
+    period_month = serializers.IntegerField(
+        validators=(PeriodMonthValidator(),)
+    )
+
     class Meta:
         model = Transaction
         fields = '__all__'
         read_only_fields = ('author', 'basename')
 
-    def validate_period_month(self, period_month):
-        if period_month not in range(1, 13):
-            raise serializers.ValidationError(
-                'Номер месяца должен быть в диапазоне от 1 до 12.'
-            )
-        return period_month
 
-    def validate_period_year(self, period_year):
-        if period_year not in range(2024, 2100):
-            raise serializers.ValidationError(
-                'Год должен быть в диапазоне от 2024 до 2099.'
-            )
-        return period_year
+class GroupCreateSerializer(serializers.ModelSerializer):
+    basename = serializers.SlugRelatedField(
+        queryset=Basename.objects.all(),
+        slug_field='basename'
+    )
+    fact_value = serializers.DecimalField(
+        required=False,
+        max_digits=12,
+        decimal_places=2
+    )
+    period_year = serializers.IntegerField(
+        validators=(PeriodYearValidator(),)
+    )
+    period_month = serializers.IntegerField(
+        validators=(PeriodMonthValidator(),)
+    )
 
-
-class SummarySerializer(serializers.Serializer):
     class Meta:
-        fields = '__all__'
+        fields = (
+            'id',
+            'basename',
+            'period_month',
+            'period_year',
+            'type_transaction',
+            'group_name',
+            'plan_value',
+            'fact_value'
+        )
         model = Summary
         validators = (
             serializers.UniqueTogetherValidator(
@@ -43,3 +62,23 @@ class SummarySerializer(serializers.Serializer):
                 )
             ),
         )
+
+
+class GroupDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = (
+            'id',
+            'basename',
+            'period_month',
+            'period_year',
+            'type_transaction',
+            'group_name',
+            'plan_value',
+            'fact_value'
+        )
+        model = Summary
+
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
+        representation['owner_base_username'] = instance.basename.user.username
+        return representation

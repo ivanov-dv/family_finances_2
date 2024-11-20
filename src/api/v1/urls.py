@@ -13,6 +13,11 @@ router_v1.register(
     transactions_views.TransactionViewSet,
     basename='user_transactions'
 )
+router_v1.register(
+    r'users/(?P<user_id>\d+)/groups',
+    transactions_views.GroupViewSet,
+    basename='user_groups'
+)
 
 urlpatterns = [
     path(
