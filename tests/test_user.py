@@ -166,3 +166,57 @@ class TestCoreSettings:
             response.data['current_basename'])
         assert (user_2_tg_only.core_settings.current_year ==
                 response.data['current_year'])
+
+
+class TestTelegramSettings:
+
+    url = '/api/v1/users/{user_id}/telegram-settings/'
+
+    def test_get_telegram_settings(self, client, user_2_tg_only):
+        response = client.get(
+            self.url.format(user_id=user_2_tg_only.id)
+        )
+        assert response.status_code == 200
+        assert (user_2_tg_only.telegram_settings.id_telegram ==
+                response.data['id_telegram'])
+        assert (user_2_tg_only.telegram_settings.telegram_only ==
+                response.data['telegram_only'])
+        assert (user_2_tg_only.telegram_settings.user.username ==
+                response.data['user'])
+        assert (user_2_tg_only.telegram_settings.joint_chat ==
+                response.data['joint_chat'])
+
+    def test_put_telegram_settings(self, client, user_2_tg_only):
+        data = {
+            'id_telegram': 777,
+            'telegram_only': False,
+            'joint_chat': 'test_chat'
+        }
+        response = client.put(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert response.data['id_telegram'] == data['id_telegram']
+        assert response.data['telegram_only'] == data['telegram_only']
+        assert response.data['joint_chat'] == data['joint_chat']
+        assert (user_2_tg_only.telegram_settings.user.username ==
+                response.data['user'])
+
+    def test_patch_telegram_settings(self, client, user_2_tg_only):
+        data = {'telegram_only': False}
+        response = client.patch(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert data['telegram_only'] == response.data['telegram_only']
+        assert (user_2_tg_only.telegram_settings.joint_chat ==
+                response.data['joint_chat'])
+        assert (user_2_tg_only.telegram_settings.id_telegram ==
+                response.data['id_telegram'])
+        assert (user_2_tg_only.telegram_settings.user.username ==
+                response.data['user'])
+
