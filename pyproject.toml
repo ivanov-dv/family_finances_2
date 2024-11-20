@@ -17,6 +17,7 @@ psycopg2-binary = "^2.9.10"
 drf-yasg = "^1.21.8"
 pytest-django = "^4.9.0"
 django-extensions = "^3.2.3"
+django-filter = "^24.3"
 
 
 [build-system]
