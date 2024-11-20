@@ -13,9 +13,9 @@ urlpatterns = [
 # Генерация динамической документации
 schema_view = get_schema_view(
     info=openapi.Info(
-      title="Reference API",
+      title="Family Finances API",
       default_version='v1',
-      description="RESTful API справочника"
+      description="Family Finances API"
    ),
    public=True,
    permission_classes=[permissions.AllowAny],
