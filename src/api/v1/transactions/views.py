@@ -1,9 +1,7 @@
-from pprint import pprint
-
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.generics import get_object_or_404
-from rest_framework.mixins import ListModelMixin
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
@@ -13,7 +11,12 @@ from .serializers import TransactionCreateSerializer, GroupCreateSerializer, \
     GroupDetailSerializer, SummarySerializer, TransactionDetailSerializer
 
 
-class TransactionViewSet(ModelViewSet):
+class TransactionViewSet(
+    ListModelMixin,
+    CreateModelMixin,
+    RetrieveModelMixin,
+    GenericViewSet
+):
     """CRUD for transactions."""
 
     serializer_class = TransactionCreateSerializer
