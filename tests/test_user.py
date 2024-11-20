@@ -3,6 +3,9 @@ from pprint import pprint
 
 import pytest
 
+from transactions.models import Basename
+from users.models import TelegramSettings, CoreSettings
+
 pytestmark = pytest.mark.django_db
 
 class TestUser:
@@ -32,11 +35,17 @@ class TestUser:
         )
         assert response.status_code == 201
         assert data['username'] == response.data['username']
-        assert (data['telegram_only'] ==
-                response.data['telegram_settings']['telegram_only'])
-        if data.get('id_telegram'):
-            assert (data['id_telegram'] ==
-                    response.data['telegram_settings']['id_telegram'])
+        assert 'id' in response.data
+        assert 'email' in response.data
+        assert 'first_name' in response.data
+        assert 'last_name' in response.data
+        assert TelegramSettings.objects.filter(
+            user_id=response.data['id']
+        ).exists()
+        assert CoreSettings.objects.filter(
+            user_id=response.data['id']
+        ).exists()
+        assert Basename.objects.filter(user_id=response.data['id']).exists()
 
     @pytest.mark.parametrize(
         'data',
