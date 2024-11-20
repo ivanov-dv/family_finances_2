@@ -4,6 +4,8 @@ from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from api.v1.transactions.validators import PeriodYearValidator, \
+    PeriodMonthValidator
 from transactions.models import Basename
 from users.models import User, TelegramSettings, CoreSettings
 
@@ -35,6 +37,12 @@ class CoreSettingsSerializer(serializers.ModelSerializer):
     user = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
+    )
+    current_year = serializers.IntegerField(
+        validators=(PeriodYearValidator(),)
+    )
+    current_month = serializers.IntegerField(
+        validators=(PeriodMonthValidator(),)
     )
 
     class Meta:
