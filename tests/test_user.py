@@ -1,5 +1,4 @@
 from datetime import datetime
-from pprint import pprint
 
 import pytest
 
@@ -103,7 +102,6 @@ class TestUser:
             data=data,
             content_type='application/json'
         )
-        pprint(response.__dict__)
         assert response.status_code == 200
         assert data['username'].lower() == response.data['username']
 
