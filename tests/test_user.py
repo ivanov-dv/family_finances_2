@@ -1,4 +1,5 @@
 from datetime import datetime
+from pprint import pprint
 
 import pytest
 
@@ -147,7 +148,7 @@ class TestCoreSettings:
     def test_put_core_settings(self, client, user_2_tg_only):
         data = {
             'current_month': 12,
-            'current_year': 2022
+            'current_year': 2025
         }
         response = client.put(
             self.url.format(user_id=user_2_tg_only.id),
@@ -159,6 +160,26 @@ class TestCoreSettings:
         assert data['current_year'] == response.data['current_year']
         assert (user_2_tg_only.core_settings.current_basename.basename ==
             response.data['current_basename'])
+
+    @pytest.mark.parametrize(
+        'data',
+        (
+            {'current_month': 13, 'current_year': 2025},
+            {'current_month': 12, 'current_year': 2000},
+        )
+    )
+    def test_put_core_settings_invalid_data(
+            self,
+            client,
+            user_2_tg_only,
+            data
+    ):
+        response = client.put(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 400
 
     def test_patch_core_settings(self, client, user_2_tg_only):
         data = {'current_month': 11}
@@ -173,6 +194,26 @@ class TestCoreSettings:
             response.data['current_basename'])
         assert (user_2_tg_only.core_settings.current_year ==
                 response.data['current_year'])
+
+    @pytest.mark.parametrize(
+        'data',
+        (
+            {'current_month': 13},
+            {'current_year': 2000}
+        )
+    )
+    def test_patch_core_settings_invalid_data(
+            self,
+            client,
+            user_2_tg_only,
+            data
+    ):
+        response = client.patch(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 400
 
 
 class TestTelegramSettings:
@@ -211,6 +252,34 @@ class TestTelegramSettings:
         assert (user_2_tg_only.telegram_settings.user.username ==
                 response.data['user'])
 
+    @pytest.mark.parametrize(
+        'data',
+        (
+            {
+                'id_telegram': '12qwe3',
+                'telegram_only': False,
+                'joint_chat': 'test_chat'
+            },
+            {
+                'id_telegram': 777,
+                'telegram_only': 123,
+                'joint_chat': 'test_chat'
+            },
+        )
+    )
+    def test_put_telegram_settings_invalid_data(
+            self,
+            client,
+            user_2_tg_only,
+            data
+    ):
+        response = client.put(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 400
+
     def test_patch_telegram_settings(self, client, user_2_tg_only):
         data = {'telegram_only': False}
         response = client.patch(
@@ -226,4 +295,25 @@ class TestTelegramSettings:
                 response.data['id_telegram'])
         assert (user_2_tg_only.telegram_settings.user.username ==
                 response.data['user'])
+
+    @pytest.mark.parametrize(
+        'data',
+        (
+                {'telegram_only': 123},
+                {'joint_chat': True},
+                {'id_telegram': '123sa'}
+        )
+    )
+    def test_patch_telegram_settings_invalid_data(
+            self,
+            client,
+            user_2_tg_only,
+            data
+    ):
+        response = client.patch(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 400
 
