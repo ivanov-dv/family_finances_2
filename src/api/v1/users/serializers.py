@@ -66,8 +66,6 @@ class UserCreateSerializer(serializers.ModelSerializer):
             ),
         )
     )
-    core_settings = CoreSettingsSerializer(read_only=True)
-    telegram_settings = TelegramSettingsSerializer(read_only=True)
 
     class Meta:
         fields = (
@@ -77,12 +75,8 @@ class UserCreateSerializer(serializers.ModelSerializer):
             'email',
             'first_name',
             'last_name',
-            'date_joined',
-            'last_login',
             'telegram_only',
-            'id_telegram',
-            'core_settings',
-            'telegram_settings'
+            'id_telegram'
         )
         model = User
 
