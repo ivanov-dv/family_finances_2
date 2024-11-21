@@ -7,7 +7,6 @@ pytestmark = pytest.mark.django_db
 
 
 class TestTransaction:
-
     url = '/api/v1/users/{user_id}/transactions/'
 
     def test_create_transaction_and_change_summary(
@@ -63,7 +62,6 @@ class TestTransaction:
         assert response.status_code == 200
         assert len(response.data) == 2
 
-
     def test_get_transaction(self, client, transaction_1):
         response = client.get(
             f'{self.url.format(user_id=transaction_1.author.id)}'
@@ -74,7 +72,34 @@ class TestTransaction:
         assert transaction_1.id == response.data['id']
         assert transaction_1.group_name == response.data['group_name']
         assert transaction_1.description == response.data['description']
-        assert transaction_1.type_transaction == response.data['type_transaction']
+        assert transaction_1.type_transaction == response.data[
+            'type_transaction']
         assert (Decimal(str(transaction_1.value_transaction)) ==
                 Decimal(str(response.data['value_transaction'])))
         assert transaction_1.author.id == response.data['author']
+
+
+class TestSummary:
+    url = '/api/v1/users/{user_id}/summary/'
+
+    def test_get_summary(self, client, user_2_tg_only, summary_1, summary_2):
+        response = client.get(
+            self.url.format(user_id=user_2_tg_only.id)
+        )
+        pprint(response.data)
+        assert response.status_code == 200
+        assert (response.data['current_basename_id'] ==
+                user_2_tg_only.core_settings.current_basename.id)
+        assert (response.data['period_month'] ==
+                user_2_tg_only.core_settings.current_month)
+        assert (response.data['period_year'] ==
+                user_2_tg_only.core_settings.current_year)
+        assert (response.data['username'] == summary_1.basename.user.username)
+        assert (len(response.data['summary']) == 2)
+        assert 'id' in response.data['summary'][0]
+        assert 'type_transaction' in response.data['summary'][0]
+        assert 'group_name' in response.data['summary'][0]
+        assert 'plan_value' in response.data['summary'][0]
+        assert 'fact_value' in response.data['summary'][0]
+        assert 'created_at' in response.data['summary'][0]
+        assert 'updated_at' in response.data['summary'][0]
