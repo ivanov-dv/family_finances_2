@@ -1,10 +1,16 @@
+from django.db import IntegrityError
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from family_finances import constants
+from transactions.models import (
+    Transaction,
+    Summary,
+    Basename,
+    LinkedUserToBasename
+)
 from users.models import User
 from .validators import PeriodYearValidator, PeriodMonthValidator
-from family_finances import constants
-from transactions.models import Transaction, Summary, Basename
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
@@ -136,3 +142,88 @@ class BasenameSerializer(serializers.ModelSerializer):
 
 class LinkUserToBasenameSerializer(serializers.Serializer):
     id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        """Проверка, что пользователь может быть связан с базой."""
+        linked_user_id = attrs['id']
+        linked_user = User.objects.filter(pk=linked_user_id).first()
+        if not linked_user:
+            raise serializers.ValidationError(
+                f"Пользователь с id {linked_user_id} не найден.")
+        owner_user_id = self.context.get('user_id')
+        if linked_user_id == owner_user_id:
+            raise serializers.ValidationError(
+                'Нельзя самого себя подключить к базе.'
+            )
+        basename_id = self.context.get('basename_id')
+        basename = Basename.objects.filter(pk=basename_id).first()
+        if not basename:
+            raise serializers.ValidationError(
+                f'У пользователя id {owner_user_id} '
+                f'нет базы с id {basename_id}'
+            )
+        if basename.user.id != owner_user_id:
+            raise serializers.ValidationError(
+                f'У пользователя id {owner_user_id} нет базы '
+                f'с id {basename.id}.'
+            )
+        attrs['basename'] = basename
+        attrs['linked_user'] = linked_user
+        return attrs
+
+    def create(self, validated_data):
+        """Подключение пользователя к базе."""
+        try:
+            linked = LinkedUserToBasename.objects.create(
+                basename=validated_data['basename'],
+                linked_user=validated_data['linked_user']
+            )
+        except IntegrityError as e:
+            raise serializers.ValidationError(
+                {f'Ошибка сохранения: {str(e)}'}
+            )
+        return linked
+
+
+class UnlinkUserToBasenameSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+
+    def validate(self, attrs):
+        """Проверка наличия связи."""
+        linked_user_id = attrs['id']
+        basename_id = self.context.get('basename_id')
+        try:
+            linked_user = User.objects.get(pk=linked_user_id)
+        except User.DoesNotExist:
+            raise serializers.ValidationError(
+                f'Пользователь с id {linked_user_id} не найден.'
+            )
+        try:
+            basename = Basename.objects.get(pk=basename_id)
+        except Basename.DoesNotExist:
+            raise serializers.ValidationError(
+                f'База с id {basename_id} не найдена.'
+            )
+        try:
+            linked_object = LinkedUserToBasename.objects.get(
+                basename=basename,
+                linked_user=linked_user
+            )
+        except LinkedUserToBasename.DoesNotExist:
+            raise serializers.ValidationError(
+                f'Связь между пользователем id {linked_user_id} и базой '
+                f'id {basename_id} не найдена.'
+            )
+        attrs['linked_user'] = linked_user
+        attrs['basename'] = basename
+        attrs['linked_object'] = linked_object
+        return attrs
+
+    def delete(self, validated_data):
+        """Отключение пользователя от базы."""
+        try:
+            validated_data['linked_object'].delete()
+        except IntegrityError as e:
+            raise serializers.ValidationError(
+                {f'Ошибка сохранения: {str(e)}'}
+            )

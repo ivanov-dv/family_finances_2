@@ -2,7 +2,6 @@ from decimal import Decimal
 from pprint import pprint
 
 import pytest
-from rest_framework.reverse import reverse
 
 pytestmark = pytest.mark.django_db
 
@@ -215,7 +214,7 @@ class TestLinkUsersToBasename:
             content_type='application/json'
         )
         pprint(response.data)
-        assert response.status_code == 200
+        assert response.status_code == 201
         assert 'status' in response.data
         response = client.post(
             self.unlink_url.format(
@@ -225,18 +224,17 @@ class TestLinkUsersToBasename:
             data=data,
             content_type='application/json'
         )
-        pprint(response.data)
-        assert response.status_code == 200
+        assert response.status_code == 204
         assert 'status' in response.data
 
 
     @pytest.mark.parametrize(
         'data, expected_status',
         (
-            ({'id': 1}, 404),
-            ({'id': '12345678901234567890'}, 404),
-            ({'id': 12345678901234567890}, 404),
-            ({'id': -12345678901234567890}, 404),
+            ({'id': 1}, 400),
+            ({'id': '12345678901234567890'}, 400),
+            ({'id': 12345678901234567890}, 400),
+            ({'id': -12345678901234567890}, 400),
             ({'id': 'abcde'}, 400),
             ({'username': 'user2_tg_only'}, 400)
         )
