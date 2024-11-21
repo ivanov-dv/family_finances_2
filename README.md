@@ -12,7 +12,7 @@
 - Django REST Framework;
 - Pytest;
 - Poetry;
-- Docker.
+- Docker Compose.
 
 ### Запуск:
 1. Клонируйте репозиторий.
