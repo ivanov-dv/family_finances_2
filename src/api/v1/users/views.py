@@ -13,7 +13,7 @@ from users.models import User
 
 
 class UserViewSet(ModelViewSet):
-    """CRUD for users."""
+    """CRUD для users."""
 
     queryset = User.objects.select_related('telegram_settings').all()
 
@@ -28,7 +28,7 @@ class CoreSettingsViewSet(
     UpdateModelMixin,
     GenericViewSet
 ):
-    """Show and update user settings."""
+    """Отображение и обновление user settings."""
 
     serializer_class = CoreSettingsSerializer
 
@@ -51,7 +51,7 @@ class TelegramSettingsViewSet(
     UpdateModelMixin,
     GenericViewSet
 ):
-    """Show and update telegram settings."""
+    """Отображение и обновление telegram settings."""
 
     serializer_class = TelegramSettingsSerializer
 
