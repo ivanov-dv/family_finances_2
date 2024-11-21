@@ -1,38 +1,18 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import UniqueConstraint
 
 
 class User(AbstractUser):
-    linked_users = models.ManyToManyField(
-        'User',
-        through='LinkedUser',
+    available_linked_basenames = models.ManyToManyField(
+        'transactions.Basename',
+        through='transactions.LinkedUserToBasename',
+        related_name='available_linked_users',
     )
 
     def save(self, *args, **kwargs):
         if self.username:
             self.username = self.username.lower()
         super().save(*args, **kwargs)
-
-
-class LinkedUser(models.Model):
-    user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE
-    )
-    linked_user = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='authors'
-    )
-
-    class Meta:
-        constraints = [
-            UniqueConstraint(
-                fields=('user', 'linked_user'),
-                name='unique_user_linked_user'
-            )
-        ]
 
 
 class CoreSettings(models.Model):

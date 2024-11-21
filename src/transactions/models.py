@@ -22,8 +22,16 @@ class CreatedUpdatedModel(models.Model):
 
 
 class Basename(CreatedUpdatedModel):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='basenames'
+    )
     basename = models.CharField(max_length=20)
+    linked_users = models.ManyToManyField(
+        get_user_model(),
+        through='LinkedUserToBasename'
+    )
 
     class Meta:
         constraints = [
@@ -32,12 +40,30 @@ class Basename(CreatedUpdatedModel):
                 name='unique_basename_user'
             )
         ]
-        default_related_name = 'basenames'
 
     def save(self, *args, **kwargs):
         if self.basename:
             self.basename = self.basename.lower()
         super().save(*args, **kwargs)
+
+
+class LinkedUserToBasename(models.Model):
+    basename = models.ForeignKey(
+        Basename,
+        on_delete=models.CASCADE
+    )
+    linked_user = models.ForeignKey(
+        get_user_model(),
+        on_delete=models.CASCADE
+    )
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(
+                fields=('basename', 'linked_user'),
+                name='unique_basename_linked_user'
+            )
+        ]
 
 
 class Transaction(CreatedUpdatedModel):
