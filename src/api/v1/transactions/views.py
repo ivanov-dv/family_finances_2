@@ -1,3 +1,4 @@
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import filters
 from rest_framework.generics import get_object_or_404
@@ -39,21 +40,22 @@ class TransactionViewSet(
 
     def perform_create(self, serializer):
         user = self.get_user()
-        serializer.save(
-            author=user,
-            basename=user.core_settings.current_basename,
-            period_month=user.core_settings.current_month,
-            period_year=user.core_settings.current_year
-        )
-        summary = Summary.objects.get(
-            basename=user.core_settings.current_basename,
-            period_month=user.core_settings.current_month,
-            period_year=user.core_settings.current_year,
-            type_transaction=serializer.validated_data['type_transaction'],
-            group_name=serializer.validated_data['group_name']
-        )
-        summary.fact_value += serializer.validated_data['value_transaction']
-        summary.save()
+        with transaction.atomic():
+            serializer.save(
+                author=user,
+                basename=user.core_settings.current_basename,
+                period_month=user.core_settings.current_month,
+                period_year=user.core_settings.current_year
+            )
+            summary = Summary.objects.get(
+                basename=user.core_settings.current_basename,
+                period_month=user.core_settings.current_month,
+                period_year=user.core_settings.current_year,
+                type_transaction=serializer.validated_data['type_transaction'],
+                group_name=serializer.validated_data['group_name']
+            )
+            summary.fact_value += serializer.validated_data['value_transaction']
+            summary.save()
 
 
 class GroupViewSet(ModelViewSet):

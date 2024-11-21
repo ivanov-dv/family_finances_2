@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from django.contrib.auth.password_validation import validate_password
+from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
@@ -93,24 +94,25 @@ class UserCreateSerializer(serializers.ModelSerializer):
         telegram_only = validated_data.pop('telegram_only', None)
         id_telegram = validated_data.pop('id_telegram', None)
         validated_data['username'] = validated_data['username'].lower()
-        user = User.objects.create(**validated_data)
-        if password:
-            user.set_password(password)
-            user.save()
-        TelegramSettings.objects.create(
-            user=user,
-            telegram_only=telegram_only,
-            id_telegram=id_telegram
-        )
-        basename = Basename.objects.create(user=user, basename=user.username)
-        dt = datetime.now()
-        CoreSettings.objects.create(
-            user=user,
-            current_basename=basename,
-            current_month=dt.month,
-            current_year=dt.year
-        )
-        return user
+        with transaction.atomic():
+            user = User.objects.create(**validated_data)
+            if password:
+                user.set_password(password)
+                user.save()
+            TelegramSettings.objects.create(
+                user=user,
+                telegram_only=telegram_only,
+                id_telegram=id_telegram
+            )
+            basename = Basename.objects.create(user=user, basename=user.username)
+            dt = datetime.now()
+            CoreSettings.objects.create(
+                user=user,
+                current_basename=basename,
+                current_month=dt.month,
+                current_year=dt.year
+            )
+            return user
 
     def validate_username(self, username):
         return username.lower()
