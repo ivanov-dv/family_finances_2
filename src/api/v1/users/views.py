@@ -28,7 +28,7 @@ class CoreSettingsViewSet(
     UpdateModelMixin,
     GenericViewSet
 ):
-    """Update user settings."""
+    """Show and update user settings."""
 
     serializer_class = CoreSettingsSerializer
 
@@ -51,7 +51,7 @@ class TelegramSettingsViewSet(
     UpdateModelMixin,
     GenericViewSet
 ):
-    """Update telegram settings."""
+    """Show and update telegram settings."""
 
     serializer_class = TelegramSettingsSerializer
 
