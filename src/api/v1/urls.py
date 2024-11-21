@@ -23,6 +23,11 @@ router_v1.register(
     transactions_views.SummaryViewSet,
     basename='user_summary'
 )
+router_v1.register(
+    r'users/(?P<user_id>\d+)/basenames',
+    transactions_views.BasenameViewSet,
+    basename='user_basenames'
+)
 
 urlpatterns = [
     path(

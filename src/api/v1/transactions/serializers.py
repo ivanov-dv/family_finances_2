@@ -125,3 +125,10 @@ class SummarySerializer(serializers.ModelSerializer):
             'updated_at'
         )
         model = Summary
+
+
+class BasenameSerializer(serializers.ModelSerializer):
+    class Meta:
+        fields = ('id', 'basename')
+        model = Basename
+

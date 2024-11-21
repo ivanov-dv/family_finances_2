@@ -6,10 +6,11 @@ from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveMode
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
-from transactions.models import Summary
+from transactions.models import Summary, Basename
 from users.models import User
 from .serializers import TransactionCreateSerializer, GroupCreateSerializer, \
-    GroupDetailSerializer, SummarySerializer, TransactionDetailSerializer
+    GroupDetailSerializer, SummarySerializer, TransactionDetailSerializer, \
+    BasenameSerializer
 
 
 class TransactionViewSet(
@@ -18,7 +19,7 @@ class TransactionViewSet(
     RetrieveModelMixin,
     GenericViewSet
 ):
-    """CRUD for transactions."""
+    """Отображение и создание для transactions."""
 
     serializer_class = TransactionCreateSerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
@@ -59,9 +60,7 @@ class TransactionViewSet(
 
 
 class GroupViewSet(ModelViewSet):
-    """CRUD for group."""
-
-    serializer_class = GroupCreateSerializer
+    """CRUD для group."""
 
     def get_user(self):
         return get_object_or_404(User, pk=self.kwargs['user_id'])
@@ -87,6 +86,8 @@ class SummaryViewSet(
     ListModelMixin,
     GenericViewSet
 ):
+    """Просмотр Summary."""
+
     serializer_class = SummarySerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('group_name', 'type_transaction')
@@ -114,5 +115,36 @@ class SummaryViewSet(
                 'period_year': user.core_settings.current_year,
                 'current_basename_id': user.core_settings.current_basename.id,
                 'summary': serializer.data
+            }
+        )
+
+
+class BasenameViewSet(ModelViewSet):
+    """CRUD для Basename."""
+
+    serializer_class = BasenameSerializer
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('^basename',)
+
+    def get_user(self):
+        return get_object_or_404(User, pk=self.kwargs['user_id'])
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return None
+        return Basename.objects.filter(user_id=self.kwargs['user_id'])
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.get_user())
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        user = self.get_user()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                'owner_id': user.id,
+                'owner_username': user.username,
+                'basenames': serializer.data
             }
         )

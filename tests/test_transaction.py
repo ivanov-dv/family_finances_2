@@ -103,3 +103,96 @@ class TestSummary:
         assert 'fact_value' in response.data['summary'][0]
         assert 'created_at' in response.data['summary'][0]
         assert 'updated_at' in response.data['summary'][0]
+
+
+class TestBasename:
+
+    url = '/api/v1/users/{user_id}/basenames/'
+
+    def test_create_basename(self, client, user_2_tg_only):
+        data = {
+            'basename': 'Test_basename'
+        }
+        response = client.post(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 201
+        assert 'id' in response.data
+        assert response.data['basename'] == data['basename'].lower()
+
+    def test_create_basename_invalid_data(self, client, user_2_tg_only):
+        data = {
+            'basename': 'Test_basename_7777777777777777777'
+        }
+        response = client.post(
+            self.url.format(user_id=user_2_tg_only.id),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 400
+
+    def test_get_basenames(self, client, user_2_tg_only):
+        response = client.get(
+            self.url.format(user_id=user_2_tg_only.id),
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert len(response.data) == 3
+        assert len(response.data['basenames']) == 1
+        assert 'id' in response.data['basenames'][0]
+        assert response.data['owner_id'] == user_2_tg_only.id
+        assert response.data['owner_username'] == user_2_tg_only.username
+
+    def test_get_basename(self, client, user_2_tg_only):
+        response = client.get(
+            f'{self.url.format(user_id=user_2_tg_only.id)}'
+            f'{user_2_tg_only.core_settings.current_basename.id}/',
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert (response.data['id'] ==
+                user_2_tg_only.core_settings.current_basename.id)
+        assert (response.data['basename'] ==
+                user_2_tg_only.core_settings.current_basename.basename)
+
+    def test_put_basename(self, client, user_2_tg_only):
+        data = {
+            'basename': 'New_Test_basename'
+        }
+        response = client.put(
+            f'{self.url.format(user_id=user_2_tg_only.id)}'
+            f'{user_2_tg_only.core_settings.current_basename.id}/',
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert response.data['basename'] == data['basename'].lower()
+
+    def test_patch_basename(self, client, user_2_tg_only):
+        data = {
+            'basename': 'New_Test_basename'
+        }
+        response = client.patch(
+            f'{self.url.format(user_id=user_2_tg_only.id)}'
+            f'{user_2_tg_only.core_settings.current_basename.id}/',
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert response.data['basename'] == data['basename'].lower()
+
+    def test_delete_basename(self, client, user_2_tg_only):
+        response = client.delete(
+            f'{self.url.format(user_id=user_2_tg_only.id)}'
+            f'{user_2_tg_only.core_settings.current_basename.id}/',
+            content_type='application/json'
+        )
+        assert response.status_code == 204
+        response = client.get(
+            f'{self.url.format(user_id=user_2_tg_only.id)}'
+            f'{user_2_tg_only.core_settings.current_basename.id}/',
+            content_type='application/json'
+        )
+        assert response.status_code == 404

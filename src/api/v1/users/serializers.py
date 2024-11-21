@@ -5,6 +5,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
+from api.v1.transactions.serializers import BasenameSerializer
 from api.v1.transactions.validators import PeriodYearValidator, \
     PeriodMonthValidator
 from transactions.models import Basename
@@ -138,11 +139,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='username'
     )
-    basenames = serializers.SlugRelatedField(
-        read_only=True,
-        many=True,
-        slug_field='basename'
-    )
+    basenames = BasenameSerializer(read_only=True, many=True)
 
     class Meta:
         model = User
