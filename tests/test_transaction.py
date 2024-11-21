@@ -2,6 +2,7 @@ from decimal import Decimal
 from pprint import pprint
 
 import pytest
+from rest_framework.reverse import reverse
 
 pytestmark = pytest.mark.django_db
 
@@ -196,3 +197,73 @@ class TestBasename:
             content_type='application/json'
         )
         assert response.status_code == 404
+
+
+class TestLinkUsersToBasename:
+
+    link_url = '/api/v1/users/{user_id}/basenames/{basename_id}/link_user/'
+    unlink_url = '/api/v1/users/{user_id}/basenames/{basename_id}/unlink_user/'
+
+    def test_link_and_unlink(self, client, user_1, user_2_tg_only):
+        data = {'id': user_2_tg_only.id}
+        response = client.post(
+            self.link_url.format(
+                user_id=user_1.id,
+                basename_id=user_1.core_settings.current_basename.id
+            ),
+            data=data,
+            content_type='application/json'
+        )
+        pprint(response.data)
+        assert response.status_code == 200
+        assert 'status' in response.data
+        response = client.post(
+            self.unlink_url.format(
+                user_id=user_1.id,
+                basename_id=user_1.core_settings.current_basename.id
+            ),
+            data=data,
+            content_type='application/json'
+        )
+        pprint(response.data)
+        assert response.status_code == 200
+        assert 'status' in response.data
+
+
+    @pytest.mark.parametrize(
+        'data, expected_status',
+        (
+            ({'id': 1}, 404),
+            ({'id': '12345678901234567890'}, 404),
+            ({'id': 12345678901234567890}, 404),
+            ({'id': -12345678901234567890}, 404),
+            ({'id': 'abcde'}, 400),
+            ({'username': 'user2_tg_only'}, 400)
+        )
+    )
+    def test_link_to_basename_invalid_data(
+            self,
+            client,
+            user_1,
+            user_2_tg_only,
+            data,
+            expected_status
+    ):
+        response = client.post(
+            self.link_url.format(
+                user_id=user_1.id,
+                basename_id=user_1.core_settings.current_basename.id
+            ),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == expected_status
+        response = client.post(
+            self.unlink_url.format(
+                user_id=user_1.id,
+                basename_id=user_1.core_settings.current_basename.id
+            ),
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == expected_status

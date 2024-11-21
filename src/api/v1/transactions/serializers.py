@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from rest_framework.exceptions import ValidationError
 
+from users.models import User
 from .validators import PeriodYearValidator, PeriodMonthValidator
 from family_finances import constants
 from transactions.models import Transaction, Summary, Basename
@@ -132,3 +133,6 @@ class BasenameSerializer(serializers.ModelSerializer):
         fields = ('id', 'basename')
         model = Basename
 
+
+class LinkUserToBasenameSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
