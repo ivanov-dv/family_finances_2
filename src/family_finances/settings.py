@@ -126,3 +126,5 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
 }
+
+SHELL_PLUS = "ipython"
