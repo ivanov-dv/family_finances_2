@@ -1,5 +1,6 @@
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
@@ -19,9 +20,9 @@ from .serializers import (
     GroupDetailSerializer,
     SummarySerializer,
     TransactionDetailSerializer,
-    BasenameSerializer,
     LinkUserToBasenameSerializer,
-    UnlinkUserToBasenameSerializer
+    UnlinkUserToBasenameSerializer,
+    BasenameSerializer
 )
 
 
@@ -67,7 +68,9 @@ class TransactionViewSet(
                 type_transaction=serializer.validated_data['type_transaction'],
                 group_name=serializer.validated_data['group_name']
             )
-            summary.fact_value += serializer.validated_data['value_transaction']
+            summary.fact_value += serializer.validated_data[
+                'value_transaction'
+            ]
             summary.save()
 
 
@@ -161,6 +164,20 @@ class BasenameViewSet(ModelViewSet):
             }
         )
 
+    @swagger_auto_schema(
+        tags=['Подключение/отключение пользователей'],
+        operation_description='Подключение пользователя к базе',
+        responses={
+            status.HTTP_200_OK:
+                f'Пользователь username '
+                f'(id 1) подключен к базе '
+                f'user_base '
+                f'(id 11) '
+                f'пользователя username_2 '
+                f'(id 22).'
+        },
+        request_body=LinkUserToBasenameSerializer
+    )
     @action(detail=True, methods=['post'], url_path='link_user')
     def link_user(self, request, user_id, pk=None):
         serializer = LinkUserToBasenameSerializer(
@@ -178,9 +195,23 @@ class BasenameViewSet(ModelViewSet):
                           f'пользователя {instance.basename.user.username} '
                           f'(id {instance.basename.user.id}).'
             },
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_200_OK
         )
 
+    @swagger_auto_schema(
+        tags=['Подключение/отключение пользователей'],
+        operation_description='Отключение пользователя от базы',
+        responses={
+            status.HTTP_200_OK:
+                f'Пользователь username '
+                f'(id 1) отключен от базы '
+                f'user_base '
+                f'(id 11) '
+                f'пользователя username_2 '
+                f'(id 22).'
+        },
+        request_body=UnlinkUserToBasenameSerializer
+    )
     @action(detail=True, methods=['post'], url_path='unlink_user')
     def unlink_user(self, request, user_id, pk=None):
         serializer = UnlinkUserToBasenameSerializer(
@@ -199,5 +230,5 @@ class BasenameViewSet(ModelViewSet):
                           f'пользователя {vd['basename'].user.username} '
                           f'(id {vd['basename'].user.id}).'
             },
-            status=status.HTTP_204_NO_CONTENT
+            status=status.HTTP_200_OK
         )

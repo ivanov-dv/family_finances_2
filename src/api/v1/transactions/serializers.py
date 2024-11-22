@@ -141,7 +141,7 @@ class BasenameSerializer(serializers.ModelSerializer):
 
 
 class LinkUserToBasenameSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(label='ID пользователя')
 
     def validate(self, attrs):
         """Проверка, что пользователь может быть связан с базой."""
@@ -186,7 +186,7 @@ class LinkUserToBasenameSerializer(serializers.Serializer):
 
 
 class UnlinkUserToBasenameSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    id = serializers.IntegerField(label='ID пользователя')
 
     def validate(self, attrs):
         """Проверка наличия связи."""
