@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const password = document.getElementById('password').value;
         const loginError = document.getElementById('loginError');
 
-        const response = await fetch("ajax-login/", {
+        const response = await fetch("users/ajax-login/", {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken(),  // Функция для получения CSRF-токена
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const registrationError = document.getElementById('registrationError');
         const registrationSuccess = document.getElementById('registrationSuccess');
 
-        const response = await fetch("registration/", {
+        const response = await fetch("users/registration/", {
             method: 'POST',
             headers: {
                 'X-CSRFToken': getCSRFToken(),  // Функция для получения CSRF-токена
