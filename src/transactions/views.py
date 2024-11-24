@@ -84,12 +84,13 @@ def registration(request):
             return JsonResponse(
                 {'status': 'success'}
             )
-    else:
-        return JsonResponse(
-            {
-                'status': 'error',
-                'message': 'Неправильное имя пользователя или пароль'}
-        )
+        else:
+            return JsonResponse(
+                {
+                    'status': 'error',
+                    'message': list(form.errors.values())
+                }
+            )
     return JsonResponse(
         {'status': 'error', 'message': 'Некорректный запрос'}
     )

@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const menuButton = document.getElementById('menuButton');
     const closeSidebar = document.getElementById('closeSidebar');
-    // const loginForm = document.getElementById('loginForm');
+    const loginForm = document.getElementById('loginForm');
     const registrationForm = document.getElementById('registrationForm');
 
     function getCSRFToken() {
@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const registration_username = document.getElementById('registration_username').value;
         const registration_password = document.getElementById('registration_password').value;
         const registrationError = document.getElementById('registrationError');
+        const registrationSuccess = document.getElementById('registrationSuccess');
 
         const response = await fetch("registration/", {
             method: 'POST',
@@ -53,9 +54,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const data = await response.json();
 
         if (data.status === 'success') {
-            window.location.reload();  // Перезагрузка страницы после успешного входа
+            // Показываем сообщение об успешной регистрации
+            registrationSuccess.textContent = 'Регистрация прошла успешно!';
+            registrationSuccess.style.display = 'block';
+
+            // Скрываем форму (по желанию)
+            registrationForm.style.display = 'none';
         } else {
-            registrationError.textContent = data.message;  // Отображение ошибки
+            // Показываем сообщение об ошибке
+            registrationError.textContent = data.message;
+            registrationError.style.display = 'block';
         }
     });
 
