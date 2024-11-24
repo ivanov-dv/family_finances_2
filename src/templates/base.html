@@ -1,0 +1,36 @@
+{% load static %}
+{% load django_bootstrap5 %}
+{% bootstrap_javascript %}
+{% bootstrap_css %}
+
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <title>{{ title }}</title>
+</head>
+
+<body>
+
+    {% include 'includes/menu.html' %}
+    
+    <div class="container-xl">
+        {% include 'includes/header.html' %}
+    
+        {% include 'includes/modal_login.html' %}
+        {% include 'includes/modal_registration.html' %}
+        
+        <div class="main-content" id="main-content">
+            {% block content %}
+            {% endblock %}
+        </div>
+    
+    </div>
+    
+    <script src="{% static 'js/sidebar_toggle.js' %}"></script>
+
+</body>
+</html>

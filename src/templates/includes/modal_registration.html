@@ -1,0 +1,26 @@
+<!-- Login Modal -->
+<div class="modal fade" id="registrationModal" tabindex="-1" aria-labelledby="registrationModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="registrationModalLabel">Регистрация</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="registrationForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="registration_username" class="form-label">Логин</label>
+                        <input type="text" class="form-control" id="registration_username" placeholder="Введите логин" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="registration_password" class="form-label">Пароль</label>
+                        <input type="password" class="form-control" id="registration_password" placeholder="Введите пароль" required>
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">Зарегистрироваться</button>
+                    <div id="registrationError" class="text-danger mt-2"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

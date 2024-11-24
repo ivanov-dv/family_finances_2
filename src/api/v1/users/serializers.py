@@ -105,7 +105,10 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 telegram_only=telegram_only,
                 id_telegram=id_telegram
             )
-            basename = Basename.objects.create(user=user, basename=user.username)
+            basename = Basename.objects.create(
+                user=user,
+                basename=user.username
+            )
             dt = datetime.now()
             CoreSettings.objects.create(
                 user=user,

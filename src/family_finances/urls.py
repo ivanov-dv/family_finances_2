@@ -5,7 +5,9 @@ from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
 urlpatterns = [
+    path('', include('transactions.urls', namespace='transactions')),
     path('api/v1/', include('api.v1.urls', namespace='api_v1')),
+    path('auth/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
 ]
 

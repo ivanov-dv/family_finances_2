@@ -29,7 +29,7 @@ class Basename(CreatedUpdatedModel):
     )
     basename = models.CharField(max_length=20)
     linked_users = models.ManyToManyField(
-        get_user_model(),
+        User,
         through='LinkedUserToBasename'
     )
 
