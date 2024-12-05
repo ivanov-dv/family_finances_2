@@ -12,6 +12,7 @@ class TestTransaction:
     def test_create_transaction_and_change_summary(
             self,
             client,
+            auth_header,
             user_2_tg_only,
             summary_1
     ):
@@ -23,6 +24,7 @@ class TestTransaction:
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -38,6 +40,7 @@ class TestTransaction:
         data['value_transaction'] = '0.01'
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -47,6 +50,7 @@ class TestTransaction:
         data['value_transaction'] = '-50.5'
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -54,20 +58,27 @@ class TestTransaction:
         summary_1.refresh_from_db()
         assert summary_1.fact_value == Decimal('49.50')
 
-    def test_list_transactions(self, client, transaction_1, transaction_2):
+    def test_list_transactions(
+            self,
+            client,
+            auth_header,
+            transaction_1,
+            transaction_2
+    ):
         response = client.get(
             self.url.format(user_id=transaction_1.author.id),
+            headers=auth_header,
             content_type='application/json'
         )
-        pprint(response.__dict__)
         assert response.status_code == 200
         assert 'results' in response.data
         assert len(response.data['results']) == 2
 
-    def test_get_transaction(self, client, transaction_1):
+    def test_get_transaction(self, client, auth_header, transaction_1):
         response = client.get(
             f'{self.url.format(user_id=transaction_1.author.id)}'
             f'{transaction_1.id}/',
+            headers=auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -84,11 +95,19 @@ class TestTransaction:
 class TestSummary:
     url = '/api/v1/users/{user_id}/summary/'
 
-    def test_get_summary(self, client, user_2_tg_only, summary_1, summary_2):
+    def test_get_summary(
+            self,
+            client,
+            auth_header,
+            user_2_tg_only,
+            summary_1,
+            summary_2
+    ):
         response = client.get(
-            self.url.format(user_id=user_2_tg_only.id)
+            self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
+            content_type='application/json'
         )
-        pprint(response.data)
         assert response.status_code == 200
         assert (response.data['current_basename_id'] ==
                 user_2_tg_only.core_settings.current_basename.id)
@@ -111,12 +130,13 @@ class TestBasename:
 
     url = '/api/v1/users/{user_id}/basenames/'
 
-    def test_create_basename(self, client, user_2_tg_only):
+    def test_create_basename(self, client, auth_header, user_2_tg_only):
         data = {
             'basename': 'Test_basename'
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -124,20 +144,27 @@ class TestBasename:
         assert 'id' in response.data
         assert response.data['basename'] == data['basename'].lower()
 
-    def test_create_basename_invalid_data(self, client, user_2_tg_only):
+    def test_create_basename_invalid_data(
+            self,
+            client,
+            auth_header,
+            user_2_tg_only
+    ):
         data = {
             'basename': 'Test_basename_7777777777777777777'
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
         assert response.status_code == 400
 
-    def test_get_basenames(self, client, user_2_tg_only):
+    def test_get_basenames(self, client, auth_header, user_2_tg_only):
         response = client.get(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -147,10 +174,11 @@ class TestBasename:
         assert response.data['owner_id'] == user_2_tg_only.id
         assert response.data['owner_username'] == user_2_tg_only.username
 
-    def test_get_basename(self, client, user_2_tg_only):
+    def test_get_basename(self, client, auth_header, user_2_tg_only):
         response = client.get(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_basename.id}/',
+            headers=auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -159,42 +187,46 @@ class TestBasename:
         assert (response.data['basename'] ==
                 user_2_tg_only.core_settings.current_basename.basename)
 
-    def test_put_basename(self, client, user_2_tg_only):
+    def test_put_basename(self, client, auth_header, user_2_tg_only):
         data = {
             'basename': 'New_Test_basename'
         }
         response = client.put(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_basename.id}/',
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
         assert response.status_code == 200
         assert response.data['basename'] == data['basename'].lower()
 
-    def test_patch_basename(self, client, user_2_tg_only):
+    def test_patch_basename(self, client, auth_header, user_2_tg_only):
         data = {
             'basename': 'New_Test_basename'
         }
         response = client.patch(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_basename.id}/',
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
         assert response.status_code == 200
         assert response.data['basename'] == data['basename'].lower()
 
-    def test_delete_basename(self, client, user_2_tg_only):
+    def test_delete_basename(self, client, auth_header, user_2_tg_only):
         response = client.delete(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_basename.id}/',
+            headers=auth_header,
             content_type='application/json'
         )
         assert response.status_code == 204
         response = client.get(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_basename.id}/',
+            headers=auth_header,
             content_type='application/json'
         )
         assert response.status_code == 404
@@ -205,17 +237,23 @@ class TestLinkUsersToBasename:
     link_url = '/api/v1/users/{user_id}/basenames/{basename_id}/link_user/'
     unlink_url = '/api/v1/users/{user_id}/basenames/{basename_id}/unlink_user/'
 
-    def test_link_and_unlink(self, client, user_1, user_2_tg_only):
+    def test_link_and_unlink(
+            self,
+            client,
+            auth_header,
+            user_1,
+            user_2_tg_only
+    ):
         data = {'id': user_2_tg_only.id}
         response = client.post(
             self.link_url.format(
                 user_id=user_1.id,
                 basename_id=user_1.core_settings.current_basename.id
             ),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
-        pprint(response.data)
         assert response.status_code == 200
         assert 'status' in response.data
         response = client.post(
@@ -223,6 +261,7 @@ class TestLinkUsersToBasename:
                 user_id=user_1.id,
                 basename_id=user_1.core_settings.current_basename.id
             ),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -244,6 +283,7 @@ class TestLinkUsersToBasename:
     def test_link_to_basename_invalid_data(
             self,
             client,
+            auth_header,
             user_1,
             user_2_tg_only,
             data,
@@ -254,6 +294,7 @@ class TestLinkUsersToBasename:
                 user_id=user_1.id,
                 basename_id=user_1.core_settings.current_basename.id
             ),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -263,6 +304,7 @@ class TestLinkUsersToBasename:
                 user_id=user_1.id,
                 basename_id=user_1.core_settings.current_basename.id
             ),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )

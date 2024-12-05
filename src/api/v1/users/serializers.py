@@ -8,6 +8,7 @@ from rest_framework.validators import UniqueValidator
 from api.v1.transactions.serializers import BasenameSerializer
 from api.v1.transactions.validators import PeriodYearValidator, \
     PeriodMonthValidator
+from api.v1.users.validators import not_allowed_username_validator
 from transactions.models import Basename
 from users.models import User, TelegramSettings, CoreSettings
 
@@ -119,7 +120,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             return user
 
     def validate_username(self, username):
-        return username.lower()
+        return not_allowed_username_validator(username)
 
     def validate(self, data):
         errors = {}

@@ -2,8 +2,14 @@ from datetime import datetime
 
 import pytest
 
+from django.conf import settings
 from transactions.models import Basename, Summary, Transaction
 from users.models import User, TelegramSettings, CoreSettings
+
+
+@pytest.fixture
+def auth_header():
+    return {'Authorization': settings.ACCESS_TOKEN}
 
 
 @pytest.fixture
