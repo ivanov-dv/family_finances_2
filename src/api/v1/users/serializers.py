@@ -5,11 +5,11 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from api.v1.transactions.serializers import BasenameSerializer
+from api.v1.transactions.serializers import SpaceSerializer
 from api.v1.transactions.validators import PeriodYearValidator, \
     PeriodMonthValidator
 from api.v1.users.validators import not_allowed_username_validator
-from transactions.models import Basename
+from transactions.models import Space
 from users.models import User, TelegramSettings, CoreSettings
 
 
@@ -33,7 +33,7 @@ class TelegramSettingsSerializer(serializers.ModelSerializer):
 
 
 class CoreSettingsSerializer(serializers.ModelSerializer):
-    current_basename = BasenameSerializer(
+    current_space = SpaceSerializer(
         read_only=True
     )
     user = serializers.SlugRelatedField(
@@ -51,7 +51,7 @@ class CoreSettingsSerializer(serializers.ModelSerializer):
         model = CoreSettings
         fields = (
             'user',
-            'current_basename',
+            'current_space',
             'current_month',
             'current_year'
         )
@@ -105,14 +105,14 @@ class UserCreateSerializer(serializers.ModelSerializer):
                 telegram_only=telegram_only,
                 id_telegram=id_telegram
             )
-            basename = Basename.objects.create(
+            space = Space.objects.create(
                 user=user,
-                basename=user.username
+                name=user.username
             )
             dt = datetime.now()
             CoreSettings.objects.create(
                 user=user,
-                current_basename=basename,
+                current_space=space,
                 current_month=dt.month,
                 current_year=dt.year
             )
@@ -142,7 +142,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='username'
     )
-    basenames = BasenameSerializer(read_only=True, many=True)
+    spaces = SpaceSerializer(read_only=True, many=True)
 
     class Meta:
         model = User
@@ -157,5 +157,5 @@ class UserDetailSerializer(serializers.ModelSerializer):
             'core_settings',
             'telegram_settings',
             'linked_users',
-            'basenames'
+            'spaces'
         )

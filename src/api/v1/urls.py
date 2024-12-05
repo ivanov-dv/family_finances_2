@@ -24,9 +24,9 @@ router_v1.register(
     basename='user_summary'
 )
 router_v1.register(
-    r'users/(?P<user_id>\d+)/basenames',
-    transactions_views.BasenameViewSet,
-    basename='user_basenames'
+    r'users/(?P<user_id>\d+)/spaces',
+    transactions_views.SpaceViewSet,
+    basename='user_spaces'
 )
 
 urlpatterns = [

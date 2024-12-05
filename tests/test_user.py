@@ -5,7 +5,7 @@ import pytest
 from django.conf import settings
 
 from tests.conftest import auth_header
-from transactions.models import Basename
+from transactions.models import Space
 from users.models import TelegramSettings, CoreSettings
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -49,7 +49,7 @@ class TestUser:
         assert CoreSettings.objects.filter(
             user_id=response.data['id']
         ).exists()
-        assert Basename.objects.filter(user_id=response.data['id']).exists()
+        assert Space.objects.filter(user_id=response.data['id']).exists()
 
     @pytest.mark.parametrize(
         'data',
@@ -253,8 +253,8 @@ class TestCoreSettings:
         )
         dt = datetime.now()
         assert response.status_code == 200
-        assert (user_2_tg_only.core_settings.current_basename.id ==
-                response.data['current_basename']['id'])
+        assert (user_2_tg_only.core_settings.current_space.id ==
+                response.data['current_space']['id'])
         assert response.data['current_month'] == dt.month
         assert response.data['current_year'] == dt.year
 
@@ -272,8 +272,8 @@ class TestCoreSettings:
         assert response.status_code == 200
         assert data['current_month'] == response.data['current_month']
         assert data['current_year'] == response.data['current_year']
-        assert (user_2_tg_only.core_settings.current_basename.id ==
-            response.data['current_basename']['id'])
+        assert (user_2_tg_only.core_settings.current_space.id ==
+            response.data['current_space']['id'])
 
     @pytest.mark.parametrize(
         'data',
@@ -307,8 +307,8 @@ class TestCoreSettings:
         )
         assert response.status_code == 200
         assert data['current_month'] == response.data['current_month']
-        assert (user_2_tg_only.core_settings.current_basename.id ==
-            response.data['current_basename']['id'])
+        assert (user_2_tg_only.core_settings.current_space.id ==
+            response.data['current_space']['id'])
         assert (user_2_tg_only.core_settings.current_year ==
                 response.data['current_year'])
 

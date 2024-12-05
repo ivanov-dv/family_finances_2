@@ -21,35 +21,35 @@ class CreatedUpdatedModel(models.Model):
         abstract = True
 
 
-class Basename(CreatedUpdatedModel):
+class Space(CreatedUpdatedModel):
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='basenames'
+        related_name='spaces'
     )
-    basename = models.CharField(max_length=20)
+    name = models.CharField(max_length=20)
     linked_users = models.ManyToManyField(
         User,
-        through='LinkedUserToBasename'
+        through='LinkedUserToSpace'
     )
 
     class Meta:
         constraints = [
             UniqueConstraint(
-                fields=('user', 'basename'),
-                name='unique_basename_user'
+                fields=('user', 'name'),
+                name='unique_name_user'
             )
         ]
 
     def save(self, *args, **kwargs):
-        if self.basename:
-            self.basename = self.basename.lower()
+        if self.name:
+            self.name = self.name.lower()
         super().save(*args, **kwargs)
 
 
-class LinkedUserToBasename(models.Model):
-    basename = models.ForeignKey(
-        Basename,
+class LinkedUserToSpace(models.Model):
+    space = models.ForeignKey(
+        Space,
         on_delete=models.CASCADE
     )
     linked_user = models.ForeignKey(
@@ -60,14 +60,14 @@ class LinkedUserToBasename(models.Model):
     class Meta:
         constraints = [
             UniqueConstraint(
-                fields=('basename', 'linked_user'),
-                name='unique_basename_linked_user'
+                fields=('space', 'linked_user'),
+                name='unique_space_linked_user'
             )
         ]
 
 
 class Transaction(CreatedUpdatedModel):
-    basename = models.ForeignKey(Basename, on_delete=models.CASCADE)
+    space = models.ForeignKey(Space, on_delete=models.CASCADE)
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     period_month = models.IntegerField()
     period_year = models.IntegerField()
@@ -87,7 +87,7 @@ class Transaction(CreatedUpdatedModel):
 
 
 class Summary(CreatedUpdatedModel):
-    basename = models.ForeignKey(Basename, on_delete=models.CASCADE)
+    space = models.ForeignKey(Space, on_delete=models.CASCADE)
     period_month = models.IntegerField()
     period_year = models.IntegerField()
     type_transaction = models.CharField(
@@ -110,7 +110,7 @@ class Summary(CreatedUpdatedModel):
         constraints = (
             models.UniqueConstraint(
                 fields=(
-                    'basename',
+                    'space',
                     'period_month',
                     'period_year',
                     'group_name'
