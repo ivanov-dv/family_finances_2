@@ -253,8 +253,8 @@ class TestCoreSettings:
         )
         dt = datetime.now()
         assert response.status_code == 200
-        assert (user_2_tg_only.core_settings.current_basename.basename ==
-                response.data['current_basename'])
+        assert (user_2_tg_only.core_settings.current_basename.id ==
+                response.data['current_basename']['id'])
         assert response.data['current_month'] == dt.month
         assert response.data['current_year'] == dt.year
 
@@ -272,8 +272,8 @@ class TestCoreSettings:
         assert response.status_code == 200
         assert data['current_month'] == response.data['current_month']
         assert data['current_year'] == response.data['current_year']
-        assert (user_2_tg_only.core_settings.current_basename.basename ==
-            response.data['current_basename'])
+        assert (user_2_tg_only.core_settings.current_basename.id ==
+            response.data['current_basename']['id'])
 
     @pytest.mark.parametrize(
         'data',
@@ -307,8 +307,8 @@ class TestCoreSettings:
         )
         assert response.status_code == 200
         assert data['current_month'] == response.data['current_month']
-        assert (user_2_tg_only.core_settings.current_basename.basename ==
-            response.data['current_basename'])
+        assert (user_2_tg_only.core_settings.current_basename.id ==
+            response.data['current_basename']['id'])
         assert (user_2_tg_only.core_settings.current_year ==
                 response.data['current_year'])
 

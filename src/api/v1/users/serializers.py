@@ -33,9 +33,8 @@ class TelegramSettingsSerializer(serializers.ModelSerializer):
 
 
 class CoreSettingsSerializer(serializers.ModelSerializer):
-    current_basename = serializers.SlugRelatedField(
-        slug_field='basename',
-        read_only=True,
+    current_basename = BasenameSerializer(
+        read_only=True
     )
     user = serializers.SlugRelatedField(
         slug_field='username',
