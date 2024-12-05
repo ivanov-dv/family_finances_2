@@ -13,6 +13,9 @@ SECRET_KEY = os.getenv(
     'SECRET_KEY',
     'p&l%385148kslhtyn^##a1)ilz@4zqj=rq&agdol^##zgl9(vs'
 )
+ACCESS_TOKEN = os.getenv(
+    'ACCESS_TOKEN'
+)
 
 DEBUG = True
 
@@ -118,6 +121,12 @@ REST_FRAMEWORK = {
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'api.v1.auth.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
@@ -130,3 +139,10 @@ LOGOUT_REDIRECT_URL = reverse_lazy('transactions:home')
 
 LOGIN_URL = 'login'
 LOGOUT_URL = 'logout'
+
+NOT_ALLOWED_USERNAMES = (
+    'admin',
+    'superuser',
+    'guest',
+    'me'
+)

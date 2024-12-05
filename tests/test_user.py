@@ -2,11 +2,13 @@ from datetime import datetime
 from pprint import pprint
 
 import pytest
+from django.conf import settings
 
+from tests.conftest import auth_header
 from transactions.models import Basename
 from users.models import TelegramSettings, CoreSettings
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)
 
 class TestUser:
 
@@ -27,9 +29,10 @@ class TestUser:
             }
         ]
     )
-    def test_create_user(self, client, data):
+    def test_create_user(self, client, auth_header, data):
         response = client.post(
             self.url,
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -67,13 +70,29 @@ class TestUser:
             },
         ]
     )
-    def test_create_user_invalid_data(self, client, data):
+    def test_create_user_invalid_data(self, client, auth_header, data):
         response = client.post(
             self.url,
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
         assert response.status_code == 400
+
+    def test_create_user_not_allowed_username(self, client, auth_header):
+        data = {
+            'password': 'testpassword1234',
+            'telegram_only': False
+        }
+        for username in settings.NOT_ALLOWED_USERNAMES:
+            data['username'] = username
+            response = client.post(
+                self.url,
+                headers=auth_header,
+                data=data,
+                content_type='application/json'
+            )
+            assert response.status_code == 400
 
     @pytest.mark.parametrize(
         'user',
@@ -82,9 +101,13 @@ class TestUser:
             'user_2_tg_only'
         ]
     )
-    def test_get_user(self, request, client, user):
+    def test_get_user(self, request, client, auth_header, user):
         user_instance = request.getfixturevalue(user)
-        response = client.get(f'{self.url}{user_instance.id}/')
+        response = client.get(
+            f'{self.url}{user_instance.id}/',
+            headers=auth_header,
+            content_type='application/json'
+        )
         assert response.status_code == 200
         assert user_instance.username == response.data['username']
         assert user_instance.id == response.data['id']
@@ -93,13 +116,14 @@ class TestUser:
         assert user_instance.last_name == response.data['last_name']
 
 
-    def test_put_user(self, client, user_1):
+    def test_put_user(self, client, auth_header, user_1):
         data = {
             "username": "BdgGEZ1TFkNCvtK7Tpw66y",
             "password": "string252341"
         }
         response = client.put(
             f'{self.url}{user_1.id}/',
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -115,9 +139,10 @@ class TestUser:
             {'last_name': 'Doe'},
         ]
     )
-    def test_patch_user(self, client, user_1, data):
+    def test_patch_user(self, client, auth_header, user_1, data):
         response = client.patch(
             f'{self.url}{user_1.id}/',
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -125,8 +150,12 @@ class TestUser:
         for key in data:
             assert data[key] == response.data[key]
 
-    def test_delete_user(self, client, user_1):
-        response = client.delete(f'{self.url}{user_1.id}/')
+    def test_delete_user(self, client, auth_header, user_1):
+        response = client.delete(
+            f'{self.url}{user_1.id}/',
+            headers=auth_header,
+            content_type='application/json'
+        )
         assert response.status_code == 204
 
 
@@ -134,9 +163,11 @@ class TestCoreSettings:
 
     url = '/api/v1/users/{user_id}/core-settings/'
 
-    def test_get_core_settings(self, client, user_2_tg_only):
+    def test_get_core_settings(self, client, auth_header, user_2_tg_only):
         response = client.get(
-            self.url.format(user_id=user_2_tg_only.id)
+            self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
+            content_type='application/json'
         )
         dt = datetime.now()
         assert response.status_code == 200
@@ -145,13 +176,14 @@ class TestCoreSettings:
         assert response.data['current_month'] == dt.month
         assert response.data['current_year'] == dt.year
 
-    def test_put_core_settings(self, client, user_2_tg_only):
+    def test_put_core_settings(self, client, auth_header, user_2_tg_only):
         data = {
             'current_month': 12,
             'current_year': 2025
         }
         response = client.put(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -171,20 +203,23 @@ class TestCoreSettings:
     def test_put_core_settings_invalid_data(
             self,
             client,
+            auth_header,
             user_2_tg_only,
             data
     ):
         response = client.put(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
         assert response.status_code == 400
 
-    def test_patch_core_settings(self, client, user_2_tg_only):
+    def test_patch_core_settings(self, client, auth_header, user_2_tg_only):
         data = {'current_month': 11}
         response = client.patch(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -205,11 +240,13 @@ class TestCoreSettings:
     def test_patch_core_settings_invalid_data(
             self,
             client,
+            auth_header,
             user_2_tg_only,
             data
     ):
         response = client.patch(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -220,9 +257,11 @@ class TestTelegramSettings:
 
     url = '/api/v1/users/{user_id}/telegram-settings/'
 
-    def test_get_telegram_settings(self, client, user_2_tg_only):
+    def test_get_telegram_settings(self, client, auth_header, user_2_tg_only):
         response = client.get(
-            self.url.format(user_id=user_2_tg_only.id)
+            self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
+            content_type='application/json'
         )
         assert response.status_code == 200
         assert (user_2_tg_only.telegram_settings.id_telegram ==
@@ -234,7 +273,7 @@ class TestTelegramSettings:
         assert (user_2_tg_only.telegram_settings.joint_chat ==
                 response.data['joint_chat'])
 
-    def test_put_telegram_settings(self, client, user_2_tg_only):
+    def test_put_telegram_settings(self, client, auth_header, user_2_tg_only):
         data = {
             'id_telegram': 777,
             'telegram_only': False,
@@ -242,6 +281,7 @@ class TestTelegramSettings:
         }
         response = client.put(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -270,20 +310,23 @@ class TestTelegramSettings:
     def test_put_telegram_settings_invalid_data(
             self,
             client,
+            auth_header,
             user_2_tg_only,
             data
     ):
         response = client.put(
             self.url.format(user_id=user_2_tg_only.id),
             data=data,
+            headers=auth_header,
             content_type='application/json'
         )
         assert response.status_code == 400
 
-    def test_patch_telegram_settings(self, client, user_2_tg_only):
+    def test_patch_telegram_settings(self, client, auth_header, user_2_tg_only):
         data = {'telegram_only': False}
         response = client.patch(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
@@ -307,11 +350,13 @@ class TestTelegramSettings:
     def test_patch_telegram_settings_invalid_data(
             self,
             client,
+            auth_header,
             user_2_tg_only,
             data
     ):
         response = client.patch(
             self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
             data=data,
             content_type='application/json'
         )
