@@ -59,8 +59,10 @@ class TestTransaction:
             self.url.format(user_id=transaction_1.author.id),
             content_type='application/json'
         )
+        pprint(response.__dict__)
         assert response.status_code == 200
-        assert len(response.data) == 2
+        assert 'results' in response.data
+        assert len(response.data['results']) == 2
 
     def test_get_transaction(self, client, transaction_1):
         response = client.get(
@@ -214,7 +216,7 @@ class TestLinkUsersToBasename:
             content_type='application/json'
         )
         pprint(response.data)
-        assert response.status_code == 201
+        assert response.status_code == 200
         assert 'status' in response.data
         response = client.post(
             self.unlink_url.format(
@@ -224,7 +226,7 @@ class TestLinkUsersToBasename:
             data=data,
             content_type='application/json'
         )
-        assert response.status_code == 204
+        assert response.status_code == 200
         assert 'status' in response.data
 
 
