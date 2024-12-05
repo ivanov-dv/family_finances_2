@@ -9,6 +9,10 @@ class User(AbstractUser):
         related_name='available_linked_users',
     )
 
+    class Meta(AbstractUser.Meta):
+        ordering = ('-id',)
+
+
     def save(self, *args, **kwargs):
         if self.username:
             self.username = self.username.lower()

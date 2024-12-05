@@ -1,8 +1,10 @@
+from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import UpdateModelMixin, ListModelMixin
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
+from api.v1.users.filters import UserFilter
 from api.v1.users.serializers import (
     UserCreateSerializer,
     TelegramSettingsSerializer,
@@ -15,7 +17,13 @@ from users.models import User
 class UserViewSet(ModelViewSet):
     """CRUD для users."""
 
-    queryset = User.objects.select_related('telegram_settings').all()
+    queryset = User.objects.select_related(
+        'telegram_settings',
+        'core_settings'
+    ).all()
+    filter_backends = (DjangoFilterBackend,)
+    filterset_class = UserFilter
+
 
     def get_serializer_class(self):
         if self.action == 'create':
