@@ -16,7 +16,8 @@ def auth_header():
 def user_1():
     user = User.objects.create(
         username='user1',
-        password='123456'
+        password='123456',
+        email='user1@example.com'
     )
     TelegramSettings.objects.create(user=user, telegram_only=False)
     basename = Basename.objects.create(user=user, basename=user.username)

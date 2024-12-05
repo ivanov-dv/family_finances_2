@@ -10,6 +10,7 @@ from users.models import TelegramSettings, CoreSettings
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
+
 class TestUser:
 
     url = '/api/v1/users/'
@@ -93,6 +94,87 @@ class TestUser:
                 content_type='application/json'
             )
             assert response.status_code == 400
+
+    def test_get_all_users(self, client, auth_header, user_1, user_2_tg_only):
+        response = client.get(
+            self.url,
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'results' in response.data
+        assert len(response.data['results']) == 3  # 3 юзера, т.к. еще админ
+
+    def test_filter_username_users(
+            self,
+            client,
+            auth_header,
+            user_1,
+            user_2_tg_only
+    ):
+        response = client.get(
+            f'{self.url}?username={user_1.username}',
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'results' in response.data
+        assert len(response.data['results']) == 1
+        assert response.data['results'][0]['username'] == user_1.username
+
+    def test_filter_telegram_only_users(
+            self,
+            client,
+            auth_header,
+            user_1,
+            user_2_tg_only
+    ):
+        response = client.get(
+            f'{self.url}?telegram_only=true',
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'results' in response.data
+        assert len(response.data['results']) == 1
+        assert (response.data['results'][0]['username'] ==
+                user_2_tg_only.username)
+
+    def test_filter_id_telegram_users(
+            self,
+            client,
+            auth_header,
+            user_1,
+            user_2_tg_only
+    ):
+        response = client.get(
+            f'{self.url}?'
+            f'id_telegram={user_2_tg_only.telegram_settings.id_telegram}',
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'results' in response.data
+        assert len(response.data['results']) == 1
+        assert (response.data['results'][0]['username'] ==
+                user_2_tg_only.username)
+
+    def test_filter_email_users(
+            self,
+            client,
+            auth_header,
+            user_1,
+            user_2_tg_only
+    ):
+        response = client.get(
+            f'{self.url}?email={user_1.email}',
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'results' in response.data
+        assert len(response.data['results']) == 1
+        assert response.data['results'][0]['username'] == user_1.username
 
     @pytest.mark.parametrize(
         'user',
