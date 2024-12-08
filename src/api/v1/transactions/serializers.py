@@ -10,7 +10,6 @@ from transactions.models import (
     Space
 )
 from users.models import User
-from .validators import PeriodYearValidator, PeriodMonthValidator
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
@@ -26,7 +25,9 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             'group_name',
             'description',
             'value_transaction',
-            'author'
+            'author',
+            'created_at',
+            'updated_at',
         )
         read_only_fields = ('author',)
 
@@ -48,9 +49,6 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         instance = Transaction.objects.create(**validated_data)
         return instance
 
-    def validate(self, attrs):
-        return attrs
-
 
 class TransactionDetailSerializer(serializers.ModelSerializer):
     class Meta:
@@ -58,22 +56,20 @@ class TransactionDetailSerializer(serializers.ModelSerializer):
         model = Transaction
 
 
-class GroupCreateSerializer(serializers.ModelSerializer):
-    space = serializers.SlugRelatedField(
-        queryset=Space.objects.all(),
-        slug_field='name'
+class SpaceSerializer(serializers.ModelSerializer):
+    owner_username = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        source='user'
     )
-    fact_value = serializers.DecimalField(
-        required=False,
-        max_digits=12,
-        decimal_places=2
-    )
-    period_year = serializers.IntegerField(
-        validators=(PeriodYearValidator(),)
-    )
-    period_month = serializers.IntegerField(
-        validators=(PeriodMonthValidator(),)
-    )
+
+    class Meta:
+        fields = ('id', 'name', 'owner_username')
+        model = Space
+
+
+class SummaryDetailSerializer(serializers.ModelSerializer):
+    space = SpaceSerializer()
 
     class Meta:
         fields = (
@@ -81,49 +77,6 @@ class GroupCreateSerializer(serializers.ModelSerializer):
             'space',
             'period_month',
             'period_year',
-            'type_transaction',
-            'group_name',
-            'plan_value',
-            'fact_value'
-        )
-        model = Summary
-        validators = (
-            serializers.UniqueTogetherValidator(
-                queryset=Summary.objects.all(),
-                fields=(
-                    'space',
-                    'period_month',
-                    'period_year',
-                    'group_name'
-                )
-            ),
-        )
-
-
-class GroupDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = (
-            'id',
-            'space',
-            'period_month',
-            'period_year',
-            'type_transaction',
-            'group_name',
-            'plan_value',
-            'fact_value'
-        )
-        model = Summary
-
-    def to_representation(self, instance):
-        representation = super().to_representation(instance)
-        representation['owner_space_username'] = instance.space.user.username
-        return representation
-
-
-class SummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        fields = (
-            'id',
             'type_transaction',
             'group_name',
             'plan_value',
@@ -132,12 +85,26 @@ class SummarySerializer(serializers.ModelSerializer):
             'updated_at'
         )
         model = Summary
+        read_only_fields = (
+            'space',
+            'period_month',
+            'period_year',
+            'created_at',
+            'updated_at'
+        )
 
 
-class SpaceSerializer(serializers.ModelSerializer):
+class SummaryCreateSerializer(serializers.ModelSerializer):
+
     class Meta:
-        fields = ('id', 'name')
-        model = Space
+        fields = (
+            'id',
+            'type_transaction',
+            'group_name',
+            'plan_value',
+            'fact_value'
+        )
+        model = Summary
 
 
 class LinkUserToSpaceSerializer(serializers.Serializer):

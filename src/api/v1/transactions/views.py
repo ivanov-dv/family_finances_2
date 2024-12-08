@@ -1,8 +1,9 @@
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status
 from rest_framework.decorators import action
+from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import (
     ListModelMixin,
@@ -16,13 +17,12 @@ from transactions.models import Summary, Space
 from users.models import User
 from .serializers import (
     TransactionCreateSerializer,
-    GroupCreateSerializer,
-    GroupDetailSerializer,
-    SummarySerializer,
+    SummaryDetailSerializer,
     TransactionDetailSerializer,
     LinkUserToSpaceSerializer,
     UnlinkUserToSpaceSerializer,
-    SpaceSerializer
+    SpaceSerializer,
+    SummaryCreateSerializer
 )
 
 
@@ -74,36 +74,9 @@ class TransactionViewSet(
             summary.save()
 
 
-class GroupViewSet(ModelViewSet):
-    """CRUD для group."""
-
-    def get_user(self):
-        return get_object_or_404(User, pk=self.kwargs['user_id'])
-
-    def get_queryset(self):
-        if getattr(self, 'swagger_fake_view', False):
-            return None
-        return Summary.objects.filter(basename__user_id=self.kwargs['user_id'])
-
-    def get_serializer_class(self):
-        if self.action == 'create':
-            return GroupCreateSerializer
-        return GroupDetailSerializer
-
-    def perform_create(self, serializer):
-        user = self.get_user()
-        serializer.save(
-            basename=user.core_settings.current_basename
-        )
-
-
-class SummaryViewSet(
-    ListModelMixin,
-    GenericViewSet
-):
+class SummaryViewSet(ModelViewSet):
     """Просмотр Summary."""
 
-    serializer_class = SummarySerializer
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('group_name', 'type_transaction')
     search_fields = ('^group_name',)
@@ -119,19 +92,22 @@ class SummaryViewSet(
             period_year=user.core_settings.current_year
         )
 
-    def list(self, request, *args, **kwargs):
-        queryset = self.filter_queryset(self.get_queryset())
-        user = self.get_user()
-        serializer = self.get_serializer(queryset, many=True)
-        return Response(
-            {
-                'username': user.username,
-                'period_month': user.core_settings.current_month,
-                'period_year': user.core_settings.current_year,
-                'current_space_id': user.core_settings.current_space.id,
-                'summary': serializer.data
-            }
-        )
+    def get_serializer_class(self):
+        if self.action in ('create', 'update'):
+            return SummaryCreateSerializer
+        return SummaryDetailSerializer
+
+    def perform_create(self, serializer):
+        try:
+            serializer.save(
+                space=self.get_user().core_settings.current_space,
+                period_month=self.get_user().core_settings.current_month,
+                period_year=self.get_user().core_settings.current_year
+            )
+        except IntegrityError:
+            raise ValidationError(
+                'Не уникальное имя группы для текущего периода и базы.'
+            )
 
 
 class SpaceViewSet(ModelViewSet):

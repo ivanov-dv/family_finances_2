@@ -14,11 +14,6 @@ router_v1.register(
     basename='user_transactions'
 )
 router_v1.register(
-    r'users/(?P<user_id>\d+)/groups',
-    transactions_views.GroupViewSet,
-    basename='user_groups'
-)
-router_v1.register(
     r'users/(?P<user_id>\d+)/summary',
     transactions_views.SummaryViewSet,
     basename='user_summary'

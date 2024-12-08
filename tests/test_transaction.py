@@ -1,5 +1,4 @@
 from decimal import Decimal
-from pprint import pprint
 
 import pytest
 
@@ -90,12 +89,15 @@ class TestTransaction:
         assert (Decimal(str(transaction_1.value_transaction)) ==
                 Decimal(str(response.data['value_transaction'])))
         assert transaction_1.author.id == response.data['author']
+        assert 'created_at' in response.data
+        assert 'updated_at' in response.data
 
 
 class TestSummary:
     url = '/api/v1/users/{user_id}/summary/'
+    url_detail = '/api/v1/users/{user_id}/summary/{id}/'
 
-    def test_get_summary(
+    def test_list_summary(
             self,
             client,
             auth_header,
@@ -109,21 +111,189 @@ class TestSummary:
             content_type='application/json'
         )
         assert response.status_code == 200
-        assert (response.data['current_space_id'] ==
-                user_2_tg_only.core_settings.current_space.id)
+        assert 'id' in response.data['results'][0]
+        assert 'space' in response.data['results'][0]
+        assert 'period_month' in response.data['results'][0]
+        assert 'period_year' in response.data['results'][0]
+        assert 'type_transaction' in response.data['results'][0]
+        assert 'group_name' in response.data['results'][0]
+        assert 'plan_value' in response.data['results'][0]
+        assert 'fact_value' in response.data['results'][0]
+        assert 'created_at' in response.data['results'][0]
+        assert 'updated_at' in response.data['results'][0]
+
+    def test_get_group(self, client, auth_header, user_2_tg_only, summary_1):
+        response = client.get(
+            self.url_detail.format(
+                user_id=user_2_tg_only.id,
+                id=summary_1.id
+            ),
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert summary_1.id == response.data['id']
+        assert summary_1.space.id == response.data['space']['id']
+        assert summary_1.period_month == response.data['period_month']
+        assert summary_1.period_year == response.data['period_year']
+        assert summary_1.type_transaction == response.data['type_transaction']
+        assert summary_1.group_name == response.data['group_name']
+        assert (Decimal(str(summary_1.plan_value)) ==
+                Decimal(response.data['plan_value']))
+        assert (Decimal(str(summary_1.fact_value)) ==
+                Decimal(response.data['fact_value']))
+        assert 'created_at' in response.data
+        assert 'updated_at' in response.data
+
+    def test_create_group(
+            self,
+            client,
+            auth_header,
+            user_2_tg_only
+    ):
+        data = {
+            'group_name': 'Test_income',
+            'type_transaction': 'income',
+            'plan_value': '100.00',
+            'fact_value': '0.00'
+        }
+        response = client.post(
+            self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 201
+        assert 'id' in response.data
+        assert response.data['group_name'] == data['group_name']
+        assert response.data['type_transaction'] == data['type_transaction']
+        assert response.data['plan_value'] == data['plan_value']
+        assert response.data['fact_value'] == data['fact_value']
+        response = client.get(
+            self.url_detail.format(
+                user_id=user_2_tg_only.id,
+                id=response.data['id']
+            ),
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'id' in response.data
+        assert 'space' in response.data
         assert (response.data['period_month'] ==
                 user_2_tg_only.core_settings.current_month)
         assert (response.data['period_year'] ==
                 user_2_tg_only.core_settings.current_year)
-        assert (response.data['username'] == summary_1.space.user.username)
-        assert (len(response.data['summary']) == 2)
-        assert 'id' in response.data['summary'][0]
-        assert 'type_transaction' in response.data['summary'][0]
-        assert 'group_name' in response.data['summary'][0]
-        assert 'plan_value' in response.data['summary'][0]
-        assert 'fact_value' in response.data['summary'][0]
-        assert 'created_at' in response.data['summary'][0]
-        assert 'updated_at' in response.data['summary'][0]
+        assert response.data['group_name'] == data['group_name']
+        assert response.data['type_transaction'] == data['type_transaction']
+        assert response.data['plan_value'] == data['plan_value']
+        assert response.data['fact_value'] == data['fact_value']
+        assert 'created_at' in response.data
+        assert 'updated_at' in response.data
+
+    def test_create_double(
+            self,
+            client,
+            auth_header,
+            user_2_tg_only,
+            summary_1
+    ):
+        data = {
+            'group_name': summary_1.group_name,
+            'type_transaction': summary_1.type_transaction,
+            'plan_value': summary_1.plan_value,
+            'fact_value': summary_1.fact_value,
+        }
+        response = client.post(
+            self.url.format(user_id=user_2_tg_only.id),
+            headers=auth_header,
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 400
+
+    def test_put_group(
+            self,
+            client,
+            auth_header,
+            user_2_tg_only,
+            summary_1
+    ):
+        data = {
+            'group_name': 'Test_income_updated',
+            'type_transaction': 'income',
+            'plan_value': '150.00',
+            'fact_value': '50.00'
+        }
+        response = client.put(
+            self.url_detail.format(
+                user_id=user_2_tg_only.id,
+                id=summary_1.id
+            ),
+            headers=auth_header,
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'id' in response.data
+        assert response.data['group_name'] == data['group_name']
+        assert response.data['type_transaction'] == data['type_transaction']
+        assert (Decimal(response.data['plan_value']) ==
+                Decimal(data['plan_value']))
+
+    def test_patch_group(
+            self,
+            client,
+            auth_header,
+            user_2_tg_only,
+            summary_1
+    ):
+        data = {
+            'plan_value': '200.00'
+        }
+        response = client.patch(
+            self.url_detail.format(
+                user_id=user_2_tg_only.id,
+                id=summary_1.id
+            ),
+            headers=auth_header,
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert 'id' in response.data
+        assert response.data['group_name'] == summary_1.group_name
+        assert response.data['type_transaction'] == summary_1.type_transaction
+        assert (Decimal(response.data['plan_value']) ==
+                Decimal(data['plan_value']))
+        assert (Decimal(response.data['fact_value']) ==
+                Decimal(summary_1.fact_value))
+
+    def test_delete_group(
+            self,
+            client,
+            auth_header,
+            user_2_tg_only,
+            summary_1
+    ):
+        response = client.delete(
+            self.url_detail.format(
+                user_id=user_2_tg_only.id,
+                id=summary_1.id
+            ),
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 204
+        response = client.get(
+            self.url_detail.format(
+                user_id=user_2_tg_only.id,
+                id=summary_1.id
+            ),
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 404
 
 
 class TestSpace:
@@ -186,6 +356,8 @@ class TestSpace:
                 user_2_tg_only.core_settings.current_space.id)
         assert (response.data['name'] ==
                 user_2_tg_only.core_settings.current_space.name)
+        assert (response.data['owner_username'] ==
+                user_2_tg_only.username)
 
     def test_put_space(self, client, auth_header, user_2_tg_only):
         data = {
