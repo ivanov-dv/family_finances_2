@@ -25,9 +25,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
             'group_name',
             'description',
             'value_transaction',
-            'author',
-            'created_at',
-            'updated_at',
+            'author'
         )
         read_only_fields = ('author',)
 
