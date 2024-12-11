@@ -20,6 +20,7 @@ django-filter = "^24.3"
 ipython = "^8.29.0"
 django-bootstrap5 = "^24.3"
 gunicorn = "^23.0.0"
+python-dotenv = "^1.0.1"
 
 
 [build-system]
