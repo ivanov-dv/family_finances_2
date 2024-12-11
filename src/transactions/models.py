@@ -103,7 +103,7 @@ class Summary(CreatedUpdatedModel):
     )
 
     class Meta:
-        default_related_name ='summaries'
+        default_related_name = 'summaries'
         ordering = ('-updated_at', '-created_at')
         verbose_name = 'свод'
         verbose_name_plural = 'своды'

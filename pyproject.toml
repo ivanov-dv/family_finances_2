@@ -1,10 +1,9 @@
 [tool.poetry]
-name = "family-finances-2"
+name = "src"
 version = "0.1.0"
 description = ""
 authors = ["Denis Ivanov <dnb8866@gmail.com>"]
 readme = "README.md"
-packages = [{include = "family_finances_2", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.12"
