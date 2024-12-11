@@ -12,7 +12,6 @@ class User(AbstractUser):
     class Meta(AbstractUser.Meta):
         ordering = ('-id',)
 
-
     def save(self, *args, **kwargs):
         if self.username:
             self.username = self.username.lower()
@@ -32,9 +31,9 @@ class CoreSettings(models.Model):
     current_year = models.IntegerField()
 
     class Meta:
-        default_related_name ='core_settings'
-        verbose_name = "core settings"
-        verbose_name_plural = "core settings"
+        default_related_name = 'core_settings'
+        verbose_name = 'core settings'
+        verbose_name_plural = 'core settings'
 
 
 class TelegramSettings(models.Model):

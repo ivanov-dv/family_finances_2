@@ -22,7 +22,7 @@ class SummaryView(TemplateView):
         current_basename = self.request.user.core_settings.current_basename
         summary = Summary.objects.filter(
             period_month=current_month,
-            period_year= current_year,
+            period_year=current_year,
             basename=current_basename
         )
         context.update(

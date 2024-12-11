@@ -4,9 +4,9 @@ from django.contrib.auth import authenticate, login
 from django.db import transaction
 from django.http import JsonResponse
 
+from transactions.models import Space
 from .forms import RegistrationForm
 from .models import TelegramSettings, CoreSettings
-from transactions.models import Space
 
 
 def login_ajax(request):
@@ -48,7 +48,7 @@ def registration(request):
             user=user,
             telegram_only=False
         )
-        basename = Basename.objects.create(
+        basename = Space.objects.create(
             user=user,
             basename=user.username
         )

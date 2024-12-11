@@ -24,7 +24,6 @@ class UserViewSet(ModelViewSet):
     filter_backends = (DjangoFilterBackend,)
     filterset_class = UserFilter
 
-
     def get_serializer_class(self):
         if self.action == 'create':
             return UserCreateSerializer

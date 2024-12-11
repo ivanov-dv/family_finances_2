@@ -145,12 +145,12 @@ class SpaceViewSet(ModelViewSet):
         operation_description='Подключение пользователя к базе',
         responses={
             status.HTTP_200_OK:
-                f'Пользователь username '
-                f'(id 1) подключен к базе '
-                f'user_base '
-                f'(id 11) '
-                f'пользователя username_2 '
-                f'(id 22).'
+                'Пользователь username '
+                '(id 1) подключен к базе '
+                'user_base '
+                '(id 11) '
+                'пользователя username_2 '
+                '(id 22).'
         },
         request_body=LinkUserToSpaceSerializer
     )
