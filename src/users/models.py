@@ -3,9 +3,9 @@ from django.db import models
 
 
 class User(AbstractUser):
-    available_linked_basenames = models.ManyToManyField(
-        'transactions.Basename',
-        through='transactions.LinkedUserToBasename',
+    available_linked_spaces = models.ManyToManyField(
+        'transactions.Space',
+        through='transactions.LinkedUserToSpace',
         related_name='available_linked_users',
     )
 
@@ -24,8 +24,8 @@ class CoreSettings(models.Model):
         User,
         on_delete=models.CASCADE
     )
-    current_basename = models.OneToOneField(
-        'transactions.Basename',
+    current_space = models.OneToOneField(
+        'transactions.Space',
         on_delete=models.CASCADE
     )
     current_month = models.IntegerField()

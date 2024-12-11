@@ -3,7 +3,7 @@ from datetime import datetime
 import pytest
 
 from django.conf import settings
-from transactions.models import Basename, Summary, Transaction
+from transactions.models import Space, Summary, Transaction
 from users.models import User, TelegramSettings, CoreSettings
 
 
@@ -20,11 +20,11 @@ def user_1():
         email='user1@example.com'
     )
     TelegramSettings.objects.create(user=user, telegram_only=False)
-    basename = Basename.objects.create(user=user, basename=user.username)
+    space = Space.objects.create(user=user, name=user.username)
     dt = datetime.now()
     CoreSettings.objects.create(
         user=user,
-        current_basename=basename,
+        current_space=space,
         current_month=dt.month,
         current_year=dt.year
     )
@@ -41,11 +41,11 @@ def user_2_tg_only():
         id_telegram=1234567890,
         telegram_only=True
     )
-    basename = Basename.objects.create(user=user, basename=user.username)
+    space = Space.objects.create(user=user, name=user.username)
     dt = datetime.now()
     CoreSettings.objects.create(
         user=user,
-        current_basename=basename,
+        current_space=space,
         current_month=dt.month,
         current_year=dt.year
     )
@@ -55,7 +55,7 @@ def user_2_tg_only():
 @pytest.fixture
 def summary_1(user_2_tg_only):
     return Summary.objects.create(
-        basename=user_2_tg_only.core_settings.current_basename,
+        space=user_2_tg_only.core_settings.current_space,
         period_month=user_2_tg_only.core_settings.current_month,
         period_year=user_2_tg_only.core_settings.current_year,
         type_transaction='income',
@@ -66,7 +66,7 @@ def summary_1(user_2_tg_only):
 @pytest.fixture
 def summary_2(user_2_tg_only):
     return Summary.objects.create(
-        basename=user_2_tg_only.core_settings.current_basename,
+        space=user_2_tg_only.core_settings.current_space,
         period_month=user_2_tg_only.core_settings.current_month,
         period_year=user_2_tg_only.core_settings.current_year,
         type_transaction='expense',
@@ -78,7 +78,7 @@ def summary_2(user_2_tg_only):
 @pytest.fixture
 def transaction_1(user_2_tg_only, summary_1):
     return Transaction.objects.create(
-        basename=user_2_tg_only.core_settings.current_basename,
+        space=user_2_tg_only.core_settings.current_space,
         author=user_2_tg_only,
         period_month=user_2_tg_only.core_settings.current_month,
         period_year=user_2_tg_only.core_settings.current_year,
@@ -92,7 +92,7 @@ def transaction_1(user_2_tg_only, summary_1):
 @pytest.fixture
 def transaction_2(user_2_tg_only, summary_2):
     return Transaction.objects.create(
-        basename=user_2_tg_only.core_settings.current_basename,
+        space=user_2_tg_only.core_settings.current_space,
         author=user_2_tg_only,
         period_month=user_2_tg_only.core_settings.current_month,
         period_year=user_2_tg_only.core_settings.current_year,

@@ -6,7 +6,7 @@ from django.http import JsonResponse
 
 from .forms import RegistrationForm
 from .models import TelegramSettings, CoreSettings
-from transactions.models import Basename
+from transactions.models import Space
 
 
 def login_ajax(request):

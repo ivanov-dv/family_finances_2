@@ -14,19 +14,14 @@ router_v1.register(
     basename='user_transactions'
 )
 router_v1.register(
-    r'users/(?P<user_id>\d+)/groups',
-    transactions_views.GroupViewSet,
-    basename='user_groups'
-)
-router_v1.register(
     r'users/(?P<user_id>\d+)/summary',
     transactions_views.SummaryViewSet,
     basename='user_summary'
 )
 router_v1.register(
-    r'users/(?P<user_id>\d+)/basenames',
-    transactions_views.BasenameViewSet,
-    basename='user_basenames'
+    r'users/(?P<user_id>\d+)/spaces',
+    transactions_views.SpaceViewSet,
+    basename='user_spaces'
 )
 
 urlpatterns = [
