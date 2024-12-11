@@ -179,12 +179,12 @@ class SpaceViewSet(ModelViewSet):
         operation_description='Отключение пользователя от базы',
         responses={
             status.HTTP_200_OK:
-                f'Пользователь username '
-                f'(id 1) отключен от базы '
-                f'user_base '
-                f'(id 11) '
-                f'пользователя username_2 '
-                f'(id 22).'
+                'Пользователь username '
+                '(id 1) отключен от базы '
+                'user_base '
+                '(id 11) '
+                'пользователя username_2 '
+                '(id 22).'
         },
         request_body=UnlinkUserToSpaceSerializer
     )
