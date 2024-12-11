@@ -3,9 +3,6 @@ from datetime import timedelta
 from pathlib import Path
 
 from django.urls import reverse_lazy
-from dotenv import load_dotenv
-
-load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -17,9 +14,14 @@ ACCESS_TOKEN = os.getenv(
     'ACCESS_TOKEN'
 )
 
-DEBUG = True
+DEBUG = os.getenv('DJANGO_DEBUG_MODE', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv(
+        'DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost'
+    ).split(',')
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -71,16 +73,27 @@ TEMPLATES = [
 WSGI_APPLICATION = 'family_finances.wsgi.application'
 
 
-DATABASES = {
+USE_SQLITE = os.getenv('USE_SQLITE', 'False').lower() == 'true'
+
+POSTGRESQL_SETTINGS = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv('POSTGRES_DB'),
-        'USER': os.getenv('POSTGRES_USER'),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD'),
-        'HOST': os.getenv('POSTGRES_HOST'),
-        'PORT': os.getenv('POSTGRES_PORT'),
+        'NAME': os.getenv('POSTGRES_DB', 'family_finances_2'),
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', ''),
+        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+        'PORT': os.getenv('POSTGRES_PORT', 5432)
     }
 }
+
+SQLITE_SETTINGS = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
+    }
+}
+
+DATABASES = SQLITE_SETTINGS if USE_SQLITE else POSTGRESQL_SETTINGS
 
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -101,17 +114,14 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 
 USE_TZ = True
 
-STATIC_URL = 'static/'
-
-STATICFILES_DIRS = [
-    BASE_DIR / 'static',
-]
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'collected_static'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
