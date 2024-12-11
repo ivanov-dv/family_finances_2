@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:17
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_DB
+      - POSTGRES_USER
+      - POSTGRES_PASSWORD
+    ports:
+      - "5433:5432"
+    volumes:
+      - ff2_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ff2_network
+
+  django:
+    build: .
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: db
+    command: > 
+      bash -c "
+        cd src &&
+        poetry run python manage.py migrate &&
+        poetry run python manage.py collectstatic --noinput &&
+        cp -r /app/src/collected_static/. /backend_static &&
+        cp -r /app/src/static/. /backend_static &&
+        poetry run gunicorn --bind 0.0.0.0:8000 family_finances.wsgi
+      "
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ff2_static:/backend_static
+    networks:
+      - ff2_network
+
+  gateway:
+    build: nginx/.
+    env_file: .env
+    depends_on:
+      - django
+    volumes:
+      - ff2_static:/static/
+    networks:
+      - ff2_network
+    ports:
+      - "9000:80"
+
+volumes:
+  ff2_postgres_data:
+  ff2_static:
+
+networks:
+  ff2_network:
