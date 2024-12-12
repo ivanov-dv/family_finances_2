@@ -58,4 +58,4 @@ jobs:
       run: |
         curl --request GET \
           --header "Authorization: ${{ secrets.SERVER_DEPLOY_TOKEN }}" \
-          --url "http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=${{ github.repository }}"
+          --url "http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=family_finances_2"
