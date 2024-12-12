@@ -40,3 +40,17 @@ jobs:
       run: |
         poetry run flake8 src/
         poetry run pytest
+
+
+  deploy:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    needs: tests
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Deploy
+      run: |
+        curl http://
