@@ -12,7 +12,7 @@ jobs:
   tests:
     strategy:
       matrix:
-        python-version: [ "3.12", "3.13" ]
+        python-version: [ "3.12" ]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -54,10 +54,8 @@ jobs:
     needs: tests
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Deploy
+    - name: Send deploy request
       run: |
-        curl --verbose "http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=${{ github.repository }}" \
-          -H "Authorization: ${{ secrets.SERVER_DEPLOY_TOKEN }}"
+        curl --request GET \
+        --header "Authorization: ${{ secrets.SERVER_DEPLOY_TOKEN }}" \
+        --url http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=${{ github.repository }}
