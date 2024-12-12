@@ -57,4 +57,4 @@ jobs:
     - name: Send deploy request
       run: |
         curl -L "http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=family_finances_2" \
-          --header "${{ secrets.SERVER_DEPLOY_TOKEN }}"
+          --header ${{ secrets.SERVER_DEPLOY_TOKEN }}
