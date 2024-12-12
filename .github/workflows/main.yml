@@ -59,4 +59,5 @@ jobs:
 
     - name: Deploy
       run: |
-        curl http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=${{ github.repository }} -H "Authorization: ${{ secrets.SERVER_DEPLOY_TOKEN }}"
+        curl --verbose "http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=${{ github.repository }}" \
+          -H "Authorization: ${{ secrets.SERVER_DEPLOY_TOKEN }}"
