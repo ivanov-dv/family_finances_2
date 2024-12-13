@@ -84,29 +84,30 @@ def telegram_auth(request):
         )
         user = User.objects.filter(username=verify_data['id']).first()
         if not user:
-            new_user = User.objects.create(
-                username=verify_data['id'],
-                first_name=verify_data['first_name'],
-                last_name=verify_data['last_name']
-            )
-            new_user.set_password(verify_data['id'] + settings.SECRET_KEY)
-            new_user.save()
-            TelegramSettings.objects.create(
-                user=new_user,
-                telegram_only=True,
-                id_telegram=verify_data['id']
-            )
-            space = Space.objects.create(
-                user=new_user,
-                name=new_user.username
-            )
-            dt = datetime.now()
-            CoreSettings.objects.create(
-                user=new_user,
-                current_space=space,
-                current_month=dt.month,
-                current_year=dt.year
-            )
+            with transaction.atomic():
+                new_user = User.objects.create(
+                    username=verify_data['id'],
+                    first_name=verify_data['first_name'],
+                    last_name=verify_data['last_name']
+                )
+                new_user.set_password(verify_data['id'] + settings.SECRET_KEY)
+                new_user.save()
+                TelegramSettings.objects.create(
+                    user=new_user,
+                    telegram_only=True,
+                    id_telegram=verify_data['id']
+                )
+                space = Space.objects.create(
+                    user=new_user,
+                    name=new_user.username
+                )
+                dt = datetime.now()
+                CoreSettings.objects.create(
+                    user=new_user,
+                    current_space=space,
+                    current_month=dt.month,
+                    current_year=dt.year
+                )
             login(request, new_user)
         else:
             login(request, user)
