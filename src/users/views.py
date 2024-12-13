@@ -62,3 +62,10 @@ def registration(request):
     return JsonResponse(
         {'status': 'success'}
     )
+
+
+def telegram_auth(request):
+    print(request.body)
+    return JsonResponse(
+        {'status': request.body}
+    )
