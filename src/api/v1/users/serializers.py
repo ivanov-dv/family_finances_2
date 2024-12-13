@@ -1,5 +1,6 @@
 from datetime import datetime
 
+from django.conf import settings
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from rest_framework import serializers
@@ -99,7 +100,9 @@ class UserCreateSerializer(serializers.ModelSerializer):
             user = User.objects.create(**validated_data)
             if password:
                 user.set_password(password)
-                user.save()
+            else:
+                user.set_password(str(id_telegram) + settings.SECRET_KEY)
+            user.save()
             TelegramSettings.objects.create(
                 user=user,
                 telegram_only=telegram_only,
