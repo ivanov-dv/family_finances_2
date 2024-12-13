@@ -90,7 +90,9 @@ def telegram_auth(request):
                     first_name=verify_data['first_name'],
                     last_name=verify_data['last_name']
                 )
-                new_user.set_password(verify_data['id'] + settings.SECRET_KEY)
+                new_user.set_password(
+                    str(verify_data['id']) + settings.SECRET_KEY
+                )
                 new_user.save()
                 TelegramSettings.objects.create(
                     user=new_user,
