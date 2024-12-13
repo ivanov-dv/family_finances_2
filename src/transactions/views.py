@@ -27,7 +27,7 @@ class SummaryView(TemplateView):
         )
         context.update(
             {
-                'title': 'FF',
+                'title': 'FF test',
                 'income': summary.filter(
                     type_transaction='income'
                 ),
