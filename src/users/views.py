@@ -85,7 +85,7 @@ def telegram_auth(request):
         auth_user = authenticate(
             request,
             username=verify_data['id'],
-            password=settings.AUTH_TOKEN
+            password='test'
         )
         if not auth_user:
             new_user = User.objects.create(
