@@ -79,13 +79,14 @@ def telegram_auth(request):
             'Handle the missing Telegram data in the response.'
         )
     try:
+        test_password = 'Tedsaft1233254234513'
         verify_data = verify_telegram_authentication(
             bot_token=settings.BOT_TOKEN, request_data=request.GET
         )
         auth_user = authenticate(
             request,
             username=verify_data['id'],
-            password='test'
+            password=test_password
         )
         if not auth_user:
             new_user = User.objects.create(
@@ -93,11 +94,11 @@ def telegram_auth(request):
                 first_name=verify_data['first_name'],
                 last_name=verify_data['last_name']
             )
-            new_user.set_password('test')
+            new_user.set_password(test_password)
             auth_user_after_create_account = authenticate(
                 request,
                 username=verify_data['id'],
-                password='test'
+                password=test_password
             )
             login(request, auth_user_after_create_account)
         else:
