@@ -16,14 +16,11 @@ ACCESS_TOKEN = os.getenv(
     'ACCESS_TOKEN'
 )
 
-DEBUG = os.getenv('DJANGO_DEBUG_MODE', 'False').lower() == 'true'
+DEBUG = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.getenv(
-        'DJANGO_ALLOWED_HOSTS', '127.0.0.1,localhost'
-    ).split(',')
-]
+ALLOWED_HOSTS = os.getenv(
+    'ALLOWED_HOSTS', '127.0.0.1,localhost'
+).split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -158,3 +155,14 @@ NOT_ALLOWED_USERNAMES = (
     'guest',
     'me'
 )
+
+CSRF_TRUSTED_ORIGINS = os.getenv(
+    'CSRF_TRUSTED_ORIGINS', '127.0.0.1,localhost'
+).split(',')
+
+
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
+
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
