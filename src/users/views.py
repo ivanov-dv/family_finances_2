@@ -79,31 +79,37 @@ def telegram_auth(request):
             'Handle the missing Telegram data in the response.'
         )
     try:
-        test_password = 'Tedsaft1233254234513'
         verify_data = verify_telegram_authentication(
             bot_token=settings.BOT_TOKEN, request_data=request.GET
         )
-        auth_user = authenticate(
-            request,
-            username=verify_data['id'],
-            password=test_password
-        )
-        if not auth_user:
+        user = User.objects.filter(username=verify_data['id']).first()
+        if not user:
             new_user = User.objects.create(
                 username=verify_data['id'],
                 first_name=verify_data['first_name'],
                 last_name=verify_data['last_name']
             )
-            new_user.set_password(test_password)
+            new_user.set_password(verify_data['id'] + settings.SECRET_KEY)
             new_user.save()
-            auth_user_after_create_account = authenticate(
-                request,
-                username=verify_data['id'],
-                password=test_password
+            TelegramSettings.objects.create(
+                user=new_user,
+                telegram_only=True,
+                id_telegram=verify_data['id']
             )
-            login(request, auth_user_after_create_account)
+            space = Space.objects.create(
+                user=new_user,
+                name=new_user.username
+            )
+            dt = datetime.now()
+            CoreSettings.objects.create(
+                user=new_user,
+                current_space=space,
+                current_month=dt.month,
+                current_year=dt.year
+            )
+            login(request, new_user)
         else:
-            login(request, auth_user)
+            login(request, user)
     except TelegramDataIsOutdatedError:
         return HttpResponse('Authentication was received more than a day ago.')
     except NotTelegramDataError:
