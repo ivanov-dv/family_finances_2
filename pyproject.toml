@@ -20,6 +20,7 @@ ipython = "^8.29.0"
 django-bootstrap5 = "^24.3"
 gunicorn = "^23.0.0"
 python-dotenv = "^1.0.1"
+django-telegram-login = "^0.2.3"
 
 
 [build-system]
