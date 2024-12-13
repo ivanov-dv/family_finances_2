@@ -1,12 +1,18 @@
 name: CI
 
-on: pull_request
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
 
 jobs:
   tests:
     strategy:
       matrix:
-        python-version: [ "3.12", "3.13" ]
+        python-version: [ "3.12" ]
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -42,15 +48,14 @@ jobs:
         poetry run pytest
 
 
-  deploy:
+  send_deploy_webhook:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     needs: tests
 
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v3
-
-    - name: Deploy
+    - name: Send deploy webhook
       run: |
-        curl http://${{ secrets.SERVER_WEBHOOK_URL }}?repo=${{ github.repository }} -H "Authorization: ${{ secrets.SERVER_DEPLOY_TOKEN }}"
+        curl -L \
+          -H "${{ secrets.SERVER_DEPLOY_TOKEN }}" \
+          "${{ secrets.SERVER_WEBHOOK_URL }}/?repo=family_finances_2&docker_prod_file=docker-compose.prod.yml"
