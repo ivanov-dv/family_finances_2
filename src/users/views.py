@@ -95,6 +95,7 @@ def telegram_auth(request):
                 last_name=verify_data['last_name']
             )
             new_user.set_password(test_password)
+            new_user.save()
             auth_user_after_create_account = authenticate(
                 request,
                 username=verify_data['id'],
