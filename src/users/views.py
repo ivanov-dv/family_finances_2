@@ -102,9 +102,9 @@ def telegram_auth(request):
             login(request, auth_user_after_create_account)
         else:
             login(request, auth_user)
-    except TelegramDataIsOutdatedError as _ex1:
+    except TelegramDataIsOutdatedError:
         return HttpResponse('Authentication was received more than a day ago.')
-    except NotTelegramDataError as _ex2:
+    except NotTelegramDataError:
         return HttpResponse('The data is not related to Telegram!')
     except Exception as _ex3:
         return HttpResponse(f"Ошибка {_ex3.__class__.__name__}: {_ex3}")
