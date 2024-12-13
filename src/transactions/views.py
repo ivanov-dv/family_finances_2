@@ -8,7 +8,7 @@ class HomePageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'FF'
+        context['title'] = 'FF test'
         return context
 
 
@@ -27,7 +27,7 @@ class SummaryView(TemplateView):
         )
         context.update(
             {
-                'title': 'FF test',
+                'title': 'FF',
                 'income': summary.filter(
                     type_transaction='income'
                 ),
