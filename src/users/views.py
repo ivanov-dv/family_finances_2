@@ -57,14 +57,14 @@ def registration(request):
             user=user,
             telegram_only=False
         )
-        basename = Space.objects.create(
+        space = Space.objects.create(
             user=user,
-            basename=user.username
+            name=user.username
         )
         dt = datetime.now()
         CoreSettings.objects.create(
             user=user,
-            current_basename=basename,
+            current_space=space,
             current_month=dt.month,
             current_year=dt.year
         )
