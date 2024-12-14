@@ -111,16 +111,20 @@ class TestSummary:
             content_type='application/json'
         )
         assert response.status_code == 200
-        assert 'id' in response.data['results'][0]
-        assert 'space' in response.data['results'][0]
-        assert 'period_month' in response.data['results'][0]
-        assert 'period_year' in response.data['results'][0]
-        assert 'type_transaction' in response.data['results'][0]
-        assert 'group_name' in response.data['results'][0]
-        assert 'plan_value' in response.data['results'][0]
-        assert 'fact_value' in response.data['results'][0]
-        assert 'created_at' in response.data['results'][0]
-        assert 'updated_at' in response.data['results'][0]
+        assert 'sum_income_plan' in response.data
+        assert 'sum_income_fact' in response.data
+        assert 'sum_expense_plan' in response.data
+        assert 'sum_expense_fact' in response.data
+        assert 'id' in response.data['summary'][0]
+        assert 'space' in response.data['summary'][0]
+        assert 'period_month' in response.data['summary'][0]
+        assert 'period_year' in response.data['summary'][0]
+        assert 'type_transaction' in response.data['summary'][0]
+        assert 'group_name' in response.data['summary'][0]
+        assert 'plan_value' in response.data['summary'][0]
+        assert 'fact_value' in response.data['summary'][0]
+        assert 'created_at' in response.data['summary'][0]
+        assert 'updated_at' in response.data['summary'][0]
 
     def test_get_group(self, client, auth_header, user_2_tg_only, summary_1):
         response = client.get(

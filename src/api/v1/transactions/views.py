@@ -1,4 +1,5 @@
 from django.db import transaction, IntegrityError
+from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status
@@ -108,6 +109,31 @@ class SummaryViewSet(ModelViewSet):
             raise ValidationError(
                 'Не уникальное имя группы для текущего периода и базы.'
             )
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+        income_plan = queryset.filter(
+            type_transaction='income'
+        ).aggregate(Sum('plan_value'))['plan_value__sum']
+        income_fact = queryset.filter(
+            type_transaction='income'
+        ).aggregate(Sum('fact_value'))['fact_value__sum']
+        expense_plan = queryset.filter(
+            type_transaction='expense'
+        ).aggregate(Sum('plan_value'))['plan_value__sum']
+        expense_fact = queryset.filter(
+            type_transaction='expense'
+        ).aggregate(Sum('fact_value'))['fact_value__sum']
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(
+            {
+                'sum_income_plan': income_plan,
+                'sum_income_fact': income_fact,
+                'sum_expense_plan': expense_plan,
+                'sum_expense_fact': expense_fact,
+                'summary': serializer.data
+            }
+        )
 
 
 class SpaceViewSet(ModelViewSet):
