@@ -4,8 +4,8 @@
     <nav class="navbar bg-body-tertiary">
       <div class="container-fluid">
         <span class="navbar-brand mb-0 h1">Текущий период: {{ current_month }}.{{ current_year }}</span>
-        <span class="navbar-brand mb-0 h1">База: {{ current_basename.basename }}</span>
-        <span class="navbar-brand mb-0 h1">Владелец базы: {{ current_basename.user.username }}</span>
+        <span class="navbar-brand mb-0 h1">База: {{ current_space.name }}</span>
+        <span class="navbar-brand mb-0 h1">Владелец базы: {{ current_space.user.username }}</span>
       </div>
     </nav>
 {% endblock %}
