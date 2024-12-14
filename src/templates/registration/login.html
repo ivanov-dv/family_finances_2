@@ -1,0 +1,40 @@
+{% load static %}
+{% load django_bootstrap5 %}
+{% bootstrap_javascript %}
+{% bootstrap_css %}
+
+<!DOCTYPE html>
+<html lang="ru" data-bs-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <link rel='stylesheet' href='{% static 'css/style.css' %}'>
+    <title>{{ title }}</title>
+</head>
+<body>
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">Вход</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="loginForm">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="username" class="form-label">Логин</label>
+                            <input type="text" class="form-control" id="username" placeholder="Введите логин" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="password" class="form-label">Пароль</label>
+                            <input type="password" class="form-control" id="password" placeholder="Введите пароль" required>
+                        </div>
+                        <button type="submit" class="btn btn-dark w-100">Войти</button>
+                        <div id="loginError" class="text-danger mt-2"></div>
+                    </form>
+                    {% include 'includes/auth_telegram.html' %}
+                </div>
+            </div>
+        </div>
+</body>
+</html>
