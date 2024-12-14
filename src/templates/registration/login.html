@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h2>Вы не авторизованы</h2>
+        <a href={% url 'transactions:home' %}>На главную</a>
+    </div>
+{% endblock %}

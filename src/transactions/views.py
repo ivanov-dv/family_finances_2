@@ -1,3 +1,4 @@
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
 from .models import Summary
@@ -12,18 +13,18 @@ class HomePageView(TemplateView):
         return context
 
 
-class SummaryView(TemplateView):
+class SummaryView(LoginRequiredMixin, TemplateView):
     template_name = 'transactions/summary.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         current_month = self.request.user.core_settings.current_month
         current_year = self.request.user.core_settings.current_year
-        current_basename = self.request.user.core_settings.current_basename
+        current_space = self.request.user.core_settings.current_space
         summary = Summary.objects.filter(
             period_month=current_month,
             period_year=current_year,
-            basename=current_basename
+            space=current_space
         )
         context.update(
             {
@@ -36,7 +37,7 @@ class SummaryView(TemplateView):
                 ),
                 'current_month': current_month,
                 'current_year': current_year,
-                'current_basename': current_basename
+                'current_space': current_space
             }
         )
         context['title'] = 'FF'
