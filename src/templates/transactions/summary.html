@@ -62,13 +62,40 @@
                                     <td>{{ expense.fact_value|intcomma }}</td>
                                 </tr>
                                 {% empty %}
-                                <tr><td colspan="3" class="text-center">Нет данных</td></tr>
+                                    <tr><td colspan="3" class="text-center">Нет данных</td></tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
+
+                <div class="row justify-content-center">
+                    <h5 class="text-center">Свод</h5>
+                    <div class="col-md-6 mb-4">
+                        <div class="table-responsive">
+                            <table class="table table-striped table-bordered">
+                                <tbody>
+                                    <tr>
+                                        <td>Итого доходы</td>
+                                        <td>{{ sum_income_plan|intcomma }}</td>
+                                        <td>{{ sum_income_fact|intcomma }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Итого расходы</td>
+                                        <td>{{ sum_expense_plan|intcomma }}</td>
+                                        <td>{{ sum_expense_fact|intcomma }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Сальдо</td>
+                                        <td>{{ balance_plan|intcomma }}</td>
+                                        <td>{{ balance_fact|intcomma }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
         </div>
     </div>
 {% endblock %}

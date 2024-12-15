@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.db import transaction, IntegrityError
 from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
@@ -114,16 +116,16 @@ class SummaryViewSet(ModelViewSet):
         queryset = self.filter_queryset(self.get_queryset())
         income_plan = queryset.filter(
             type_transaction='income'
-        ).aggregate(Sum('plan_value'))['plan_value__sum']
+        ).aggregate(Sum('plan_value'))['plan_value__sum'] or Decimal('0.0')
         income_fact = queryset.filter(
             type_transaction='income'
-        ).aggregate(Sum('fact_value'))['fact_value__sum']
+        ).aggregate(Sum('fact_value'))['fact_value__sum'] or Decimal('0.0')
         expense_plan = queryset.filter(
             type_transaction='expense'
-        ).aggregate(Sum('plan_value'))['plan_value__sum']
+        ).aggregate(Sum('plan_value'))['plan_value__sum'] or Decimal('0.0')
         expense_fact = queryset.filter(
             type_transaction='expense'
-        ).aggregate(Sum('fact_value'))['fact_value__sum']
+        ).aggregate(Sum('fact_value'))['fact_value__sum'] or Decimal('0.0')
         serializer = self.get_serializer(queryset, many=True)
         return Response(
             {
