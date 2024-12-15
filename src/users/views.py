@@ -130,6 +130,8 @@ def telegram_auth(request):
 
 def check_telegram_auth(init_data: str, token: str) -> bool:
     """Проверка подлинности данных Telegram Web App."""
+    print('check_data')
+    pprint(init_data)
     try:
         parsed_data = dict(parse_qsl(init_data))
     except ValueError:
@@ -150,6 +152,7 @@ def check_telegram_auth(init_data: str, token: str) -> bool:
         key=secret_key.digest(), msg=data_check_string.encode(),
         digestmod=hashlib.sha256
     ).hexdigest()
+    print(calculated_hash == hash_)
     return calculated_hash == hash_
 
 
@@ -159,6 +162,7 @@ def webapp(request):
 
 
 def webapp_auth(request):
+    print('webapp auth')
     if request.method == "POST":
         import json
         data = json.loads(request.body)
