@@ -115,6 +115,8 @@ class TestSummary:
         assert 'sum_income_fact' in response.data
         assert 'sum_expense_plan' in response.data
         assert 'sum_expense_fact' in response.data
+        assert 'balance_plan' in response.data
+        assert 'balance_fact' in response.data
         assert 'id' in response.data['summary'][0]
         assert 'space' in response.data['summary'][0]
         assert 'period_month' in response.data['summary'][0]

@@ -131,6 +131,8 @@ class SummaryViewSet(ModelViewSet):
                 'sum_income_fact': income_fact,
                 'sum_expense_plan': expense_plan,
                 'sum_expense_fact': expense_fact,
+                'balance_plan': income_plan - expense_plan,
+                'balance_fact': income_fact - expense_fact,
                 'summary': serializer.data
             }
         )
