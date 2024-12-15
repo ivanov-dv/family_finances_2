@@ -30,8 +30,8 @@
                                 {% for income in incomes %}
                                 <tr>
                                     <td>{{ income.group_name }}</td>
-                                    <td>{{ income.plan }}</td>
-                                    <td>{{ income.fact }}</td>
+                                    <td>{{ income.plan_value }}</td>
+                                    <td>{{ income.fact_value }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr><td colspan="3" class="text-center">Нет данных</td></tr>
@@ -57,8 +57,8 @@
                                 {% for expense in expenses %}
                                 <tr>
                                     <td>{{ expense.group_name }}</td>
-                                    <td>{{ expense.plan }}</td>
-                                    <td>{{ expense.fact }}</td>
+                                    <td>{{ expense.plan_value }}</td>
+                                    <td>{{ expense.fact_value }}</td>
                                 </tr>
                                 {% empty %}
                                 <tr><td colspan="3" class="text-center">Нет данных</td></tr>

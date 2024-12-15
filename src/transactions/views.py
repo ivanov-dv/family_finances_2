@@ -29,22 +29,15 @@ class SummaryView(LoginRequiredMixin, TemplateView):
         context.update(
             {
                 'title': 'FF',
-                'income': summary.filter(
+                'incomes': summary.filter(
                     type_transaction='income'
                 ),
-                'expense': summary.filter(
+                'expenses': summary.filter(
                     type_transaction='expense'
                 ),
                 'current_month': current_month,
                 'current_year': current_year,
                 'current_space': current_space
             }
-        )
-        context['title'] = 'FF'
-        context['income'] = summary.filter(
-            type_transaction='income'
-        )
-        context['expense'] = summary.filter(
-            type_transaction='expense'
         )
         return context
