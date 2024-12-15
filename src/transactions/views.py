@@ -6,6 +6,11 @@ from django.views.generic import TemplateView
 
 from .models import Summary
 
+def my_view(request):
+    print(request.headers)
+    print(request.body)
+    print(request.__dict__)
+
 
 class HomePageView(TemplateView):
     template_name = 'transactions/index.html'
@@ -44,12 +49,8 @@ class SummaryView(LoginRequiredMixin, TemplateView):
         context.update(
             {
                 'title': 'FF',
-                'incomes': summary.filter(
-                    type_transaction='income'
-                ),
-                'expenses': summary.filter(
-                    type_transaction='expense'
-                ),
+                'incomes': summary.filter(type_transaction='income'),
+                'expenses': summary.filter(type_transaction='expense'),
                 'sum_income_plan': income_plan,
                 'sum_income_fact': income_fact,
                 'sum_expense_plan': expense_plan,
