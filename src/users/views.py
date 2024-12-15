@@ -157,6 +157,7 @@ def webapp(request):
     if request.method == 'GET':
         return render(request, 'webapp/webapp.html')
 
+
 def webapp_auth(request):
     if request.method == "POST":
         import json
@@ -170,7 +171,7 @@ def webapp_auth(request):
 
         # Получаем ID пользователя Telegram
         user_id = init_data.split("id=")[1].split("&")[0]
-        username = init_data.split("username=")[1].split("&")[0]
+        # username = init_data.split("username=")[1].split("&")[0]
 
         # Создаем пользователя, если его еще нет
         user, created = User.objects.get_or_create(
