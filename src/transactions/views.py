@@ -8,13 +8,6 @@ from django.views.generic import TemplateView
 from .models import Summary
 
 
-def my_view(request):
-    print(request.headers)
-    print(request.body)
-    print(request.__dict__)
-    return HttpResponse(f'{request.headers} {request.body} {request.__dict__}')
-
-
 class HomePageView(TemplateView):
     template_name = 'transactions/index.html'
 
