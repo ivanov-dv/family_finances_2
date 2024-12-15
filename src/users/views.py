@@ -1,9 +1,15 @@
+import hashlib
+import hmac
 from datetime import datetime
+from operator import itemgetter
+from pprint import pprint
+from urllib.parse import parse_qsl
 
 from django.conf import settings
 from django.contrib.auth import authenticate, login, get_user_model
 from django.db import transaction
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
+from django.shortcuts import render
 from django.urls import reverse
 from django_telegram_login.authentication import verify_telegram_authentication
 from django_telegram_login.errors import (
@@ -120,3 +126,63 @@ def telegram_auth(request):
     except Exception as _ex3:
         return HttpResponse(f"Ошибка {_ex3.__class__.__name__}: {_ex3}")
     return HttpResponseRedirect(reverse('transactions:home'))
+
+
+def check_telegram_auth(init_data: str, token: str) -> bool:
+    """Проверка подлинности данных Telegram Web App."""
+    try:
+        parsed_data = dict(parse_qsl(init_data))
+    except ValueError:
+        # Init data is not a valid query string
+        return False
+    if "hash" not in parsed_data:
+        # Hash is not present in init data
+        return False
+
+    hash_ = parsed_data.pop('hash')
+    data_check_string = "\n".join(
+        f"{k}={v}" for k, v in sorted(parsed_data.items(), key=itemgetter(0))
+    )
+    secret_key = hmac.new(
+        key=b"WebAppData", msg=token.encode(), digestmod=hashlib.sha256
+    )
+    calculated_hash = hmac.new(
+        key=secret_key.digest(), msg=data_check_string.encode(),
+        digestmod=hashlib.sha256
+    ).hexdigest()
+    return calculated_hash == hash_
+
+
+def webapp(request):
+    if request.method == 'GET':
+        return render(request, 'webapp/webapp.html')
+
+def webapp_auth(request):
+    if request.method == "POST":
+        import json
+        data = json.loads(request.body)
+        pprint(data)
+
+        init_data = data.get("initData")
+        if not check_telegram_auth(init_data, settings.BOT_TOKEN):
+            return JsonResponse(
+                {"success": False, "error": "Invalid Telegram data"})
+
+        # Получаем ID пользователя Telegram
+        user_id = init_data.split("id=")[1].split("&")[0]
+        username = init_data.split("username=")[1].split("&")[0]
+
+        # Создаем пользователя, если его еще нет
+        user, created = User.objects.get_or_create(
+            telegram_settings__id_telegram=user_id,
+            defaults={
+                "password": str(user_id) + settings.SECRET_KEY,
+                "telegram_only": True,
+                "id_telegram": user_id
+            })
+
+        # Выполняем автоматический логин
+        login(request, user)
+        return JsonResponse({"success": True})
+
+    return JsonResponse({"success": False, "error": "Invalid request method"})
