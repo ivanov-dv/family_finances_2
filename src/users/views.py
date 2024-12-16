@@ -176,8 +176,14 @@ def webapp_auth(request):
 
         # Получаем ID пользователя Telegram
         print('Получаем ID пользователя Telegram')
-        user_id = init_data.split("id=")[1].split("&")[0]
+        # user_id = init_data.split("id=")[1].split("&")[0]
         # username = init_data.split("username=")[1].split("&")[0]
+
+        from urllib.parse import parse_qs
+        parsed_data = parse_qs(init_data)
+        print(f'{parsed_data=}')
+        user_id = parsed_data.get("id", [None])[0]
+        print(f'{user_id=}')
 
         # Создаем пользователя, если его еще нет
         print('Создаем пользователя, если его еще нет')
