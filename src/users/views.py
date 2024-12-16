@@ -131,20 +131,16 @@ def telegram_auth(request):
 
 def check_telegram_auth(init_data: str, token: str) -> bool:
     """Проверка подлинности данных Telegram Web App."""
-    print('check_data')
-    pprint(init_data)
     try:
         parsed_data = dict(parse_qsl(init_data))
     except ValueError:
-        # Init data is not a valid query string
         return False
-    if "hash" not in parsed_data:
-        # Hash is not present in init data
+    if 'hash' not in parsed_data:
         return False
 
     hash_ = parsed_data.pop('hash')
-    data_check_string = "\n".join(
-        f"{k}={v}" for k, v in sorted(parsed_data.items(), key=itemgetter(0))
+    data_check_string = '\n'.join(
+        f'{k}={v}' for k, v in sorted(parsed_data.items(), key=itemgetter(0))
     )
     secret_key = hmac.new(
         key=b"WebAppData", msg=token.encode(), digestmod=hashlib.sha256
@@ -153,7 +149,6 @@ def check_telegram_auth(init_data: str, token: str) -> bool:
         key=secret_key.digest(), msg=data_check_string.encode(),
         digestmod=hashlib.sha256
     ).hexdigest()
-    print(calculated_hash == hash_)
     return calculated_hash == hash_
 
 
@@ -182,26 +177,34 @@ def webapp_auth(request):
         user = User.objects.filter(
             telegram_settings__id_telegram=user_id,
         ).first()
+        print(user)
         if not user:
+            print('Создание пользователя')
             user = User.objects.create(username=user_id)
+            print('Установка пароля')
             user.set_password(str(user_id) + settings.SECRET_KEY)
+            print('Сохранение пользователя')
             user.save()
+            print('Создание настроек Telegram')
             TelegramSettings.objects.create(
                 user=user,
                 telegram_only=True,
                 id_telegram=user_id
             )
+            print('Создание пространства')
             space = Space.objects.create(
                 user=user,
                 name=user.username
             )
             dt = datetime.now()
+            print('Создание настроек Core')
             CoreSettings.objects.create(
                 user=user,
                 current_space=space,
                 current_month=dt.month,
                 current_year=dt.year
             )
+        print('Авторизация')
         login(request, user)
         return JsonResponse({'success': True})
 
