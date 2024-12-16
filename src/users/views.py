@@ -161,34 +161,23 @@ def webapp(request):
     if request.method == 'GET':
         return render(request, 'webapp/webapp.html')
 
-@csrf_exempt
 def webapp_auth(request):
     print('webapp auth')
     if request.method == "POST":
         import json
         data = json.loads(request.body)
-        pprint(data)
 
         init_data = data.get("initData")
         if not check_telegram_auth(init_data, settings.BOT_TOKEN):
             return JsonResponse(
                 {"success": False, "error": "Invalid Telegram data"})
 
-        # Получаем ID пользователя Telegram
-        print('Получаем ID пользователя Telegram')
-        # user_id = init_data.split("id=")[1].split("&")[0]
-        # username = init_data.split("username=")[1].split("&")[0]
-
         from urllib.parse import parse_qs
         parsed_data = parse_qs(init_data)
-        print(f'{parsed_data=}', type(parsed_data))
         user_data = parsed_data.get("user", [None])[0]
         parsed_user = json.loads(user_data)
-        print(f'{parsed_user=}', type(parsed_user))
         user_id = parsed_user.get("id", None)
 
-        # Создаем пользователя, если его еще нет
-        print('Создаем пользователя, если его еще нет')
         user, created = User.objects.get_or_create(
             telegram_settings__id_telegram=user_id,
             defaults={
@@ -196,11 +185,7 @@ def webapp_auth(request):
                 "telegram_only": True,
                 "id_telegram": user_id
             })
-        print(user, created)
-        # Выполняем автоматический логин
         login(request, user)
-        print('success login')
         return JsonResponse({"success": True})
 
-    print('error login')
     return JsonResponse({"success": False, "error": "Invalid request method"})
