@@ -180,7 +180,10 @@ def webapp_auth(request):
         print(user)
         if not user:
             print('Создание пользователя')
-            user = User.objects.create(username=user_id)
+            try:
+                user = User.objects.create(username=user_id)
+            except Exception as e:
+                print(f'Ошибка при создании пользователя: {e}')
             print('Установка пароля')
             user.set_password(str(user_id) + settings.SECRET_KEY)
             print('Сохранение пользователя')
