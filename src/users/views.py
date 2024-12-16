@@ -182,8 +182,9 @@ def webapp_auth(request):
         from urllib.parse import parse_qs
         parsed_data = parse_qs(init_data)
         print(f'{parsed_data=}', type(parsed_data))
-        user_id = parsed_data.get("user", [None])[0]
-        print(f'{user_id=}', type(user_id))
+        user_data = parsed_data.get("user", [None])[0]
+        parsed_user = json.loads(user_data)
+        print(f'{parsed_user=}', type(parsed_user))
 
         # Создаем пользователя, если его еще нет
         print('Создаем пользователя, если его еще нет')
