@@ -164,29 +164,45 @@ def webapp(request):
 
 @csrf_exempt
 def webapp_auth(request):
-    if request.method == "POST":
+    if request.method == 'POST':
         import json
         data = json.loads(request.body)
 
-        init_data = data.get("initData")
+        init_data = data.get('initData')
         if not check_telegram_auth(init_data, settings.BOT_TOKEN):
             return JsonResponse(
-                {"success": False, "error": "Invalid Telegram data"})
+                {'success': False, 'error': 'Invalid Telegram data'}
+            )
 
         from urllib.parse import parse_qs
         parsed_data = parse_qs(init_data)
-        user_data = parsed_data.get("user", [None])[0]
+        user_data = parsed_data.get('user', [None])[0]
         parsed_user = json.loads(user_data)
-        user_id = parsed_user.get("id", None)
-
-        user, created = User.objects.get_or_create(
+        user_id = parsed_user.get('id', None)
+        user = User.objects.filter(
             telegram_settings__id_telegram=user_id,
-            defaults={
-                "password": str(user_id) + settings.SECRET_KEY,
-                "telegram_only": True,
-                "id_telegram": user_id
-            })
+        ).first()
+        if not user:
+            user = User.objects.create(username=user_id)
+            user.set_password(str(user_id) + settings.SECRET_KEY)
+            user.save()
+            TelegramSettings.objects.create(
+                user=user,
+                telegram_only=True,
+                id_telegram=user_id
+            )
+            space = Space.objects.create(
+                user=user,
+                name=user.username
+            )
+            dt = datetime.now()
+            CoreSettings.objects.create(
+                user=user,
+                current_space=space,
+                current_month=dt.month,
+                current_year=dt.year
+            )
         login(request, user)
-        return JsonResponse({"success": True})
+        return JsonResponse({'success': True})
 
-    return JsonResponse({"success": False, "error": "Invalid request method"})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
