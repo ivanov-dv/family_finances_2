@@ -14,7 +14,7 @@ class User(AbstractUser):
 
     def save(self, *args, **kwargs):
         if self.username:
-            self.username = self.username.lower()
+            self.username = str(self.username).lower()
         super().save(*args, **kwargs)
 
 
