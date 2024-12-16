@@ -2,7 +2,6 @@ import hashlib
 import hmac
 from datetime import datetime
 from operator import itemgetter
-from pprint import pprint
 from urllib.parse import parse_qsl
 
 from django.conf import settings
@@ -177,37 +176,26 @@ def webapp_auth(request):
         user = User.objects.filter(
             telegram_settings__id_telegram=user_id,
         ).first()
-        print(user)
         if not user:
-            print('Создание пользователя')
-            try:
-                user = User.objects.create(username=user_id)
-            except Exception as e:
-                print(f'Ошибка при создании пользователя: {e}')
-            print('Установка пароля')
+            user = User.objects.create(username=user_id)
             user.set_password(str(user_id) + settings.SECRET_KEY)
-            print('Сохранение пользователя')
             user.save()
-            print('Создание настроек Telegram')
             TelegramSettings.objects.create(
                 user=user,
                 telegram_only=True,
                 id_telegram=user_id
             )
-            print('Создание пространства')
             space = Space.objects.create(
                 user=user,
                 name=user.username
             )
             dt = datetime.now()
-            print('Создание настроек Core')
             CoreSettings.objects.create(
                 user=user,
                 current_space=space,
                 current_month=dt.month,
                 current_year=dt.year
             )
-        print('Авторизация')
         login(request, user)
         return JsonResponse({'success': True})
 
