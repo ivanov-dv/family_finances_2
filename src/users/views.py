@@ -161,9 +161,9 @@ def webapp(request):
     if request.method == 'GET':
         return render(request, 'webapp/webapp.html')
 
+
 @csrf_exempt
 def webapp_auth(request):
-    print('webapp auth')
     if request.method == "POST":
         import json
         data = json.loads(request.body)
