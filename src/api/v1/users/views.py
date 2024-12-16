@@ -1,4 +1,6 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.decorators import action
+from rest_framework.exceptions import NotFound
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import UpdateModelMixin, ListModelMixin
 from rest_framework.response import Response
@@ -28,6 +30,16 @@ class UserViewSet(ModelViewSet):
         if self.action == 'create':
             return UserCreateSerializer
         return UserDetailSerializer
+
+    @action(methods=['GET'], detail=False, url_path='get-id')
+    def get_id(self, request):
+        id_telegram = request.query_params.get('id_telegram')
+        user_id = User.objects.filter(
+            telegram_settings__id_telegram=id_telegram
+        ).values('id').first()
+        if user_id:
+            return Response({'user_id': user_id['id']})
+        raise NotFound(detail='Пользователь не найден.')
 
 
 class CoreSettingsViewSet(
