@@ -175,10 +175,12 @@ def webapp_auth(request):
                 {"success": False, "error": "Invalid Telegram data"})
 
         # Получаем ID пользователя Telegram
+        print('Получаем ID пользователя Telegram')
         user_id = init_data.split("id=")[1].split("&")[0]
         # username = init_data.split("username=")[1].split("&")[0]
 
         # Создаем пользователя, если его еще нет
+        print('Создаем пользователя, если его еще нет')
         user, created = User.objects.get_or_create(
             telegram_settings__id_telegram=user_id,
             defaults={
@@ -186,7 +188,7 @@ def webapp_auth(request):
                 "telegram_only": True,
                 "id_telegram": user_id
             })
-
+        print(user, created)
         # Выполняем автоматический логин
         login(request, user)
         print('success login')
