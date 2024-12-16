@@ -189,6 +189,8 @@ def webapp_auth(request):
 
         # Выполняем автоматический логин
         login(request, user)
+        print('success login')
         return JsonResponse({"success": True})
 
+    print('error login')
     return JsonResponse({"success": False, "error": "Invalid request method"})
