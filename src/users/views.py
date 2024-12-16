@@ -185,6 +185,7 @@ def webapp_auth(request):
         user_data = parsed_data.get("user", [None])[0]
         parsed_user = json.loads(user_data)
         print(f'{parsed_user=}', type(parsed_user))
+        user_id = parsed_user.get("id", None)
 
         # Создаем пользователя, если его еще нет
         print('Создаем пользователя, если его еще нет')
