@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang='ru'>
 <head>
-    <meta charset="UTF-8">
+    <meta charset='UTF-8'>
     <title>Web App</title>
 </head>
 <body>
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<script src='https://telegram.org/js/telegram-web-app.js'></script>
 <script>
     Telegram.WebApp.ready();
 
@@ -14,7 +14,7 @@
 
     console.log(initData)
     // Отправляем данные на сервер Django
-    fetch('https://ff2.zapto.org/users/webapp-auth/', {
+    fetch('{% url 'users:webapp_auth' %}', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
@@ -24,11 +24,11 @@
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log("Авторизация успешна!");
+            console.log('Авторизация успешна!');
             // Перенаправляем на главную страницу
-            window.location.href = "https://ff2.zapto.org/";
+            window.location.href = '{% url 'transactions:home' %}';
         } else {
-            console.error("Ошибка авторизации:", data.error);
+            console.error('Ошибка авторизации:', data.error);
         }
     });
 </script>
