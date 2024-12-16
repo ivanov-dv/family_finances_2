@@ -11,6 +11,7 @@ from django.db import transaction
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse
+from django.views.decorators.csrf import csrf_exempt
 from django_telegram_login.authentication import verify_telegram_authentication
 from django_telegram_login.errors import (
     TelegramDataIsOutdatedError,
@@ -160,7 +161,7 @@ def webapp(request):
     if request.method == 'GET':
         return render(request, 'webapp/webapp.html')
 
-
+@csrf_exempt
 def webapp_auth(request):
     print('webapp auth')
     if request.method == "POST":
