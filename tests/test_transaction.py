@@ -350,6 +350,7 @@ class TestSpace:
         assert response.data['owner_id'] == user_2_tg_only.id
         assert response.data['owner_username'] == user_2_tg_only.username
         assert 'available_linked_users' in response.data['spaces'][0]
+        assert 'linked_chat' in response.data['spaces'][0]
 
     def test_get_space(self, client, auth_header, user_2_tg_only):
         response = client.get(
@@ -365,11 +366,13 @@ class TestSpace:
                 user_2_tg_only.core_settings.current_space.name)
         assert (response.data['owner_username'] ==
                 user_2_tg_only.username)
+        assert 'linked_chat' in response.data
         assert 'available_linked_users' in response.data
 
     def test_put_space(self, client, auth_header, user_2_tg_only):
         data = {
-            'name': 'New_Test_name'
+            'name': 'New_Test_name',
+            'linked_chat': '-12312314'
         }
         response = client.put(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
@@ -380,11 +383,17 @@ class TestSpace:
         )
         assert response.status_code == 200
         assert response.data['name'] == data['name'].lower()
+        assert (response.data['linked_chat'] ==
+                data['linked_chat'])
 
-    def test_patch_space(self, client, auth_header, user_2_tg_only):
-        data = {
-            'name': 'New_Test_space'
-        }
+    @pytest.mark.parametrize(
+        'data',
+        (
+            {'name': 'New_Test_space'},
+            {'linked_chat': '-1243124312'}
+        )
+    )
+    def test_patch_space(self, client, auth_header, user_2_tg_only, data):
         response = client.patch(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_space.id}/',
@@ -393,7 +402,8 @@ class TestSpace:
             content_type='application/json'
         )
         assert response.status_code == 200
-        assert response.data['name'] == data['name'].lower()
+        key = list(data.keys())[0]
+        assert response.data[key] == data[key].lower()
 
     def test_delete_space(self, client, auth_header, user_2_tg_only):
         response = client.delete(

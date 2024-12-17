@@ -66,7 +66,13 @@ class SpaceSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ('id', 'name', 'owner_username', 'available_linked_users')
+        fields = (
+            'id',
+            'name',
+            'linked_chat',
+            'owner_username',
+            'available_linked_users'
+        )
         model = Space
 
 
@@ -78,7 +84,7 @@ class SpaceShortSerializer(serializers.ModelSerializer):
     )
 
     class Meta:
-        fields = ('id', 'name', 'owner_username')
+        fields = ('id', 'name', 'linked_chat', 'owner_username')
         model = Space
 
 

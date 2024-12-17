@@ -43,14 +43,13 @@ class TelegramSettings(models.Model):
         on_delete=models.CASCADE,
         related_name='telegram_settings'
     )
-    id_telegram = models.BigIntegerField(unique=True, null=True, blank=True)
-    telegram_only = models.BooleanField(default=False)
-    joint_chat = models.CharField(
-        max_length=64,
+    id_telegram = models.BigIntegerField(
         unique=True,
         null=True,
-        blank=True
+        blank=True,
+        default=None
     )
+    telegram_only = models.BooleanField(default=False)
 
     class Meta:
         verbose_name = "telegram settings"
