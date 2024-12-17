@@ -25,7 +25,8 @@ class CoreSettings(models.Model):
     )
     current_space = models.OneToOneField(
         'transactions.Space',
-        on_delete=models.CASCADE
+        on_delete=models.SET_NULL,
+        null=True
     )
     current_month = models.IntegerField()
     current_year = models.IntegerField()
