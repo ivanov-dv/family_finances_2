@@ -6,10 +6,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from api.v1.transactions.serializers import (
-    SpaceSerializer,
-    SpaceShortSerializer
-)
+from api.v1.transactions.serializers import SpaceShortSerializer
 from api.v1.transactions.validators import (
     PeriodYearValidator,
     PeriodMonthValidator
@@ -58,6 +55,27 @@ class CoreSettingsSerializer(serializers.ModelSerializer):
         fields = (
             'user',
             'current_space',
+            'current_month',
+            'current_year'
+        )
+
+
+class CoreSettingsUpdateSerializer(serializers.ModelSerializer):
+    current_space_id = serializers.PrimaryKeyRelatedField(
+        queryset=Space.objects.all(),
+        allow_null=True
+    )
+    current_year = serializers.IntegerField(
+        validators=(PeriodYearValidator(),)
+    )
+    current_month = serializers.IntegerField(
+        validators=(PeriodMonthValidator(),)
+    )
+
+    class Meta:
+        model = CoreSettings
+        fields = (
+            'current_space_id',
             'current_month',
             'current_year'
         )
@@ -150,7 +168,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='username'
     )
-    spaces = SpaceSerializer(read_only=True, many=True)
+    spaces = SpaceShortSerializer(read_only=True, many=True)
     available_linked_spaces = SpaceShortSerializer(read_only=True, many=True)
 
     class Meta:

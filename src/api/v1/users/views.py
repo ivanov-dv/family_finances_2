@@ -11,7 +11,8 @@ from api.v1.users.serializers import (
     UserCreateSerializer,
     TelegramSettingsSerializer,
     UserDetailSerializer,
-    CoreSettingsSerializer
+    CoreSettingsSerializer,
+    CoreSettingsUpdateSerializer
 )
 from users.models import User
 
@@ -49,10 +50,16 @@ class CoreSettingsViewSet(
 ):
     """Отображение и обновление user settings."""
 
+    http_method_names = ('get', 'patch')
     serializer_class = CoreSettingsSerializer
 
     def get_queryset(self):
         return get_object_or_404(User, pk=self.kwargs['user_id']).core_settings
+
+    def get_serializer_class(self):
+        if self.action in ('update', 'partial_update'):
+            return CoreSettingsUpdateSerializer
+        return CoreSettingsSerializer
 
     def get_object(self):
         return get_object_or_404(
