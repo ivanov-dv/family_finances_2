@@ -60,6 +60,22 @@ class SpaceSerializer(serializers.ModelSerializer):
         read_only=True,
         source='user'
     )
+    available_linked_users = serializers.PrimaryKeyRelatedField(
+        many=True,
+        read_only=True
+    )
+
+    class Meta:
+        fields = ('id', 'name', 'owner_username', 'available_linked_users')
+        model = Space
+
+
+class SpaceShortSerializer(serializers.ModelSerializer):
+    owner_username = serializers.SlugRelatedField(
+        slug_field='username',
+        read_only=True,
+        source='user'
+    )
 
     class Meta:
         fields = ('id', 'name', 'owner_username')
@@ -67,7 +83,7 @@ class SpaceSerializer(serializers.ModelSerializer):
 
 
 class SummaryDetailSerializer(serializers.ModelSerializer):
-    space = SpaceSerializer()
+    space = SpaceShortSerializer()
 
     class Meta:
         fields = (
