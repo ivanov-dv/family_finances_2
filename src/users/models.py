@@ -23,7 +23,7 @@ class CoreSettings(models.Model):
         User,
         on_delete=models.CASCADE
     )
-    current_space = models.OneToOneField(
+    current_space = models.ForeignKey(
         'transactions.Space',
         on_delete=models.SET_NULL,
         null=True

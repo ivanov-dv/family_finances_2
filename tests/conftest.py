@@ -53,6 +53,25 @@ def user_2_tg_only():
 
 
 @pytest.fixture
+def user_3_shared_space(user_1):
+    user = User.objects.create(
+        username='user3',
+        password='123456',
+        email='user3@example.com'
+    )
+    TelegramSettings.objects.create(user=user, telegram_only=False)
+    Space.objects.create(user=user, name=user.username)
+    dt = datetime.now()
+    CoreSettings.objects.create(
+        user=user,
+        current_space=user_1.core_settings.current_space,
+        current_month=dt.month,
+        current_year=dt.year
+    )
+    return user
+
+
+@pytest.fixture
 def summary_1(user_2_tg_only):
     return Summary.objects.create(
         space=user_2_tg_only.core_settings.current_space,
