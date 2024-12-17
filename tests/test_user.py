@@ -7,7 +7,7 @@ from tests.conftest import auth_header
 from transactions.models import Space
 from users.models import TelegramSettings, CoreSettings
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)
 
 
 class TestUser:
