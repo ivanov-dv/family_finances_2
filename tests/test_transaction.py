@@ -349,6 +349,7 @@ class TestSpace:
         assert 'id' in response.data['spaces'][0]
         assert response.data['owner_id'] == user_2_tg_only.id
         assert response.data['owner_username'] == user_2_tg_only.username
+        assert 'available_linked_users' in response.data['spaces'][0]
 
     def test_get_space(self, client, auth_header, user_2_tg_only):
         response = client.get(
@@ -364,6 +365,7 @@ class TestSpace:
                 user_2_tg_only.core_settings.current_space.name)
         assert (response.data['owner_username'] ==
                 user_2_tg_only.username)
+        assert 'available_linked_users' in response.data
 
     def test_put_space(self, client, auth_header, user_2_tg_only):
         data = {
