@@ -17,9 +17,6 @@ from users.models import User, TelegramSettings, CoreSettings
 
 
 class TelegramSettingsSerializer(serializers.ModelSerializer):
-    joint_chat = serializers.CharField(
-        required=False
-    )
     user = serializers.SlugRelatedField(
         slug_field='username',
         read_only=True
@@ -31,7 +28,6 @@ class TelegramSettingsSerializer(serializers.ModelSerializer):
             'user',
             'id_telegram',
             'telegram_only',
-            'joint_chat'
         )
 
 

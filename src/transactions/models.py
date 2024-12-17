@@ -32,6 +32,11 @@ class Space(CreatedUpdatedModel):
         User,
         through='LinkedUserToSpace'
     )
+    linked_chat = models.CharField(
+        max_length=64,
+        blank=True,
+        default=''
+    )
 
     class Meta:
         constraints = [

@@ -323,14 +323,11 @@ class TestTelegramSettings:
                 response.data['telegram_only'])
         assert (user_2_tg_only.telegram_settings.user.username ==
                 response.data['user'])
-        assert (user_2_tg_only.telegram_settings.joint_chat ==
-                response.data['joint_chat'])
 
     def test_put_telegram_settings(self, client, auth_header, user_2_tg_only):
         data = {
             'id_telegram': 777,
             'telegram_only': False,
-            'joint_chat': 'test_chat'
         }
         response = client.put(
             self.url.format(user_id=user_2_tg_only.id),
@@ -341,7 +338,6 @@ class TestTelegramSettings:
         assert response.status_code == 200
         assert response.data['id_telegram'] == data['id_telegram']
         assert response.data['telegram_only'] == data['telegram_only']
-        assert response.data['joint_chat'] == data['joint_chat']
         assert (user_2_tg_only.telegram_settings.user.username ==
                 response.data['user'])
 
@@ -351,12 +347,10 @@ class TestTelegramSettings:
             {
                 'id_telegram': '12qwe3',
                 'telegram_only': False,
-                'joint_chat': 'test_chat'
             },
             {
                 'id_telegram': 777,
                 'telegram_only': 123,
-                'joint_chat': 'test_chat'
             },
         )
     )
@@ -385,8 +379,6 @@ class TestTelegramSettings:
         )
         assert response.status_code == 200
         assert data['telegram_only'] == response.data['telegram_only']
-        assert (user_2_tg_only.telegram_settings.joint_chat ==
-                response.data['joint_chat'])
         assert (user_2_tg_only.telegram_settings.id_telegram ==
                 response.data['id_telegram'])
         assert (user_2_tg_only.telegram_settings.user.username ==
@@ -396,7 +388,6 @@ class TestTelegramSettings:
         'data',
         (
                 {'telegram_only': 123},
-                {'joint_chat': True},
                 {'id_telegram': '123sa'}
         )
     )
