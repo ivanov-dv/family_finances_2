@@ -257,47 +257,18 @@ class TestCoreSettings:
         assert response.data['current_month'] == dt.month
         assert response.data['current_year'] == dt.year
 
-    def test_put_core_settings(self, client, auth_header, user_2_tg_only):
-        data = {
-            'current_month': 12,
-            'current_year': 2025
-        }
-        response = client.put(
-            self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
-            data=data,
-            content_type='application/json'
-        )
-        assert response.status_code == 200
-        assert data['current_month'] == response.data['current_month']
-        assert data['current_year'] == response.data['current_year']
-        assert (user_2_tg_only.core_settings.current_space.id ==
-            response.data['current_space']['id'])
 
-    @pytest.mark.parametrize(
-        'data',
-        (
-            {'current_month': 13, 'current_year': 2025},
-            {'current_month': 12, 'current_year': 2000},
-        )
-    )
-    def test_put_core_settings_invalid_data(
+    def test_patch_core_settings(
             self,
             client,
             auth_header,
-            user_2_tg_only,
-            data
+            user_1,
+            user_2_tg_only
     ):
-        response = client.put(
-            self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
-            data=data,
-            content_type='application/json'
-        )
-        assert response.status_code == 400
-
-    def test_patch_core_settings(self, client, auth_header, user_2_tg_only):
-        data = {'current_month': 11}
+        data = {
+            'current_month': 11,
+            'current_space_id': user_1.core_settings.current_space.id
+        }
         response = client.patch(
             self.url.format(user_id=user_2_tg_only.id),
             headers=auth_header,
@@ -306,10 +277,11 @@ class TestCoreSettings:
         )
         assert response.status_code == 200
         assert data['current_month'] == response.data['current_month']
-        assert (user_2_tg_only.core_settings.current_space.id ==
-            response.data['current_space']['id'])
+        assert (user_1.core_settings.current_space.id ==
+            response.data['current_space_id'])
         assert (user_2_tg_only.core_settings.current_year ==
                 response.data['current_year'])
+
 
     @pytest.mark.parametrize(
         'data',
