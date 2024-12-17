@@ -2,7 +2,7 @@ from decimal import Decimal
 
 import pytest
 
-pytestmark = pytest.mark.django_db
+pytestmark = pytest.mark.django_db(transaction=True)
 
 
 class TestTransaction:
@@ -401,6 +401,7 @@ class TestSpace:
             content_type='application/json'
         )
         assert response.status_code == 204
+        print(user_2_tg_only.core_settings.current_space.id)
         response = client.get(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_space.id}/',
