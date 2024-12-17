@@ -364,8 +364,8 @@ class TestSpace:
                 user_2_tg_only.core_settings.current_space.id)
         assert (response.data['name'] ==
                 user_2_tg_only.core_settings.current_space.name)
-        assert (response.data['owner_username'] ==
-                user_2_tg_only.username)
+        assert response.data['owner_username'] == user_2_tg_only.username
+        assert response.data['owner_id'] == user_2_tg_only.id
         assert 'linked_chat' in response.data
         assert 'available_linked_users' in response.data
 
