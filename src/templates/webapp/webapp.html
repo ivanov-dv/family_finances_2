@@ -26,7 +26,7 @@
         if (data.success) {
             console.log('Авторизация успешна!');
             // Перенаправляем на главную страницу
-            window.location.href = '{% url 'transactions:home' %}';
+            window.location.href = '{% url 'transactions:summary' %}';
         } else {
             console.error('Ошибка авторизации:', data.error);
         }
