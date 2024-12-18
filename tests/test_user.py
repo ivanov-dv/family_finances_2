@@ -195,6 +195,9 @@ class TestUser:
         assert user_instance.email == response.data['email']
         assert user_instance.first_name == response.data['first_name']
         assert user_instance.last_name == response.data['last_name']
+        assert 'core_settings' in response.data
+        assert 'telegram_settings' in response.data
+        assert 'spaces' in response.data
 
 
     def test_put_user(self, client, auth_header, user_1):
