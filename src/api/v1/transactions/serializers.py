@@ -216,7 +216,7 @@ class UnlinkUserToSpaceSerializer(serializers.Serializer):
         try:
             validated_data['linked_object'].delete()
             core_settings = CoreSettings.objects.get(
-                current_space__user=validated_data['linked_user']
+                user=validated_data['linked_user']
             )
             core_settings.current_space = None
             core_settings.save()
