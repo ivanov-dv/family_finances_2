@@ -6,7 +6,7 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
-from api.v1.transactions.serializers import SpaceShortSerializer
+from api.v1.transactions.serializers import SpaceSerializer
 from api.v1.transactions.validators import (
     PeriodYearValidator,
     PeriodMonthValidator
@@ -32,7 +32,7 @@ class TelegramSettingsSerializer(serializers.ModelSerializer):
 
 
 class CoreSettingsSerializer(serializers.ModelSerializer):
-    current_space = SpaceShortSerializer(
+    current_space = SpaceSerializer(
         read_only=True
     )
     user = serializers.SlugRelatedField(
@@ -164,8 +164,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
         many=True,
         slug_field='username'
     )
-    spaces = SpaceShortSerializer(read_only=True, many=True)
-    available_linked_spaces = SpaceShortSerializer(read_only=True, many=True)
+    spaces = SpaceSerializer(read_only=True, many=True)
+    available_linked_spaces = SpaceSerializer(read_only=True, many=True)
 
     class Meta:
         model = User
