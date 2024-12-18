@@ -55,6 +55,10 @@ def registration(request):
                 'message': list(form.errors.values())
             }
         )
+    if form.cleaned_data['username'][0].isdigit():
+        return JsonResponse(
+            {'status': 'error', 'message': 'Логин не может начинаться с цифры'}
+        )
     with transaction.atomic():
         user = form.save(commit=False)
         user.set_password(form.cleaned_data['password'])
