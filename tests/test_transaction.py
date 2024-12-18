@@ -2,6 +2,8 @@ from decimal import Decimal
 
 import pytest
 
+from users.models import User
+
 pytestmark = pytest.mark.django_db(transaction=True)
 
 
@@ -458,6 +460,8 @@ class TestLinkUsersToSpace:
         )
         assert response.status_code == 200
         assert 'status' in response.data
+        u = User.objects.get(pk=user_2_tg_only.id)
+        assert u.core_settings.current_space is None
 
 
     @pytest.mark.parametrize(

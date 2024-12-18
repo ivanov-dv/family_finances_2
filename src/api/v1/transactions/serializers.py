@@ -9,7 +9,7 @@ from transactions.models import (
     LinkedUserToSpace,
     Space
 )
-from users.models import User
+from users.models import User, CoreSettings
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
@@ -215,6 +215,11 @@ class UnlinkUserToSpaceSerializer(serializers.Serializer):
         """Отключение пользователя от базы."""
         try:
             validated_data['linked_object'].delete()
+            core_settings = CoreSettings.objects.get(
+                current_space__user=validated_data['linked_user']
+            )
+            core_settings.current_space = None
+            core_settings.save()
         except IntegrityError as e:
             raise serializers.ValidationError(
                 {f'Ошибка сохранения: {str(e)}'}
