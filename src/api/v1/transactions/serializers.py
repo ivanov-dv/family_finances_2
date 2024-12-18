@@ -82,25 +82,8 @@ class SpaceSerializer(serializers.ModelSerializer):
         model = Space
 
 
-class SpaceShortSerializer(serializers.ModelSerializer):
-    owner_id = serializers.SlugRelatedField(
-        slug_field='id',
-        read_only=True,
-        source='user'
-    )
-    owner_username = serializers.SlugRelatedField(
-        slug_field='username',
-        read_only=True,
-        source='user'
-    )
-
-    class Meta:
-        fields = ('id', 'name', 'linked_chat', 'owner_id', 'owner_username')
-        model = Space
-
-
 class SummaryDetailSerializer(serializers.ModelSerializer):
-    space = SpaceShortSerializer()
+    space = SpaceSerializer()
 
     class Meta:
         fields = (
