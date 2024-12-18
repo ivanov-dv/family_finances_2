@@ -54,6 +54,17 @@ class TransactionDetailSerializer(serializers.ModelSerializer):
         model = Transaction
 
 
+class UserShortSerializer(serializers.ModelSerializer):
+    id_telegram = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ('id', 'username', 'first_name', 'last_name', 'id_telegram')
+
+    def get_id_telegram(self, obj):
+        return obj.telegram_settings.id_telegram
+
+
 class SpaceSerializer(serializers.ModelSerializer):
     owner_id = serializers.SlugRelatedField(
         slug_field='id',
@@ -65,7 +76,7 @@ class SpaceSerializer(serializers.ModelSerializer):
         read_only=True,
         source='user'
     )
-    available_linked_users = serializers.PrimaryKeyRelatedField(
+    available_linked_users = UserShortSerializer(
         many=True,
         read_only=True
     )
