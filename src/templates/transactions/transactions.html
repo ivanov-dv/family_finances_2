@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block core_settings_info %}
+    <nav class="navbar bg-body-tertiary">
+      <div class="container-fluid">
+        <span class="navbar-brand mb-0 h1">📅 {{ current_month }}.{{ current_year }}</span>
+        <span class="navbar-brand mb-0 h1">📓 {{ current_space.name }} ({{ current_space.user.username }})</span>
+      </div>
+    </nav>
+{% endblock %}
+
+{% block content %}
+    <div class="main-content" id="main-content">
+        <div class="container mt-4">
+            <div class="row justify-content-center">
+                <h5 class="text-center">Операции</h5>
+                <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Тип</th>
+                                <th>Статья</th>
+                                <th>Значение</th>
+                                <th>Описание</th>
+                                <th>Автор</th>
+                                <th>Дата</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                                <tr>
+                                    {% if transaction.type_transaction == 'income' %}
+                                        <td>Доход</td>
+                                    {% else %}
+                                        <td>Расход</td>
+                                    {% endif %}
+                                    <td>{{ transaction.group_name }}</td>
+                                    <td>{{ transaction.value_transaction|intcomma }}</td>
+                                    <td>{{ transaction.description }}</td>
+                                    <td>{{ transaction.author.username }}</td>
+                                    <td>{{ transaction.created_at|date:"d.m.Y" }}</td>
+                                </tr>
+                            {% empty %}
+                                <tr><td colspan="3" class="text-center">Нет данных</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

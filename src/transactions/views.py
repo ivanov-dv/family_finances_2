@@ -4,7 +4,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Sum
 from django.views.generic import TemplateView
 
-from .models import Summary
+from .models import Summary, Transaction
 
 
 class HomePageView(TemplateView):
@@ -52,6 +52,31 @@ class SummaryView(LoginRequiredMixin, TemplateView):
                 'sum_expense_fact': expense_fact,
                 'balance_plan': income_plan - expense_plan,
                 'balance_fact': income_fact - expense_fact,
+                'current_month': current_month,
+                'current_year': current_year,
+                'current_space': current_space
+            }
+        )
+        return context
+
+
+class TransactionView(LoginRequiredMixin, TemplateView):
+    template_name = 'transactions/transactions.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        current_month = self.request.user.core_settings.current_month
+        current_year = self.request.user.core_settings.current_year
+        current_space = self.request.user.core_settings.current_space
+        transactions = Transaction.objects.filter(
+            space=self.request.user.core_settings.current_space,
+            period_month=self.request.user.core_settings.current_month,
+            period_year=self.request.user.core_settings.current_year
+        )
+        context.update(
+            {
+                'title': 'FF',
+                'transactions': transactions,
                 'current_month': current_month,
                 'current_year': current_year,
                 'current_space': current_space
