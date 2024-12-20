@@ -37,7 +37,8 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'users',
     'transactions',
-    'api'
+    'api',
+    'export'
 ]
 
 MIDDLEWARE = [
@@ -171,3 +172,14 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
+
+# Настройки экспорта в excel
+# Для транзакций
+TRANSACTIONS_EXPORT_EXCEL_FILENAME = 'transactions.xlsx'
+TRANSACTIONS_EXPORT_EXCEL_SHEET_NAME = 'Транзакции'
+COL_WIDTH_DATE = 11
+COL_WIDTH_TYPE_TRANSACTION = 9
+COL_WIDTH_GROUP = 20
+COL_WIDTH_VALUE_TRANSACTION = 10
+COL_WIDTH_DESCRIPTION = 40
+COL_WIDTH_AUTHOR = 15

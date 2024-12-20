@@ -6,6 +6,7 @@ from rest_framework import permissions
 
 urlpatterns = [
     path('', include('transactions.urls', namespace='transactions')),
+    path('export/', include('export.urls', namespace='export')),
     path('users/', include('users.urls', namespace='users')),
     path('api/v1/', include('api.v1.urls', namespace='api_v1')),
     path('auth/', include('django.contrib.auth.urls')),
