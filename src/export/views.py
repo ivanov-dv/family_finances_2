@@ -2,7 +2,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
 
-from export.services import export_transactions_to_excel
+from export.services import create_excel_workbook
 from transactions.models import Transaction
 
 
@@ -18,7 +18,7 @@ def export_excel(request):
     )
 
     # Экспортируем транзакции в Excel и получаем таблицу.
-    table = export_transactions_to_excel(transactions)
+    workbook = create_excel_workbook(transactions)
 
     # Установка типа контента.
     response = HttpResponse(
@@ -32,6 +32,6 @@ def export_excel(request):
     )
 
     # Сохранение таблицы в ответе.
-    table.save(response)
+    workbook.save(response)
 
     return response

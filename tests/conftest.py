@@ -3,6 +3,8 @@ from datetime import datetime
 import pytest
 
 from django.conf import settings
+from django.test.client import Client
+
 from transactions.models import Space, Summary, Transaction
 from users.models import User, TelegramSettings, CoreSettings
 
@@ -29,6 +31,13 @@ def user_1():
         current_year=dt.year
     )
     return user
+
+
+@pytest.fixture
+def user_1_client(user_1):
+    client = Client()
+    client.force_login(user_1)
+    return client
 
 
 @pytest.fixture
@@ -120,3 +129,8 @@ def transaction_2(user_2_tg_only, summary_2):
         description='Тестовая операция 2',
         value_transaction=10.32
     )
+
+
+@pytest.fixture
+def many_transactions(transaction_1, transaction_2):
+    return transaction_1, transaction_2

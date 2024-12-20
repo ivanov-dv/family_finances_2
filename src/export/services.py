@@ -3,7 +3,7 @@ from django.db.models import QuerySet
 from openpyxl import Workbook
 
 
-def export_transactions_to_excel(transactions: QuerySet) -> Workbook:
+def create_excel_workbook(transactions: QuerySet) -> Workbook:
     """
     Экспортирует транзакции в Excel-файл.
 
