@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 
 from api.v1.users import views as user_views
 from api.v1.transactions import views as transactions_views
+from api.v1.export import views as export_views
 
 app_name = 'api_v1'
 
@@ -22,6 +23,11 @@ router_v1.register(
     r'users/(?P<user_id>\d+)/spaces',
     transactions_views.SpaceViewSet,
     basename='user_spaces'
+)
+router_v1.register(
+    r'users/(?P<user_id>\d+)/export',
+    export_views.ExportView,
+    basename='export'
 )
 
 urlpatterns = [
