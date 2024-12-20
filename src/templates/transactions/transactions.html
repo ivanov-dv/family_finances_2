@@ -50,7 +50,23 @@
             </div>
         </div>
     </div>
-    <a href="{% url 'export:excel' %}">
-        <button class="btn btn-light me-2">Экспорт в excel</button>
-    </a>
+    <div class="container mt-5">
+        <a href="{% url 'export:excel' %}">
+            <button class="btn btn-light me-2"
+                    data-bs-toggle="popover"
+                    data-bs-placement="top"
+                    data-bs-trigger="focus"
+                    data-bs-content="Кнопка не доступна из Telegram Webapp.
+                    Для Telegram перейдите в меню бота - 'Просмотр'.">
+                Экспорт в Excel
+            </button>
+        </a>
+    </div>
+    <script>
+        // Инициализация всех popover на странице
+        document.addEventListener('DOMContentLoaded', function () {
+            const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+            const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+        });
+    </script>
 {% endblock %}
