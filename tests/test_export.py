@@ -9,15 +9,9 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 class TestExport:
-    def test_export_excel_view(self, user_1_client):
-        response = user_1_client.get(reverse('export:excel'))
-        assert response.status_code == 200
-        assert (response['Content-Type'] ==
-                'application/vnd.openxmlformats-officedocument.'
-                'spreadsheetml.sheet')
-        assert 'Content-Disposition' in response
-        assert 'attachment; filename=' in response['Content-Disposition']
-        assert 'xlsx' in response['Content-Disposition']
+
+    url = reverse('export:excel')
+    url_api = '/api/v1/users/{user_id}/export/excel/'
 
     def test_create_excel_workbook(self, user_2_tg_only, many_transactions):
         transactions = Transaction.objects.filter(
@@ -27,3 +21,27 @@ class TestExport:
         )
         workbook = create_excel_workbook(transactions)
         assert isinstance(workbook, Workbook)
+
+    def test_export_excel_view(self, user_1_client):
+        response = user_1_client.get(self.url)
+        assert response.status_code == 200
+        assert (response['Content-Type'] ==
+                'application/vnd.openxmlformats-officedocument.'
+                'spreadsheetml.sheet')
+        assert 'Content-Disposition' in response
+        assert 'attachment; filename=' in response['Content-Disposition']
+        assert 'xlsx' in response['Content-Disposition']
+
+    def test_api_export_excel(self, client, auth_header, user_1):
+        response = client.get(
+            self.url_api.format(user_id=user_1.id),
+            headers=auth_header,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert (response['Content-Type'] ==
+                'application/vnd.openxmlformats-officedocument.'
+                'spreadsheetml.sheet')
+        assert 'Content-Disposition' in response
+        assert 'attachment; filename=' in response['Content-Disposition']
+        assert 'xlsx' in response['Content-Disposition']
