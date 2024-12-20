@@ -20,9 +20,12 @@ from users.models import User
 class UserViewSet(ModelViewSet):
     """CRUD для users."""
 
-    queryset = User.objects.select_related(
+    queryset = User.objects.prefetch_related(
+        'available_linked_spaces__user',
+        'spaces__available_linked_users',
+    ).select_related(
         'telegram_settings',
-        'core_settings'
+        'core_settings__current_space'
     ).all()
     filter_backends = (DjangoFilterBackend,)
     filterset_class = UserFilter
