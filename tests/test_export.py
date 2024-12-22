@@ -2,7 +2,7 @@ import pytest
 from django.urls import reverse
 from openpyxl.workbook import Workbook
 
-from export.services import create_excel_workbook
+from export.services import _create_excel_transactions_workbook
 from transactions.models import Transaction
 
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -19,7 +19,7 @@ class TestExport:
             period_month=user_2_tg_only.core_settings.current_month,
             period_year=user_2_tg_only.core_settings.current_year
         )
-        workbook = create_excel_workbook(transactions)
+        workbook = _create_excel_transactions_workbook(transactions)
         assert isinstance(workbook, Workbook)
 
     def test_export_excel_view(self, user_1_client):

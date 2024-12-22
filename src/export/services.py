@@ -1,9 +1,12 @@
 from django.conf import settings
 from django.db.models import QuerySet
+from django.http import HttpResponse
 from openpyxl import Workbook
 
+from transactions.models import Transaction
 
-def create_excel_workbook(transactions: QuerySet) -> Workbook:
+
+def _create_excel_transactions_workbook(transactions: QuerySet) -> Workbook:
     """
     Экспортирует транзакции в Excel-файл.
 
@@ -43,3 +46,39 @@ def create_excel_workbook(transactions: QuerySet) -> Workbook:
     ws.column_dimensions['F'].width = settings.COL_WIDTH_AUTHOR
 
     return wb
+
+
+def create_export_excel_transactions_response(user):
+    """
+    Создает ответ (response) с экспортированными транзакциями в Excel.
+    Период и Space для фильтрации извлекается из core_settings пользователя.
+
+    :param user: Активный пользователь.
+    :return: HttpResponse с экспортированными транзакциями в Excel.
+    """
+
+    # Получаем транзакции текущего периода.
+    transactions = Transaction.objects.filter(
+        space=user.core_settings.current_space,
+        period_month=user.core_settings.current_month,
+        period_year=user.core_settings.current_year
+    )
+
+    # Экспортируем транзакции в Excel и получаем таблицу.
+    workbook = _create_excel_transactions_workbook(transactions)
+
+    # Установка типа контента.
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.'
+                     'spreadsheetml.sheet'
+    )
+
+    # Установка заголовка для сохранения файла.
+    response['Content-Disposition'] = (
+        f'attachment; filename={settings.TRANSACTIONS_EXPORT_EXCEL_FILENAME}'
+    )
+
+    # Сохранение таблицы в ответе.
+    workbook.save(response)
+
+    return response
