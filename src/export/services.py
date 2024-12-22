@@ -1,9 +1,12 @@
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from django.http import HttpResponse
 from openpyxl import Workbook
 
 from transactions.models import Transaction
+
+User = get_user_model()
 
 
 def _create_excel_transactions_workbook(transactions: QuerySet) -> Workbook:
@@ -48,12 +51,12 @@ def _create_excel_transactions_workbook(transactions: QuerySet) -> Workbook:
     return wb
 
 
-def create_export_excel_transactions_response(user) -> HttpResponse:
+def create_export_excel_transactions_response(user: User) -> HttpResponse:
     """
     Создает ответ (response) с экспортированными транзакциями в Excel.
     Период и Space для фильтрации извлекается из core_settings пользователя.
 
-    :param user: Активный пользователь.
+    :param user: Пользователь.
     :return: HttpResponse с экспортированными транзакциями в Excel.
     """
 
