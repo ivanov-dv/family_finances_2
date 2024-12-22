@@ -88,6 +88,8 @@ class SummaryViewSet(ModelViewSet):
         return get_object_or_404(User, pk=self.kwargs['user_id'])
 
     def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return None
         user = self.get_user()
         return Summary.objects.filter(
             space=user.core_settings.current_space,

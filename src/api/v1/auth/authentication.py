@@ -13,9 +13,7 @@ class TokenAuthentication(BaseAuthentication):
         if auth_header != settings.ACCESS_TOKEN:
             raise AuthenticationFailed('Неправильный токен.')
         try:
-            user, created = User.objects.get_or_create(
-                username='admin'
-            )
+            user, created = User.objects.get_or_create(username='admin')
             return user, None
         except Exception as e:
             raise AuthenticationFailed(e)
