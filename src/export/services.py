@@ -48,7 +48,7 @@ def _create_excel_transactions_workbook(transactions: QuerySet) -> Workbook:
     return wb
 
 
-def create_export_excel_transactions_response(user):
+def create_export_excel_transactions_response(user) -> HttpResponse:
     """
     Создает ответ (response) с экспортированными транзакциями в Excel.
     Период и Space для фильтрации извлекается из core_settings пользователя.
