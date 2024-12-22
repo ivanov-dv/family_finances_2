@@ -23,5 +23,3 @@ COPY poetry.lock pyproject.toml ./
 RUN poetry install $( [ "$YOUR_ENV" = "production" ] && echo "--only=main" ) --no-interaction --no-ansi
 
 COPY src /app/src
-
-COPY data/data.json /app/src
