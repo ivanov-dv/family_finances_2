@@ -33,7 +33,7 @@ jobs:
         poetry-version: 1.8.4
     - name: Install dependencies
       run: poetry install
-    - name: Testing
+    - name: Flake8 and tests
       env:
         POSTGRES_USER: django_user
         POSTGRES_PASSWORD: django_password
@@ -49,7 +49,6 @@ jobs:
   send_deploy_webhook:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    needs: tests
 
     steps:
     - name: Send deploy webhook
