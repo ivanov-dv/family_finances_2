@@ -1,8 +1,8 @@
 FROM python:3.12
 
-ARG YOUR_ENV=production
+ARG TYPE_ENV=production
 
-ENV YOUR_ENV=${YOUR_ENV} \
+ENV TYPE_ENV=${TYPE_ENV} \
   PYTHONFAULTHANDLER=1 \
   PYTHONUNBUFFERED=1 \
   PYTHONHASHSEED=random \
@@ -20,6 +20,6 @@ RUN curl -sSL https://install.python-poetry.org | python3 - && \
 
 WORKDIR /app
 COPY poetry.lock pyproject.toml ./
-RUN poetry install $( [ "$YOUR_ENV" = "production" ] && echo "--only=main" ) --no-interaction --no-ansi
+RUN poetry install $( [ "$TYPE_ENV" = "production" ] && echo "--only=main" ) --no-interaction --no-ansi
 
 COPY src /app/src
