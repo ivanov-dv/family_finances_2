@@ -1,11 +1,12 @@
 from datetime import datetime
+from pprint import pprint
 
 import pytest
 from django.conf import settings
 
 from tests.conftest import auth_header
 from transactions.models import Space
-from users.models import TelegramSettings, CoreSettings
+from users.models import TelegramSettings, CoreSettings, User
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -243,14 +244,64 @@ class TestUser:
         assert response.status_code == 204
 
 
+class TestProfile:
+    url = '/api/v1/profile/'
+
+    def test_get_profile(self, client, user_1, user_1_token):
+        response = client.get(
+            self.url,
+            HTTP_AUTHORIZATION=user_1_token
+        )
+        assert response.status_code == 200
+        assert response.data['id'] == user_1.id
+        assert response.data['username'] == user_1.username
+        assert response.data['email'] == user_1.email
+        assert response.data['first_name'] == user_1.first_name
+        assert response.data['last_name'] == user_1.last_name
+        assert 'date_joined' in response.data
+        assert 'last_login' in response.data
+        assert 'core_settings' in response.data
+        assert 'telegram_settings' in response.data
+        assert 'spaces' in response.data
+        assert 'available_linked_spaces' in response.data
+
+    def test_patch_profile(
+            self,
+            client,
+            user_1_token,
+            user_1
+    ):
+        data = {
+            'email': 'updated_testuser@example.com',
+            'first_name': 'John',
+            'last_name': 'Doe'
+        }
+        response = client.patch(
+            self.url,
+            HTTP_AUTHORIZATION=user_1_token,
+            data=data,
+            content_type='application/json'
+        )
+        assert response.status_code == 200
+        assert response.data['id'] == user_1.id
+        assert response.data['email'] == data['email']
+        assert response.data['first_name'] == data['first_name']
+        assert response.data['last_name'] == data['last_name']
+
+
 class TestCoreSettings:
 
-    url = '/api/v1/users/{user_id}/core-settings/'
+    url = '/api/v1/profile/core-settings/'
 
-    def test_get_core_settings(self, client, auth_header, user_2_tg_only):
+    def test_get_core_settings(
+            self,
+            client,
+            user_2_tg_only,
+            user_2_access_header
+    ):
         response = client.get(
-            self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            self.url,
+            headers=user_2_access_header,
             content_type='application/json'
         )
         dt = datetime.now()
@@ -264,7 +315,7 @@ class TestCoreSettings:
     def test_patch_core_settings(
             self,
             client,
-            auth_header,
+            user_2_access_header,
             user_1,
             user_2_tg_only
     ):
@@ -273,8 +324,8 @@ class TestCoreSettings:
             'current_space_id': user_1.core_settings.current_space.id
         }
         response = client.patch(
-            self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            self.url,
+            headers=user_2_access_header,
             data=data,
             content_type='application/json'
         )
@@ -296,13 +347,13 @@ class TestCoreSettings:
     def test_patch_core_settings_invalid_data(
             self,
             client,
-            auth_header,
+            user_2_access_header,
             user_2_tg_only,
             data
     ):
         response = client.patch(
-            self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            self.url,
+            headers=user_2_access_header,
             data=data,
             content_type='application/json'
         )
