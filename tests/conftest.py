@@ -104,6 +104,30 @@ def summary_2(user_2_tg_only):
 
 
 @pytest.fixture
+def summary_prev_year_1(user_2_tg_only):
+    return Summary.objects.create(
+        space=user_2_tg_only.core_settings.current_space,
+        period_month=user_2_tg_only.core_settings.current_month,
+        period_year=user_2_tg_only.core_settings.current_year - 1,
+        type_transaction='income',
+        group_name='Test_income',
+        plan_value=10
+    )
+
+
+@pytest.fixture
+def summary_prev_year_2(user_2_tg_only):
+    return Summary.objects.create(
+        space=user_2_tg_only.core_settings.current_space,
+        period_month=user_2_tg_only.core_settings.current_month,
+        period_year=user_2_tg_only.core_settings.current_year - 1,
+        type_transaction='expense',
+        group_name='Test_expense',
+        plan_value=10
+    )
+
+
+@pytest.fixture
 def transaction_1(user_2_tg_only, summary_1):
     return Transaction.objects.create(
         space=user_2_tg_only.core_settings.current_space,
@@ -130,7 +154,34 @@ def transaction_2(user_2_tg_only, summary_2):
         value_transaction=10.32
     )
 
+@pytest.fixture
+def transaction_prev_year_1(user_2_tg_only, summary_prev_year_1):
+    return Transaction.objects.create(
+        space=user_2_tg_only.core_settings.current_space,
+        author=user_2_tg_only,
+        period_month=user_2_tg_only.core_settings.current_month,
+        period_year=user_2_tg_only.core_settings.current_year - 1,
+        type_transaction='expense',
+        group_name='Test_income',
+        description='Тестовая операция 2',
+        value_transaction=10.32
+    )
+
 
 @pytest.fixture
-def many_transactions(transaction_1, transaction_2):
-    return transaction_1, transaction_2
+def transaction_prev_year_2(user_2_tg_only, summary_prev_year_2):
+    return Transaction.objects.create(
+        space=user_2_tg_only.core_settings.current_space,
+        author=user_2_tg_only,
+        period_month=user_2_tg_only.core_settings.current_month,
+        period_year=user_2_tg_only.core_settings.current_year - 1,
+        type_transaction='expense',
+        group_name='Test_expense',
+        description='Тестовая операция 2',
+        value_transaction=10.32
+    )
+
+
+@pytest.fixture
+def many_transactions(transaction_1, transaction_2, transaction_prev_year_1, transaction_prev_year_2):
+    return transaction_1, transaction_2, transaction_prev_year_1, transaction_prev_year_2
