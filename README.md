@@ -15,7 +15,8 @@
 - Pytest;
 - Poetry;
 - Nginx;
-- Docker Compose.
+- Docker Compose;
+- CI/CD.
 
 ### Запуск:
 1. Клонируйте репозиторий.
