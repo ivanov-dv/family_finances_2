@@ -20,7 +20,9 @@ services:
       - ff2_network
 
   django:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile.local
     env_file:
       - .env
     environment:
@@ -33,14 +35,14 @@ services:
         poetry run python manage.py loaddata data.json &&
         cp -r /app/src/collected_static/. /backend_static &&
         cp -r /app/src/static/. /backend_static &&
-        poetry run gunicorn --bind 0.0.0.0:8000 family_finances.wsgi
+        poetry run python manage.py runserver 0.0.0.0:8000
       "
     depends_on:
       db:
         condition: service_healthy
     volumes:
       - ff2_static:/backend_static
-      - ./src:/app/src
+      - ./:/app
     networks:
       - ff2_network
 
