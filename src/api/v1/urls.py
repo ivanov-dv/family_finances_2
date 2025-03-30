@@ -25,6 +25,11 @@ router_v1.register(
     basename='user_spaces'
 )
 router_v1.register(
+    r'users/(?P<user_id>\d+)/periods',
+    transactions_views.PeriodViewSet,
+    basename='user_periods'
+)
+router_v1.register(
     r'users/(?P<user_id>\d+)/export',
     export_views.ExportView,
     basename='export'

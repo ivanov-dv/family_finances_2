@@ -25,7 +25,7 @@ from .serializers import (
     LinkUserToSpaceSerializer,
     UnlinkUserToSpaceSerializer,
     SpaceSerializer,
-    SummaryCreateSerializer
+    SummaryCreateSerializer,
 )
 
 
@@ -78,7 +78,7 @@ class TransactionViewSet(
 
 
 class SummaryViewSet(ModelViewSet):
-    """Просмотр Summary."""
+    """Просмотр Summary, CRUD для статей."""
 
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('group_name', 'type_transaction')
@@ -140,6 +140,51 @@ class SummaryViewSet(ModelViewSet):
                 'summary': serializer.data
             }
         )
+
+
+class PeriodViewSet(GenericViewSet):
+    """Просмотр периодов в текущем пространстве пользователя."""
+    pagination_class = None
+
+    def get_user(self):
+        return get_object_or_404(User, pk=self.kwargs['user_id'])
+
+    def get_queryset(self):
+        if getattr(self, 'swagger_fake_view', False):
+            return None
+        user = self.get_user()
+        return Summary.objects.filter(
+            space=user.core_settings.current_space,
+        )
+
+    @action(detail=False, methods=['get'], url_path='years')
+    def years(self, request, user_id):
+        return Response(
+            list(
+                self.filter_queryset(self.get_queryset())
+                .order_by('period_year')
+                .values_list('period_year', flat=True)
+                .distinct()
+            )
+        )
+
+    @action(detail=False, methods=['get'], url_path='months')
+    def months(self, request, user_id):
+        year = request.query_params.get('year')
+        if not year:
+            raise ValidationError('Запрос не содержит год.')
+        try:
+            return Response(
+                list(
+                    self.filter_queryset(self.get_queryset())
+                    .filter(period_year=year)
+                    .order_by('period_year')
+                    .values_list('period_month', flat=True)
+                    .distinct()
+                )
+            )
+        except (TypeError, ValueError) as e:
+            raise ValidationError(e)
 
 
 class SpaceViewSet(ModelViewSet):
