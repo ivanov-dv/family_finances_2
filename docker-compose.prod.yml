@@ -1,33 +1,10 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:17
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_DB
-      - POSTGRES_USER
-      - POSTGRES_PASSWORD
-    ports:
-      - "5444:5432"
-    volumes:
-      - ff2_postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - ff2_network
-    restart: always
-
   django:
     build: .
     env_file:
       - .env
-    environment:
-      POSTGRES_HOST: db
     command: > 
       bash -c "
         cd src &&
@@ -37,9 +14,6 @@ services:
         cp -r /app/src/static/. /backend_static &&
         poetry run gunicorn --bind 0.0.0.0:8000 family_finances.wsgi
       "
-    depends_on:
-      db:
-        condition: service_healthy
     volumes:
       - ff2_static:/backend_static
     networks:
@@ -60,7 +34,6 @@ services:
     restart: always
 
 volumes:
-  ff2_postgres_data:
   ff2_static:
 
 networks:
