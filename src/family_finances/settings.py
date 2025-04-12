@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 
+import sentry_sdk
 from django.urls import reverse_lazy
 from dotenv import load_dotenv
 
@@ -183,3 +184,7 @@ COL_WIDTH_GROUP = 20
 COL_WIDTH_VALUE_TRANSACTION = 10
 COL_WIDTH_DESCRIPTION = 40
 COL_WIDTH_AUTHOR = 15
+
+SENTRY_DSN = os.getenv('SENTRY_DSN')
+if SENTRY_DSN:
+    sentry_sdk.init(SENTRY_DSN)
