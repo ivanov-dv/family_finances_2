@@ -1,0 +1,27 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: django-collectstatic
+spec:
+  template:
+    spec:
+      containers:
+      - name: ff2-collectstatic
+        image: ff2-django
+        imagePullPolicy: Never
+        command: ["bash", "-c"]
+        args:
+          - |
+            cd src &&
+            poetry run python manage.py collectstatic --noinput &&
+            cp -r /app/src/collected_static/. /backend_static &&
+            cp -r /app/src/static/. /backend_static
+        volumeMounts:
+          - name: static
+            mountPath: /backend_static
+      restartPolicy: Never
+      volumes:
+        - name: static
+          persistentVolumeClaim:
+            claimName: ff2-static
+

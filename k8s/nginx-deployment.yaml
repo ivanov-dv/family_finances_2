@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ff2-nginx
+  name: ff2-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ff2-nginx
+  template:
+    metadata:
+      labels:
+        app: ff2-nginx
+    spec:
+      containers:
+        - name: ff2-nginx
+          image: nginx:1.22.1
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: ff2-nginx-config-volume
+              mountPath: /etc/nginx/conf.d/default.conf
+              subPath: default.conf
+            - name: ff2-static-volume
+              mountPath: /backend_static
+      volumes:
+        - name: ff2-nginx-config-volume
+          configMap:
+            name: ff2-nginx-config
+            items:
+              - key: default.conf
+                path: default.conf
+        - name: ff2-static-volume
+          persistentVolumeClaim:
+            claimName: ff2-static
+
