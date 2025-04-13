@@ -4,21 +4,28 @@ metadata:
   name: django-collectstatic
 spec:
   template:
+    metadata:
+      labels:
+        job-name: django-collectstatic
     spec:
       containers:
       - name: ff2-collectstatic
-        image: ff2-django
-        imagePullPolicy: Never
+        image: ivanovdv/ff2-django:latest
+        imagePullPolicy: Always
         command: ["bash", "-c"]
         args:
           - |
             cd src &&
+            poetry run python manage.py migrate --noinput &&
             poetry run python manage.py collectstatic --noinput &&
             cp -r /app/src/collected_static/. /backend_static &&
             cp -r /app/src/static/. /backend_static
         volumeMounts:
           - name: static
             mountPath: /backend_static
+        envFrom:
+          - secretRef:
+              name: ff2-django-env
       restartPolicy: Never
       volumes:
         - name: static

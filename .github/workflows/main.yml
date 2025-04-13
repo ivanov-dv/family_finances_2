@@ -73,17 +73,10 @@ jobs:
           echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
           export KUBECONFIG=$PWD/kubeconfig
           kubectl version --client
-
-      - name: Apply Kubernetes manifests
-        run: |
-          export KUBECONFIG=$PWD/kubeconfig
-          kubectl apply -f k8s/
-
-      - name: Restart static collect Job
-        run: |
-          export KUBECONFIG=$PWD/kubeconfig
           kubectl delete job django-collectstatic --ignore-not-found
-          kubectl apply -f k8s/collect-static-job.yaml
+          kubectl apply -f k8s/
+          kubectl rollout restart deployment ff2-django
+          kubectl rollout restart deployment ff2-nginx
 
       - name: Wait for static Job to complete
         run: |

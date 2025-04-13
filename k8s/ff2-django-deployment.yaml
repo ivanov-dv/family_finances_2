@@ -18,8 +18,8 @@ spec:
     spec:
       containers:
         - name: ff2-django
-          image: ff2-django
-          imagePullPolicy: Never
+          image: ivanovdv/ff2-django:latest
+          imagePullPolicy: Always
           command: [ "bash", "-c" ]
           args:
             - |
