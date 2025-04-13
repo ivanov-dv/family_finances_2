@@ -8,7 +8,7 @@ data:
     server {
       listen 80;
       location /static/ {
-        alias /static/;
+        alias /backend_static/;
       }
     }
 
