@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: ff2-django
+  name: ff2-django
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: ff2-django
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: ff2-django
+    spec:
+      containers:
+        - name: ff2-django
+          image: ivanovdv/ff2-django:latest
+          imagePullPolicy: Always
+          command: [ "bash", "-c" ]
+          args:
+            - |
+              cd src &&
+              poetry run gunicorn --bind 0.0.0.0:8000 family_finances.wsgi
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - mountPath: /backend_static
+              name: ff2-static
+          envFrom:
+            - secretRef:
+                name: ff2-django-env
+      volumes:
+        - name: ff2-static
+          persistentVolumeClaim:
+            claimName: ff2-static
+
