@@ -160,12 +160,14 @@ class PeriodViewSet(GenericViewSet):
     @action(detail=False, methods=['get'], url_path='years')
     def years(self, request, user_id):
         return Response(
-            list(
-                self.filter_queryset(self.get_queryset())
-                .order_by('period_year')
-                .values_list('period_year', flat=True)
-                .distinct()
-            )
+            {
+                'years': list(
+                    self.filter_queryset(self.get_queryset())
+                    .order_by('period_year')
+                    .values_list('period_year', flat=True)
+                    .distinct()
+                )
+            }
         )
 
     @action(detail=False, methods=['get'], url_path='months')
@@ -174,14 +176,16 @@ class PeriodViewSet(GenericViewSet):
         if not year:
             raise ValidationError('Запрос не содержит год.')
         try:
-            return Response(
-                list(
-                    self.filter_queryset(self.get_queryset())
-                    .filter(period_year=year)
-                    .order_by('period_year')
-                    .values_list('period_month', flat=True)
-                    .distinct()
-                )
+            return Response({
+                'year': year,
+                'months': list(
+                        self.filter_queryset(self.get_queryset())
+                        .filter(period_year=year)
+                        .order_by('period_year')
+                        .values_list('period_month', flat=True)
+                        .distinct()
+                    )
+                }
             )
         except (TypeError, ValueError) as e:
             raise ValidationError(e)
