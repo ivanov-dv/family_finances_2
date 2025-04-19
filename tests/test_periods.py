@@ -18,13 +18,13 @@ class TestPeriods:
         years = {transaction.period_year for transaction in many_transactions}
 
         assert response.status_code == 200
-        assert response.data == list(years)
+        assert response.data == {'years': list(years)}
 
     @pytest.mark.parametrize(
         'year, result',
         [
-            (datetime.now().year, [datetime.now().month]),
-            (datetime.now().year - 10, [])
+            (datetime.now().year, {'months': [datetime.now().month], 'year': str(datetime.now().year)}),
+            (datetime.now().year - 10, {'months': [], 'year': str(datetime.now().year - 10)}),
         ]
     )
     def test_get_months(self, client, auth_header, user_2_tg_only, many_transactions, year, result):
