@@ -16,6 +16,7 @@
 - Poetry;
 - Nginx;
 - Docker Compose;
+- Kubernetes;
 - CI/CD.
 
 ### Запуск:
