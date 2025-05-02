@@ -1,7 +1,4 @@
-from decimal import Decimal
-
 from django.db import transaction, IntegrityError
-from django.db.models import Sum
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import filters, status
@@ -16,6 +13,7 @@ from rest_framework.mixins import (
 from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
+from tools.transactions import get_summary_report
 from transactions.models import Summary, Space
 from users.models import User
 from .serializers import (
@@ -116,27 +114,18 @@ class SummaryViewSet(ModelViewSet):
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        income_plan = queryset.filter(
-            type_transaction='income'
-        ).aggregate(Sum('plan_value'))['plan_value__sum'] or Decimal('0.0')
-        income_fact = queryset.filter(
-            type_transaction='income'
-        ).aggregate(Sum('fact_value'))['fact_value__sum'] or Decimal('0.0')
-        expense_plan = queryset.filter(
-            type_transaction='expense'
-        ).aggregate(Sum('plan_value'))['plan_value__sum'] or Decimal('0.0')
-        expense_fact = queryset.filter(
-            type_transaction='expense'
-        ).aggregate(Sum('fact_value'))['fact_value__sum'] or Decimal('0.0')
+        summary_report = get_summary_report(queryset)
         serializer = self.get_serializer(queryset, many=True)
         return Response(
             {
-                'sum_income_plan': income_plan,
-                'sum_income_fact': income_fact,
-                'sum_expense_plan': expense_plan,
-                'sum_expense_fact': expense_fact,
-                'balance_plan': income_plan - expense_plan,
-                'balance_fact': income_fact - expense_fact,
+                'sum_income_plan': summary_report.income_plan,
+                'sum_income_fact': summary_report.income_fact,
+                'sum_expense_plan': summary_report.expense_plan,
+                'sum_expense_fact': summary_report.expense_fact,
+                'balance_plan':
+                    summary_report.income_plan - summary_report.expense_plan,
+                'balance_fact':
+                    summary_report.income_fact - summary_report.expense_fact,
                 'summary': serializer.data
             }
         )
