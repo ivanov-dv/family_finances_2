@@ -92,6 +92,13 @@ class Transaction(CreatedUpdatedModel):
 
 
 class Summary(CreatedUpdatedModel):
+    """
+    В данной модели одной записью является статья
+    доходов или расходов в space пользователя.
+
+    Фактическое значение инкрементится при добавлении транзакции.
+    """
+
     space = models.ForeignKey(Space, on_delete=models.CASCADE)
     period_month = models.IntegerField()
     period_year = models.IntegerField()
