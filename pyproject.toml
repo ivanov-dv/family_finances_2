@@ -23,6 +23,8 @@ python-dotenv = "^1.0.1"
 django-telegram-login = "^0.2.3"
 openpyxl = "^3.1.5"
 sentry-sdk = "^2.25.1"
+djoser = "^2.3.1"
+djangorestframework-simplejwt = "^5.3.1"
 
 
 [build-system]
