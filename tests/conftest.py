@@ -129,6 +129,9 @@ def summary_prev_year_2(user_2_tg_only):
 
 @pytest.fixture
 def transaction_1(user_2_tg_only, summary_1):
+    fact_value = 10.32
+    summary_1.fact_value += fact_value
+    summary_1.save()
     return Transaction.objects.create(
         space=user_2_tg_only.core_settings.current_space,
         author=user_2_tg_only,
@@ -137,12 +140,15 @@ def transaction_1(user_2_tg_only, summary_1):
         type_transaction='income',
         group_name='Test_income',
         description='Тестовая операция 1',
-        value_transaction=10.32
+        value_transaction=fact_value
     )
 
 
 @pytest.fixture
 def transaction_2(user_2_tg_only, summary_2):
+    fact_value = 10.32
+    summary_2.fact_value += fact_value
+    summary_2.save()
     return Transaction.objects.create(
         space=user_2_tg_only.core_settings.current_space,
         author=user_2_tg_only,
@@ -151,7 +157,7 @@ def transaction_2(user_2_tg_only, summary_2):
         type_transaction='expense',
         group_name='Test_expense',
         description='Тестовая операция 2',
-        value_transaction=10.32
+        value_transaction=fact_value
     )
 
 @pytest.fixture
