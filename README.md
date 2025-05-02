@@ -1,3 +1,5 @@
+![Tests](https://github.com/ivanov-dv/family_finances_2/actions/workflows/main.yml/badge.svg)
+
 # Django сервис для ведения семейного бюджета на базе Django + Rest Framework.
 
 ### Описание:
