@@ -168,14 +168,13 @@ class PeriodViewSet(GenericViewSet):
             return Response({
                 'year': year,
                 'months': list(
-                        self.filter_queryset(self.get_queryset())
-                        .filter(period_year=year)
-                        .order_by('period_year')
-                        .values_list('period_month', flat=True)
-                        .distinct()
-                    )
-                }
-            )
+                    self.filter_queryset(self.get_queryset())
+                    .filter(period_year=year)
+                    .order_by('period_year')
+                    .values_list('period_month', flat=True)
+                    .distinct()
+                )
+            })
         except (TypeError, ValueError) as e:
             raise ValidationError(e)
 
