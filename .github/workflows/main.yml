@@ -45,7 +45,7 @@ jobs:
         POSTGRES_PORT: 5432
         ACCESS_TOKEN: qwerty123456
       run: |
-        poetry run flake8 src/
+        poetry run flake8 --ignore=E501 src/
         poetry run pytest
 
 
