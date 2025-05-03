@@ -29,11 +29,6 @@ router_v1.register(
     transactions_views.PeriodViewSet,
     basename='user_periods'
 )
-router_v1.register(
-    r'users/(?P<user_id>\d+)/export',
-    export_views.ExportView,
-    basename='export'
-)
 
 urlpatterns = [
     path(
@@ -51,5 +46,6 @@ urlpatterns = [
         user_views.TelegramSettingsViewSet.as_view(
             {'put': 'update', 'get': 'list', 'patch': 'partial_update'}
         )
-    )
+    ),
+    path('users/<int:user_id>/export/excel/', export_views.ExportAPIView.as_view()),
 ]
