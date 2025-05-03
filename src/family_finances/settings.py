@@ -1,4 +1,5 @@
 import os
+from datetime import timedelta
 from pathlib import Path
 
 import sentry_sdk
@@ -32,6 +33,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
     'rest_framework',
+    'rest_framework.authtoken',
+    'djoser',
     'drf_yasg',
     'django_filters',
     'django_extensions',
@@ -134,14 +137,22 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'api.v1.auth.authentication.TokenAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication'
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_PAGINATION_CLASS':
         'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': 50,
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+    'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 SHELL_PLUS = "ipython"
@@ -185,6 +196,7 @@ COL_WIDTH_VALUE_TRANSACTION = 10
 COL_WIDTH_DESCRIPTION = 40
 COL_WIDTH_AUTHOR = 15
 
+# Настройки Sentry
 SENTRY_DSN = os.getenv('SENTRY_DSN')
 if SENTRY_DSN:
     sentry_sdk.init(SENTRY_DSN)

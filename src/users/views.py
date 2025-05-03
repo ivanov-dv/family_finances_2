@@ -158,6 +158,7 @@ def check_telegram_auth(init_data: str, token: str) -> bool:
 def webapp(request):
     if request.method == 'GET':
         return render(request, 'webapp/webapp.html')
+    return None
 
 
 @csrf_exempt

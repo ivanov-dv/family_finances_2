@@ -1,11 +1,15 @@
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import mixins, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.generics import get_object_or_404
 from rest_framework.mixins import UpdateModelMixin, ListModelMixin
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
+from api.v1.permissions import IsSelfUser
 from api.v1.users.filters import UserFilter
 from api.v1.users.serializers import (
     UserCreateSerializer,
@@ -14,7 +18,7 @@ from api.v1.users.serializers import (
     CoreSettingsSerializer,
     CoreSettingsUpdateSerializer
 )
-from users.models import User
+from users.models import User, CoreSettings
 
 
 class UserViewSet(ModelViewSet):
@@ -29,6 +33,7 @@ class UserViewSet(ModelViewSet):
     ).all()
     filter_backends = (DjangoFilterBackend,)
     filterset_class = UserFilter
+    permission_classes = (IsAdminUser,)
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -46,56 +51,70 @@ class UserViewSet(ModelViewSet):
         raise NotFound(detail='Пользователь не найден.')
 
 
-class CoreSettingsViewSet(
-    ListModelMixin,
-    UpdateModelMixin,
-    GenericViewSet
-):
-    """Отображение и обновление user settings."""
+class ProfileAPIView(APIView):
+    """Отображение и редактирование профиля пользователя."""
 
-    http_method_names = ('get', 'patch')
-    serializer_class = CoreSettingsSerializer
+    permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self):
-        return get_object_or_404(User, pk=self.kwargs['user_id']).core_settings
+    def get(self, request, *args, **kwargs):
+        serializer = UserDetailSerializer(self.request.user)
+        return Response(serializer.data)
 
-    def get_serializer_class(self):
-        if self.action in ('update', 'partial_update'):
-            return CoreSettingsUpdateSerializer
-        return CoreSettingsSerializer
-
-    def get_object(self):
-        return get_object_or_404(
-            User,
-            pk=self.kwargs['user_id']
-        ).core_settings
-
-    def list(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_queryset())
+    def patch(self, request, *args, **kwargs):
+        serializer = UserDetailSerializer(
+            self.request.user,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data)
 
 
-class TelegramSettingsViewSet(
-    ListModelMixin,
-    UpdateModelMixin,
-    GenericViewSet
-):
-    """Отображение и обновление telegram settings."""
+class CoreSettingsAPIView(APIView):
+    """Отображение и редактирование core настроек пользователя."""
 
-    serializer_class = TelegramSettingsSerializer
+    permission_classes = (IsAuthenticated,)
 
-    def get_queryset(self):
-        return get_object_or_404(
-            User,
-            pk=self.kwargs['user_id']
-        ).telegram_settings
+    def get(self, request, *args, **kwargs):
+        serializer = CoreSettingsSerializer(self.request.user.core_settings)
+        return Response(serializer.data)
 
-    def get_object(self):
-        return get_object_or_404(
-            User,
-            pk=self.kwargs['user_id']
-        ).telegram_settings
+    def patch(self, request, *args, **kwargs):
+        serializer = CoreSettingsUpdateSerializer(
+            self.request.user.core_settings,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
 
-    def list(self, request, *args, **kwargs):
-        serializer = self.get_serializer(self.get_queryset())
+
+class TelegramSettingsAPIView(APIView):
+    """Отображение и редактирование telegram настроек пользователя."""
+
+    permission_classes = (IsAuthenticated,)
+
+    def get(self, request, *args, **kwargs):
+        serializer = TelegramSettingsSerializer(self.request.user.telegram_settings)
+        return Response(serializer.data)
+
+    def patch(self, request, *args, **kwargs):
+        serializer = TelegramSettingsSerializer(
+            self.request.user.telegram_settings,
+            data=request.data,
+            partial=True
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(serializer.data)
+
+    def put(self, request, *args, **kwargs):
+        serializer = TelegramSettingsSerializer(
+            self.request.user.telegram_settings,
+            data=request.data,
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
         return Response(serializer.data)

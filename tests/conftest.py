@@ -4,9 +4,12 @@ import pytest
 
 from django.conf import settings
 from django.test.client import Client
+from rest_framework_simplejwt.tokens import AccessToken
 
 from transactions.models import Space, Summary, Transaction
 from users.models import User, TelegramSettings, CoreSettings
+
+USER_TEST_PASSWORD = '123456user'
 
 
 @pytest.fixture
@@ -15,12 +18,34 @@ def auth_header():
 
 
 @pytest.fixture
+def admin_user():
+    return User.objects.create_superuser(
+        'admin',
+        'admin@admin.ru',
+        'qwerty'
+    )
+
+
+@pytest.fixture
+def admin_client(admin_user):
+    client = Client()
+    client.force_login(admin_user)
+    return client
+
+
+@pytest.fixture
+def admin_auth_header(admin_user):
+    return {'Authorization': f'Bearer {AccessToken.for_user(admin_user)}'}
+
+
+@pytest.fixture
 def user_1():
     user = User.objects.create(
         username='user1',
-        password='123456',
         email='user1@example.com'
     )
+    user.set_password(USER_TEST_PASSWORD)
+    user.save()
     TelegramSettings.objects.create(user=user, telegram_only=False)
     space = Space.objects.create(user=user, name=user.username)
     dt = datetime.now()
@@ -31,6 +56,11 @@ def user_1():
         current_year=dt.year
     )
     return user
+
+
+@pytest.fixture
+def user_1_auth_header(user_1):
+    return {'Authorization': f'Bearer {AccessToken.for_user(user_1)}'}
 
 
 @pytest.fixture
@@ -45,6 +75,8 @@ def user_2_tg_only():
     user = User.objects.create(
         username='user2_tg_only'
     )
+    user.set_password(USER_TEST_PASSWORD)
+    user.save()
     TelegramSettings.objects.create(
         user=user,
         id_telegram=1234567890,
@@ -60,14 +92,19 @@ def user_2_tg_only():
     )
     return user
 
+@pytest.fixture
+def user_2_auth_header(user_2_tg_only):
+    return {'Authorization': f'Bearer {AccessToken.for_user(user_2_tg_only)}'}
+
 
 @pytest.fixture
 def user_3_shared_space(user_1):
     user = User.objects.create(
         username='user3',
-        password='123456',
         email='user3@example.com'
     )
+    user.set_password(USER_TEST_PASSWORD)
+    user.save()
     TelegramSettings.objects.create(user=user, telegram_only=False)
     Space.objects.create(user=user, name=user.username)
     dt = datetime.now()

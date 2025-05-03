@@ -1,5 +1,6 @@
-from django.urls import path, include
+from django.urls import path, include, re_path
 from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken import views as auth_views
 
 from api.v1.users import views as user_views
 from api.v1.transactions import views as transactions_views
@@ -8,7 +9,12 @@ from api.v1.export import views as export_views
 app_name = 'api_v1'
 
 router_v1 = DefaultRouter()
-router_v1.register('users', user_views.UserViewSet, basename='users')
+
+router_v1.register(
+    'users',
+    user_views.UserViewSet,
+    basename='users'
+)
 router_v1.register(
     r'users/(?P<user_id>\d+)/transactions',
     transactions_views.TransactionViewSet,
@@ -31,21 +37,17 @@ router_v1.register(
 )
 
 urlpatterns = [
-    path(
-        '',
-        include(router_v1.urls)
-    ),
-    path(
-        'users/<int:user_id>/core-settings/',
-        user_views.CoreSettingsViewSet.as_view(
-            {'put': 'update', 'get': 'list', 'patch': 'partial_update'}
-        )
-    ),
-    path(
-        'users/<int:user_id>/telegram-settings/',
-        user_views.TelegramSettingsViewSet.as_view(
-            {'put': 'update', 'get': 'list', 'patch': 'partial_update'}
-        )
-    ),
+
+    re_path(r'^auth/', include('djoser.urls.authtoken')),
+    re_path(r'^auth/', include('djoser.urls.jwt')),
+    re_path(r'^auth/', include('djoser.urls')),
+
+    path('', include(router_v1.urls)),
+
+    path('profile/core-settings/', user_views.CoreSettingsAPIView.as_view(), name="profile-core-settings"),
+    path('profile/telegram-settings/', user_views.TelegramSettingsAPIView.as_view(), name="profile-telegram-settings"),
+    path('profile/', user_views.ProfileAPIView.as_view(), name='profile'),
+
     path('users/<int:user_id>/export/excel/', export_views.ExportAPIView.as_view()),
+
 ]
