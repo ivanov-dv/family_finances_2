@@ -8,13 +8,13 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 class TestTransaction:
-    url = '/api/v1/users/{user_id}/transactions/'
+    url = '/api/v1/transactions/'
 
     def test_create_transaction_and_change_summary(
             self,
             client,
-            auth_header,
             user_2_tg_only,
+            user_2_auth_header,
             summary_1
     ):
         data = {
@@ -25,7 +25,7 @@ class TestTransaction:
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -41,7 +41,7 @@ class TestTransaction:
         data['value_transaction'] = '0.01'
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -51,7 +51,7 @@ class TestTransaction:
         data['value_transaction'] = '-50.5'
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -62,24 +62,24 @@ class TestTransaction:
     def test_list_transactions(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             transaction_1,
             transaction_2
     ):
         response = client.get(
             self.url.format(user_id=transaction_1.author.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
         assert 'results' in response.data
         assert len(response.data['results']) == 2
 
-    def test_get_transaction(self, client, auth_header, transaction_1):
+    def test_get_transaction(self, client, user_2_auth_header, transaction_1):
         response = client.get(
             f'{self.url.format(user_id=transaction_1.author.id)}'
             f'{transaction_1.id}/',
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -96,20 +96,20 @@ class TestTransaction:
 
 
 class TestSummary:
-    url = '/api/v1/users/{user_id}/summary/'
-    url_detail = '/api/v1/users/{user_id}/summary/{id}/'
+    url = '/api/v1/summary/'
+    url_detail = '/api/v1/summary/{id}/'
 
     def test_list_summary(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_2_tg_only,
             summary_1,
             summary_2
     ):
         response = client.get(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -130,13 +130,13 @@ class TestSummary:
         assert 'created_at' in response.data['summary'][0]
         assert 'updated_at' in response.data['summary'][0]
 
-    def test_get_group(self, client, auth_header, user_2_tg_only, summary_1):
+    def test_get_group(self, client, user_2_auth_header, user_2_tg_only, summary_1):
         response = client.get(
             self.url_detail.format(
                 user_id=user_2_tg_only.id,
                 id=summary_1.id
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -156,7 +156,7 @@ class TestSummary:
     def test_create_group(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_2_tg_only
     ):
         data = {
@@ -167,7 +167,7 @@ class TestSummary:
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -182,7 +182,7 @@ class TestSummary:
                 user_id=user_2_tg_only.id,
                 id=response.data['id']
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -202,7 +202,7 @@ class TestSummary:
     def test_create_double(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_2_tg_only,
             summary_1
     ):
@@ -214,7 +214,7 @@ class TestSummary:
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -223,7 +223,7 @@ class TestSummary:
     def test_put_group(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_2_tg_only,
             summary_1
     ):
@@ -238,7 +238,7 @@ class TestSummary:
                 user_id=user_2_tg_only.id,
                 id=summary_1.id
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -252,7 +252,7 @@ class TestSummary:
     def test_patch_group(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_2_tg_only,
             summary_1
     ):
@@ -264,7 +264,7 @@ class TestSummary:
                 user_id=user_2_tg_only.id,
                 id=summary_1.id
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -280,7 +280,7 @@ class TestSummary:
     def test_delete_group(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_2_tg_only,
             summary_1
     ):
@@ -289,7 +289,7 @@ class TestSummary:
                 user_id=user_2_tg_only.id,
                 id=summary_1.id
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 204
@@ -298,7 +298,7 @@ class TestSummary:
                 user_id=user_2_tg_only.id,
                 id=summary_1.id
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 404
@@ -306,15 +306,15 @@ class TestSummary:
 
 class TestSpace:
 
-    url = '/api/v1/users/{user_id}/spaces/'
+    url = '/api/v1/spaces/'
 
-    def test_create_space(self, client, auth_header, user_2_tg_only):
+    def test_create_space(self, client, user_2_auth_header, user_2_tg_only):
         data = {
             'name': 'Test_space'
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -325,7 +325,7 @@ class TestSpace:
     def test_create_space_invalid_data(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_2_tg_only
     ):
         data = {
@@ -333,16 +333,16 @@ class TestSpace:
         }
         response = client.post(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
         assert response.status_code == 400
 
-    def test_get_spaces(self, client, auth_header, user_2_tg_only):
+    def test_get_spaces(self, client, user_2_auth_header, user_2_tg_only):
         response = client.get(
             self.url.format(user_id=user_2_tg_only.id),
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -354,11 +354,11 @@ class TestSpace:
         assert 'available_linked_users' in response.data['spaces'][0]
         assert 'linked_chat' in response.data['spaces'][0]
 
-    def test_get_space(self, client, auth_header, user_2_tg_only):
+    def test_get_space(self, client, user_2_auth_header, user_2_tg_only):
         response = client.get(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_space.id}/',
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200
@@ -371,7 +371,7 @@ class TestSpace:
         assert 'linked_chat' in response.data
         assert 'available_linked_users' in response.data
 
-    def test_put_space(self, client, auth_header, user_2_tg_only):
+    def test_put_space(self, client, user_2_auth_header, user_2_tg_only):
         data = {
             'name': 'New_Test_name',
             'linked_chat': '-12312314'
@@ -379,7 +379,7 @@ class TestSpace:
         response = client.put(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_space.id}/',
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -395,11 +395,11 @@ class TestSpace:
             {'linked_chat': '-1243124312'}
         )
     )
-    def test_patch_space(self, client, auth_header, user_2_tg_only, data):
+    def test_patch_space(self, client, user_2_auth_header, user_2_tg_only, data):
         response = client.patch(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_space.id}/',
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -407,19 +407,18 @@ class TestSpace:
         key = list(data.keys())[0]
         assert response.data[key] == data[key].lower()
 
-    def test_delete_space(self, client, auth_header, user_2_tg_only):
+    def test_delete_space(self, client, user_2_auth_header, user_2_tg_only):
         response = client.delete(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_space.id}/',
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 204
-        print(user_2_tg_only.core_settings.current_space.id)
         response = client.get(
             f'{self.url.format(user_id=user_2_tg_only.id)}'
             f'{user_2_tg_only.core_settings.current_space.id}/',
-            headers=auth_header,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 404
@@ -427,23 +426,20 @@ class TestSpace:
 
 class TestLinkUsersToSpace:
 
-    link_url = '/api/v1/users/{user_id}/spaces/{space_id}/link_user/'
-    unlink_url = '/api/v1/users/{user_id}/spaces/{space_id}/unlink_user/'
+    link_url = '/api/v1/spaces/{space_id}/link_user/'
+    unlink_url = '/api/v1/spaces/{space_id}/unlink_user/'
 
     def test_link_and_unlink(
             self,
             client,
-            auth_header,
+            user_1_auth_header,
             user_1,
             user_2_tg_only
     ):
         data = {'id': user_2_tg_only.id}
         response = client.post(
-            self.link_url.format(
-                user_id=user_1.id,
-                space_id=user_1.core_settings.current_space.id
-            ),
-            headers=auth_header,
+            self.link_url.format(space_id=user_1.core_settings.current_space.id),
+            headers=user_1_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -451,10 +447,9 @@ class TestLinkUsersToSpace:
         assert 'status' in response.data
         response = client.post(
             self.unlink_url.format(
-                user_id=user_1.id,
                 space_id=user_1.core_settings.current_space.id
             ),
-            headers=auth_header,
+            headers=user_1_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -478,7 +473,7 @@ class TestLinkUsersToSpace:
     def test_link_to_space_invalid_data(
             self,
             client,
-            auth_header,
+            user_2_auth_header,
             user_1,
             user_2_tg_only,
             data,
@@ -489,7 +484,7 @@ class TestLinkUsersToSpace:
                 user_id=user_1.id,
                 space_id=user_1.core_settings.current_space.id
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )
@@ -499,7 +494,7 @@ class TestLinkUsersToSpace:
                 user_id=user_1.id,
                 space_id=user_1.core_settings.current_space.id
             ),
-            headers=auth_header,
+            headers=user_2_auth_header,
             data=data,
             content_type='application/json'
         )

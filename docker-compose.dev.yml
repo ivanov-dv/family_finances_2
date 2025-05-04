@@ -9,8 +9,8 @@ services:
       - POSTGRES_PASSWORD
 #    ports:
 #      - "5432:5432"
-    volumes:
-      - ff2_postgres_data:/var/lib/postgresql/data
+#    volumes:
+#      - ff2_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}" ]
       interval: 10s
@@ -59,7 +59,7 @@ services:
       - "9000:80"
 
 volumes:
-  ff2_postgres_data:
+#  ff2_postgres_data:
   ff2_static:
 
 networks:

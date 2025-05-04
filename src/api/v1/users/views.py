@@ -1,15 +1,13 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, viewsets
+from drf_yasg import openapi
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from rest_framework.generics import get_object_or_404
-from rest_framework.mixins import UpdateModelMixin, ListModelMixin
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework.viewsets import ModelViewSet, GenericViewSet
+from rest_framework.viewsets import ModelViewSet
 
-from api.v1.permissions import IsSelfUser
 from api.v1.users.filters import UserFilter
 from api.v1.users.serializers import (
     UserCreateSerializer,
@@ -76,10 +74,18 @@ class CoreSettingsAPIView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_description='Получение core настроек пользователя',
+        responses={200: openapi.Response('Успешный ответ', CoreSettingsSerializer)},
+    )
     def get(self, request, *args, **kwargs):
         serializer = CoreSettingsSerializer(self.request.user.core_settings)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description='Обновление core настроек пользователя',
+        responses={200: openapi.Response('Успешное обновление', CoreSettingsUpdateSerializer)},
+    )
     def patch(self, request, *args, **kwargs):
         serializer = CoreSettingsUpdateSerializer(
             self.request.user.core_settings,
@@ -96,10 +102,18 @@ class TelegramSettingsAPIView(APIView):
 
     permission_classes = (IsAuthenticated,)
 
+    @swagger_auto_schema(
+        operation_description='Получение telegram настроек пользователя',
+        responses={200: openapi.Response('Успешный ответ', TelegramSettingsSerializer)},
+    )
     def get(self, request, *args, **kwargs):
         serializer = TelegramSettingsSerializer(self.request.user.telegram_settings)
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description='Обновление telegram настроек пользователя',
+        responses={200: openapi.Response('Успешное обновление', TelegramSettingsSerializer)},
+    )
     def patch(self, request, *args, **kwargs):
         serializer = TelegramSettingsSerializer(
             self.request.user.telegram_settings,
@@ -110,6 +124,10 @@ class TelegramSettingsAPIView(APIView):
         serializer.save()
         return Response(serializer.data)
 
+    @swagger_auto_schema(
+        operation_description='Обновление telegram настроек пользователя',
+        responses={200: openapi.Response('Успешное обновление', TelegramSettingsSerializer)},
+    )
     def put(self, request, *args, **kwargs):
         serializer = TelegramSettingsSerializer(
             self.request.user.telegram_settings,

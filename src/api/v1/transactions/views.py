@@ -40,13 +40,10 @@ class TransactionViewSet(
     filterset_fields = ('period_month', 'period_year', 'space__id')
     search_fields = ('^group_name',)
 
-    def get_user(self):
-        return get_object_or_404(User, pk=self.kwargs['user_id'])
-
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return None
-        return self.get_user().transactions
+        return self.request.user.transactions
 
     def get_serializer_class(self):
         if self.action == 'create':
@@ -54,7 +51,7 @@ class TransactionViewSet(
         return TransactionDetailSerializer
 
     def perform_create(self, serializer):
-        user = self.get_user()
+        user = self.request.user
         with transaction.atomic():
             serializer.save(
                 author=user,
@@ -82,13 +79,10 @@ class SummaryViewSet(ModelViewSet):
     filterset_fields = ('group_name', 'type_transaction')
     search_fields = ('^group_name',)
 
-    def get_user(self):
-        return get_object_or_404(User, pk=self.kwargs['user_id'])
-
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return None
-        user = self.get_user()
+        user = self.request.user
         return Summary.objects.filter(
             space=user.core_settings.current_space,
             period_month=user.core_settings.current_month,
@@ -101,11 +95,12 @@ class SummaryViewSet(ModelViewSet):
         return SummaryDetailSerializer
 
     def perform_create(self, serializer):
+        user = self.request.user
         try:
             serializer.save(
-                space=self.get_user().core_settings.current_space,
-                period_month=self.get_user().core_settings.current_month,
-                period_year=self.get_user().core_settings.current_year
+                space=user.core_settings.current_space,
+                period_month=user.core_settings.current_month,
+                period_year=user.core_settings.current_year
             )
         except IntegrityError:
             raise ValidationError(
@@ -135,19 +130,16 @@ class PeriodViewSet(GenericViewSet):
     """Просмотр периодов в текущем пространстве пользователя."""
     pagination_class = None
 
-    def get_user(self):
-        return get_object_or_404(User, pk=self.kwargs['user_id'])
-
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return None
-        user = self.get_user()
+        user = self.request.user
         return Summary.objects.filter(
             space=user.core_settings.current_space,
         )
 
     @action(detail=False, methods=['get'], url_path='years')
-    def years(self, request, user_id):
+    def years(self, request):
         return Response(
             {
                 'years': list(
@@ -160,7 +152,7 @@ class PeriodViewSet(GenericViewSet):
         )
 
     @action(detail=False, methods=['get'], url_path='months')
-    def months(self, request, user_id):
+    def months(self, request):
         year = request.query_params.get('year')
         if not year:
             raise ValidationError('Запрос не содержит год.')
@@ -186,20 +178,17 @@ class SpaceViewSet(ModelViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('^name',)
 
-    def get_user(self):
-        return get_object_or_404(User, pk=self.kwargs['user_id'])
-
     def get_queryset(self):
         if getattr(self, 'swagger_fake_view', False):
             return None
-        return Space.objects.filter(user_id=self.kwargs['user_id'])
+        return Space.objects.filter(user=self.request.user)
 
     def perform_create(self, serializer):
-        serializer.save(user=self.get_user())
+        serializer.save(user=self.request.user)
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
-        user = self.get_user()
+        user = self.request.user
         serializer = self.get_serializer(queryset, many=True)
         return Response(
             {
@@ -224,10 +213,10 @@ class SpaceViewSet(ModelViewSet):
         request_body=LinkUserToSpaceSerializer
     )
     @action(detail=True, methods=['post'], url_path='link_user')
-    def link_user(self, request, user_id, pk=None):
+    def link_user(self, request, pk=None):
         serializer = LinkUserToSpaceSerializer(
             data=request.data,
-            context={'space_id': pk, 'user_id': int(user_id)}
+            context={'space_id': pk, 'user_id': int(self.request.user.id)}
         )
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
@@ -258,10 +247,10 @@ class SpaceViewSet(ModelViewSet):
         request_body=UnlinkUserToSpaceSerializer
     )
     @action(detail=True, methods=['post'], url_path='unlink_user')
-    def unlink_user(self, request, user_id, pk=None):
+    def unlink_user(self, request, pk=None):
         serializer = UnlinkUserToSpaceSerializer(
             data=request.data,
-            context={'space_id': pk, 'user_id': int(user_id)}
+            context={'space_id': pk, 'user_id': int(self.request.user.id)}
         )
         serializer.is_valid(raise_exception=True)
         vd = serializer.validated_data
