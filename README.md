@@ -13,6 +13,7 @@
 ### Применяемые библиотеки и технологии:
 - Python 3.12;
 - Django + DRF;
+- PostgreSQL;
 - Pytest;
 - Poetry;
 - Nginx;
