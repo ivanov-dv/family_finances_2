@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
 
@@ -10,7 +11,7 @@ class HomePageView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['title'] = 'FF'
+        context['title'] = settings.PROJECT_TITLE
         return context
 
 
@@ -30,7 +31,7 @@ class SummaryView(LoginRequiredMixin, TemplateView):
         summary_report = get_summary_report(summary)
         context.update(
             {
-                'title': 'FF',
+                'title': settings.PROJECT_TITLE,
                 'incomes': summary.filter(type_transaction='income'),
                 'expenses': summary.filter(type_transaction='expense'),
                 'sum_income_plan': summary_report.income_plan,
@@ -64,7 +65,7 @@ class TransactionView(LoginRequiredMixin, TemplateView):
         )
         context.update(
             {
-                'title': 'FF',
+                'title': settings.PROJECT_TITLE,
                 'transactions': transactions,
                 'current_month': current_month,
                 'current_year': current_year,

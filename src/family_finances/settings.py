@@ -174,6 +174,8 @@ SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin-allow-popups'
 
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
+PROJECT_TITLE = 'FF'
+
 # Настройки экспорта в excel
 # Для транзакций
 TRANSACTIONS_EXPORT_EXCEL_FILENAME = 'transactions.xlsx'
