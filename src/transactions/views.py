@@ -73,3 +73,22 @@ class TransactionView(LoginRequiredMixin, TemplateView):
             }
         )
         return context
+
+
+class ChangePeriod(LoginRequiredMixin, TemplateView):
+    template_name = 'transactions/change_period.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        periods = Summary.objects.filter(
+            space=self.request.user.core_settings.current_space
+        ).values('period_month', 'period_year')
+        unique_periods = {f'{period["period_year"]}_{period['period_month']}' for period in periods}
+        print(unique_periods)
+        sorted_unique_periods = sorted(list(unique_periods), reverse=True)
+        context.update(
+            {'periods': sorted_unique_periods}
+        )
+        print(sorted_unique_periods)
+        return context
+

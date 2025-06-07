@@ -4,7 +4,9 @@
 {% block core_settings_info %}
     <nav class="navbar bg-body-tertiary">
       <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1">📅 {{ current_month }}.{{ current_year }}</span>
+        <span class="navbar-brand mb-0 h1">
+              📅 <a class="navbar-brand text-white" href="{% url 'transactions:change_period' %}">{{ current_month }}.{{ current_year }}</a>
+          </span>
         <span class="navbar-brand mb-0 h1">📓 {{ current_space.name }} ({{ current_space.user.username }})</span>
       </div>
     </nav>
