@@ -6,13 +6,13 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 class TestPeriods:
-    url = '/api/v1/users/{user_id}/periods/'
+    url = '/api/v1/periods/'
 
-    def test_get_years(self, client, auth_header, user_2_tg_only, many_transactions):
+    def test_get_years(self, client, user_2_auth_header, user_2_tg_only, many_transactions):
 
         response = client.get(
-            self.url.format(user_id=user_2_tg_only.id) + 'years/',
-            headers=auth_header,
+            self.url + 'years/',
+            headers=user_2_auth_header,
         )
 
         years = {transaction.period_year for transaction in many_transactions}
@@ -27,10 +27,10 @@ class TestPeriods:
             (datetime.now().year - 10, {'months': [], 'year': str(datetime.now().year - 10)}),
         ]
     )
-    def test_get_months(self, client, auth_header, user_2_tg_only, many_transactions, year, result):
+    def test_get_months(self, client, user_2_auth_header, user_2_tg_only, many_transactions, year, result):
         response = client.get(
-            self.url.format(user_id=user_2_tg_only.id) + f'months/?year={year}',
-            headers=auth_header,
+            self.url + f'months/?year={year}',
+            headers=user_2_auth_header,
         )
         assert response.status_code == 200
         assert response.data == result
@@ -42,10 +42,10 @@ class TestPeriods:
             '',
         ]
     )
-    def test_get_month_invalid_data(self, client, auth_header, user_2_tg_only, many_transactions, param):
+    def test_get_month_invalid_data(self, client, user_2_auth_header, user_2_tg_only, many_transactions, param):
         response = client.get(
-            self.url.format(user_id=user_2_tg_only.id) + f'months/{param}',
-            headers=auth_header,
+            self.url + f'months/{param}',
+            headers=user_2_auth_header,
         )
 
         assert response.status_code == 400

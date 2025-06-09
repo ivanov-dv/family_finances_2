@@ -118,6 +118,11 @@ def user_3_shared_space(user_1):
 
 
 @pytest.fixture
+def user_3_auth_header(user_3_shared_space):
+    return {'Authorization': f'Bearer {AccessToken.for_user(user_3_shared_space)}'}
+
+
+@pytest.fixture
 def summary_1(user_2_tg_only):
     return Summary.objects.create(
         space=user_2_tg_only.core_settings.current_space,

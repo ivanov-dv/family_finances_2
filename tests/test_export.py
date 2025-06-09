@@ -11,7 +11,7 @@ pytestmark = pytest.mark.django_db(transaction=True)
 class TestExport:
 
     url = reverse('export:excel')
-    url_api = '/api/v1/users/{user_id}/export/excel/'
+    url_api = '/api/v1/export/excel/'
 
     def test_create_excel_workbook(self, user_2_tg_only, many_transactions):
         transactions = Transaction.objects.filter(
@@ -32,10 +32,10 @@ class TestExport:
         assert 'attachment; filename=' in response['Content-Disposition']
         assert 'xlsx' in response['Content-Disposition']
 
-    def test_api_export_excel(self, client, auth_header, user_1):
+    def test_api_export_excel(self, client, user_2_auth_header, user_1):
         response = client.get(
-            self.url_api.format(user_id=user_1.id),
-            headers=auth_header,
+            self.url_api,
+            headers=user_2_auth_header,
             content_type='application/json'
         )
         assert response.status_code == 200

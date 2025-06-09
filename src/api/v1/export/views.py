@@ -16,14 +16,6 @@ class ExportAPIView(APIView):
         operation_description='Запрос транзакций пользователя в текущем периоде в Excel',
         responses={200: openapi.Response('Файл отправлен')}
     )
-    def get(self, request, user_id):
+    def get(self, request):
         """Экспорт в excel."""
-
-        # Получаем пользователя.
-        user = User.objects.filter(id=user_id).first()
-
-        # Если пользователь не существует, ошибка 404.
-        if not user:
-            raise NotFound('Пользователь не существует.')
-
-        return create_export_excel_transactions_response(user)
+        return create_export_excel_transactions_response(self.request.user)

@@ -47,6 +47,6 @@ urlpatterns = [
     path('profile/telegram-settings/', user_views.TelegramSettingsAPIView.as_view(), name="profile-telegram-settings"),
     path('profile/', user_views.ProfileAPIView.as_view(), name='profile'),
 
-    path('users/<int:user_id>/export/excel/', export_views.ExportAPIView.as_view()),
+    path('export/excel/', export_views.ExportAPIView.as_view()),
 
 ]
