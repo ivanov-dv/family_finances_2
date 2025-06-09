@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-4">
+      <h2>Выберите период:</h2>
+        {% for period in periods %}
+          <p>
+            <a class="navbar-brand text-white" href="{% url 'transactions:apply_period' %}?period={{ period|urlencode }}&next={{ next|urlencode }}">
+              {{ period }}
+            </a>
+          </p>
+        {% endfor %}
+    </div>
+{% endblock %}
