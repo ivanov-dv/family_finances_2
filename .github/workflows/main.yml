@@ -35,7 +35,7 @@ jobs:
       with:
         poetry-version: 1.8.4
     - name: Install dependencies
-      run: poetry install
+      run: poetry install --with dev
     - name: Flake8 and tests
       env:
         POSTGRES_USER: django_user
@@ -45,7 +45,7 @@ jobs:
         POSTGRES_PORT: 5432
         ACCESS_TOKEN: qwerty123456
       run: |
-        poetry run flake8 --ignore=E501 src/
+        poetry run flake8
         poetry run pytest
 
 
