@@ -2,6 +2,7 @@
 .git/
 __pycache__/
 .pytest_cache/
+collected_static/
 
 .env
 docker-compose.dev.yml
