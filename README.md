@@ -39,7 +39,7 @@ P.S. В БД будут автоматически добавлены демон
 4. Установите зависимости `poetry install --with dev`.
 5. Создайте и заполните `.env` по примеру `.env.example`. При отсутствии PostgreSQL используйте `USE_SQLITE=true`.
 6. Перейдите в папку src `cd src`.
-7. Примените миграции `python manage.py migrate`.
-8. Запустите приложение (можно указать любой доступный порт) `python manage.py runserver 0.0.0.0:8888`.
+7. Примените миграции `poetry run python manage.py migrate`.
+8. Запустите приложение (можно указать любой доступный порт) `poetry run python manage.py runserver 0.0.0.0:8888`.
 
 #### Также можете использовать приложение, развернутое на моем сервере https://t.me/family_finance_2_bot
