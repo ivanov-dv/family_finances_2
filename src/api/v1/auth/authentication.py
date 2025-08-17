@@ -6,6 +6,10 @@ User = get_user_model()
 
 
 class TokenAuthentication(BaseAuthentication):
+    """
+    Класс аутентификации, который проверяет token в заголовке запроса.
+    """
+
     def authenticate(self, request):
         auth_header = request.headers.get('Authorization')
         if not auth_header:
