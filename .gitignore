@@ -5,4 +5,4 @@ __pycache__/
 collected_static/
 
 .env
-docker-compose.dev.yml
+db.sqlite3
