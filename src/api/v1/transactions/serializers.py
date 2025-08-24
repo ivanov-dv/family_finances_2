@@ -13,6 +13,8 @@ from users.models import User, CoreSettings
 
 
 class TransactionCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания транзакций."""
+
     type_transaction = serializers.ChoiceField(
         choices=constants.CHOICE_TYPE_TRANSACTION
     )
@@ -30,6 +32,7 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
         read_only_fields = ('author',)
 
     def create(self, validated_data):
+        """Создание транзакции, при которой проверяется наличие соответствующей группы операций."""
         summary = Summary.objects.filter(
             space=validated_data['space'],
             period_month=validated_data['period_month'],
@@ -49,12 +52,16 @@ class TransactionCreateSerializer(serializers.ModelSerializer):
 
 
 class TransactionDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор для детального представления транзакции."""
+
     class Meta:
         fields = '__all__'
         model = Transaction
 
 
 class UserShortSerializer(serializers.ModelSerializer):
+    """Сериализатор для краткой информации о пользователе."""
+
     id_telegram = serializers.SerializerMethodField()
 
     class Meta:
@@ -66,6 +73,11 @@ class UserShortSerializer(serializers.ModelSerializer):
 
 
 class SpaceSerializer(serializers.ModelSerializer):
+    """
+    Сериализатор для представления пространств пользователя.
+    Пользователь может иметь несколько простанств.
+    """
+
     owner_id = serializers.SlugRelatedField(
         slug_field='id',
         read_only=True,
@@ -94,6 +106,8 @@ class SpaceSerializer(serializers.ModelSerializer):
 
 
 class SummaryDetailSerializer(serializers.ModelSerializer):
+    """Сериализатор для детального представления группы операций в отчете."""
+
     space = SpaceSerializer()
 
     class Meta:
@@ -120,6 +134,7 @@ class SummaryDetailSerializer(serializers.ModelSerializer):
 
 
 class SummaryCreateSerializer(serializers.ModelSerializer):
+    """Сериализатор для создания группы операций в отчете."""
 
     class Meta:
         fields = (
@@ -133,10 +148,12 @@ class SummaryCreateSerializer(serializers.ModelSerializer):
 
 
 class LinkUserToSpaceSerializer(serializers.Serializer):
+    """Сериализатор для подключения нового пользователя к пространству пользователя-владельца."""
+
     id = serializers.IntegerField(label='ID пользователя')
 
     def validate(self, attrs):
-        """Проверка, что пользователь может быть связан с базой."""
+        """Проверка, что пользователь может быть связан с пространством."""
         linked_user_id = attrs['id']
         linked_user = User.objects.filter(pk=linked_user_id).first()
         if not linked_user:
@@ -164,7 +181,7 @@ class LinkUserToSpaceSerializer(serializers.Serializer):
         return attrs
 
     def create(self, validated_data):
-        """Подключение пользователя к базе."""
+        """Подключение пользователя к пространству."""
         try:
             linked = LinkedUserToSpace.objects.create(
                 space=validated_data['space'],
@@ -178,6 +195,8 @@ class LinkUserToSpaceSerializer(serializers.Serializer):
 
 
 class UnlinkUserToSpaceSerializer(serializers.Serializer):
+    """Сериализатор для отключения пользователя от пространства пользователя-владельца."""
+
     id = serializers.IntegerField(label='ID пользователя')
 
     def validate(self, attrs):
@@ -212,7 +231,7 @@ class UnlinkUserToSpaceSerializer(serializers.Serializer):
         return attrs
 
     def delete(self, validated_data):
-        """Отключение пользователя от базы."""
+        """Отключение пользователя от пространства."""
         try:
             validated_data['linked_object'].delete()
             core_settings = CoreSettings.objects.get(

@@ -76,7 +76,7 @@ class TransactionViewSet(
 
 
 class SummaryViewSet(ModelViewSet):
-    """Просмотр Summary, CRUD для статей."""
+    """Просмотр Summary (отчета), CRUD для статей (групп операций)."""
 
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('group_name', 'type_transaction')
@@ -180,7 +180,7 @@ class PeriodViewSet(GenericViewSet):
 
 
 class SpaceViewSet(ModelViewSet):
-    """CRUD для Basename."""
+    """CRUD для пространств пользователей."""
 
     serializer_class = SpaceSerializer
     filter_backends = (filters.SearchFilter,)
@@ -211,7 +211,7 @@ class SpaceViewSet(ModelViewSet):
 
     @swagger_auto_schema(
         tags=['Подключение/отключение пользователей'],
-        operation_description='Подключение пользователя к базе',
+        operation_description='Подключение пользователя к пространству.',
         responses={
             status.HTTP_200_OK:
                 'Пользователь username '
@@ -245,7 +245,7 @@ class SpaceViewSet(ModelViewSet):
 
     @swagger_auto_schema(
         tags=['Подключение/отключение пользователей'],
-        operation_description='Отключение пользователя от базы',
+        operation_description='Отключение пользователя от пространства.',
         responses={
             status.HTTP_200_OK:
                 'Пользователь username '
