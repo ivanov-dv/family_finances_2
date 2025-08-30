@@ -5,6 +5,8 @@ User = get_user_model()
 
 
 class UserFilter(django_filters.FilterSet):
+    """Фильтр для пользователей."""
+
     username = django_filters.CharFilter(
         field_name='username',
         lookup_expr='iexact'
