@@ -1,37 +1,40 @@
 {% load static %}
 {% load django_bootstrap5 %}
-{% bootstrap_javascript %}
-{% bootstrap_css %}
-
 <!DOCTYPE html>
-<html lang="ru" data-bs-theme="dark">
-
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name='viewport' content='width=device-width, initial-scale=1'>
-    <link rel='stylesheet' href='{% static 'css/style.css' %}'>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    {% bootstrap_css %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <title>{{ title }}</title>
+    {% block extra_head %}{% endblock %}
 </head>
 
-<body>
+<body class="{% if user.is_authenticated %}app-shell{% endif %}">
 
-    {% include 'includes/menu.html' %}
-    
-    <div class='container-xl'>
-        {% include 'includes/header.html' %}
-        {% block core_settings_info %}{% endblock %}
-    
-        {% include 'includes/modal_login.html' %}
-        {% include 'includes/modal_registration.html' %}
-        
-        <div class='main-content' id='main-content'>
-            {% block content %}
-            {% endblock %}
+    {% if user.is_authenticated %}
+        {% include 'includes/sidebar.html' %}
+    {% endif %}
+
+    <div class="main">
+        {% if user.is_authenticated %}
+            {% include 'includes/topbar.html' %}
+        {% else %}
+            {% include 'includes/header.html' %}
+            {% include 'includes/modal_login.html' %}
+            {% include 'includes/modal_registration.html' %}
+        {% endif %}
+
+        <div class="content">
+            <div class="container">
+                {% block content %}{% endblock %}
+            </div>
         </div>
-    
     </div>
-    
-    <script src="{% static 'js/sidebar_toggle.js' %}"></script>
 
+    {% bootstrap_javascript %}
+    <script src="{% static 'js/sidebar_toggle.js' %}"></script>
+    {% block extra_scripts %}{% endblock %}
 </body>
 </html>

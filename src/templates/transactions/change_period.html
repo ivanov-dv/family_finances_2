@@ -1,14 +1,25 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="container mt-4">
-      <h2>Выберите период:</h2>
-        {% for period in periods %}
-          <p>
-            <a class="navbar-brand text-white" href="{% url 'transactions:apply_period' %}?period={{ period|urlencode }}&next={{ next|urlencode }}">
-              {{ period }}
-            </a>
-          </p>
-        {% endfor %}
+    <div class="header">
+        <div>
+            <div class="header-title">Выберите период</div>
+            <div class="header-sub">Доступные периоды по текущему пространству</div>
+        </div>
+    </div>
+
+    <div class="card">
+        {% if periods %}
+            <div class="period-list">
+                {% for period in periods %}
+                    <a class="period-item"
+                       href="{% url 'transactions:apply_period' %}?period={{ period|urlencode }}&next={{ next|urlencode }}">
+                        {{ period }}
+                    </a>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="color:var(--text-secondary);font-size:14px">Периоды не найдены.</p>
+        {% endif %}
     </div>
 {% endblock %}
