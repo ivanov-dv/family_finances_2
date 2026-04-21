@@ -1,0 +1,25 @@
+<div class="topbar">
+    <div class="topbar-period">
+        {% if current_month and current_year %}
+            &#128197;
+            <a href="{% url 'transactions:change_period' %}?next={{ next|urlencode }}">{{ current_month }}.{{ current_year }}</a>
+            {% if current_space %}
+                <span class="topbar-space">&nbsp;&middot;&nbsp;{{ current_space.name }}</span>
+            {% endif %}
+        {% else %}
+            <a href="{% url 'transactions:home' %}">{{ title }}</a>
+        {% endif %}
+    </div>
+    <div class="profile-menu" id="profileMenu">
+        <button type="button" class="profile-btn" id="profileMenuBtn">
+            {{ user.username }} &#9660;
+        </button>
+        <div class="profile-menu-items">
+            <a class="profile-menu-item" href="{% url 'transactions:home' %}">Профиль</a>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="profile-menu-item">Выйти</button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="header">
+        <div>
+            <div class="header-title">Добавить операцию</div>
+            <div class="header-sub">{{ current_month }}.{{ current_year }} &middot; {{ current_space.name }}</div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-msg {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="card" style="max-width:480px">
+        <form method="post" id="add-form">
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label class="form-label">Тип операции</label>
+                <div class="type-toggle">
+                    <button type="button" class="type-toggle-btn active" data-type="expense">Расход</button>
+                    <button type="button" class="type-toggle-btn" data-type="income">Доход</button>
+                </div>
+                <input type="hidden" name="type_transaction" id="type_transaction" value="expense">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="group_name">Статья</label>
+                <select class="form-select" name="group_name" id="group_name" required>
+                    <option value="">— выберите статью —</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="value_transaction">Сумма</label>
+                <input class="form-input" type="number" name="value_transaction" id="value_transaction"
+                       step="0.01" min="0.01" placeholder="0.00" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="description">Описание <span style="color:var(--text-secondary)">(необязательно)</span></label>
+                <input class="form-input" type="text" name="description" id="description"
+                       maxlength="200" placeholder="Краткое описание">
+            </div>
+
+            <button type="submit" class="submit-btn" id="submit-btn">Добавить</button>
+        </form>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    {{ income_groups|json_script:"income-groups-data" }}
+    {{ expense_groups|json_script:"expense-groups-data" }}
+    <script>
+    (function () {
+        const incomeGroups = JSON.parse(document.getElementById('income-groups-data').textContent);
+        const expenseGroups = JSON.parse(document.getElementById('expense-groups-data').textContent);
+
+        const typeInput = document.getElementById('type_transaction');
+        const groupSelect = document.getElementById('group_name');
+        const toggleBtns = document.querySelectorAll('.type-toggle-btn');
+        const submitBtn = document.getElementById('submit-btn');
+
+        function fillGroups(type) {
+            const groups = type === 'income' ? incomeGroups : expenseGroups;
+            groupSelect.innerHTML = '<option value="">— выберите статью —</option>';
+            groups.forEach(g => {
+                const opt = document.createElement('option');
+                opt.value = g;
+                opt.textContent = g;
+                groupSelect.appendChild(opt);
+            });
+            submitBtn.textContent = type === 'income' ? 'Добавить доход' : 'Добавить расход';
+            submitBtn.className = 'submit-btn ' + (type === 'income' ? 'submit-income' : 'submit-expense');
+        }
+
+        toggleBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                toggleBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                typeInput.value = btn.dataset.type;
+                fillGroups(btn.dataset.type);
+            });
+        });
+
+        fillGroups('expense');
+    })();
+    </script>
+{% endblock %}

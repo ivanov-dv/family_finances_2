@@ -1,109 +1,108 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load static %}
 
-{% block core_settings_info %}
-    <nav class="navbar bg-body-tertiary">
-      <div class="container-fluid">
-        <span class="navbar-brand mb-0 h1">
-          📅 <a class="navbar-brand text-white" href="{% url 'transactions:change_period' %}?next={{ next|urlencode }}">{{ current_month }}.{{ current_year }}</a>
-        </span>
-        <span class="navbar-brand mb-0 h1">📓 {{ current_space.name }} ({{ current_space.user.username }})</span>
-      </div>
-    </nav>
+{% block extra_head %}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 {% endblock %}
 
 {% block content %}
-    <div class="main-content" id="main-content">
-        <div class="container mt-4">
-            <div class="row">
-                <!-- Блок с доходами -->
-                <div class="col-md-6 mb-4">
-                    <h5 class="text-center">Доходы</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Группа</th>
-                                    <th>План</th>
-                                    <th>Факт</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for income in incomes %}
-                                    <tr>
-                                        <td>{{ income.group_name }}</td>
-                                        <td>{{ income.plan_value|intcomma }}</td>
-                                        <td>{{ income.fact_value|intcomma }}</td>
-                                    </tr>
-                                {% empty %}
-                                    <tr><td colspan="3" class="text-center">Нет данных</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-    
-                <!-- Блок с расходами -->
-                <div class="col-md-6 mb-4">
-                    <h5 class="text-center">Расходы</h5>
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Группа</th>
-                                    <th>План</th>
-                                    <th>Факт</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for expense in expenses %}
-                                <tr>
-                                    <td>{{ expense.group_name }}</td>
-                                    <td>{{ expense.plan_value|intcomma }}</td>
-                                    <td>{{ expense.fact_value|intcomma }}</td>
-                                </tr>
-                                {% empty %}
-                                    <tr><td colspan="3" class="text-center">Нет данных</td></tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
+    <div class="header">
+        <div>
+            <div class="header-title">Финансовый отчёт</div>
+            <div class="header-sub">Счёт {{ current_space.user.username }}</div>
+        </div>
+        <span class="badge">{{ current_month }}.{{ current_year }}</span>
+    </div>
 
-            <div class="row justify-content-center">
-                <h5 class="text-center">Свод</h5>
-                <div class="col-md-6 mb-4">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th>Тип</th>
-                                    <th>План</th>
-                                    <th>Факт</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Итого доходы</td>
-                                    <td>{{ sum_income_plan|intcomma }}</td>
-                                    <td>{{ sum_income_fact|intcomma }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Итого расходы</td>
-                                    <td>{{ sum_expense_plan|intcomma }}</td>
-                                    <td>{{ sum_expense_fact|intcomma }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Сальдо</td>
-                                    <td>{{ balance_plan|intcomma }}</td>
-                                    <td>{{ balance_fact|intcomma }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+    <div class="kpi-grid">
+        <div class="kpi">
+            <div class="kpi-label">Итого доходы</div>
+            <div class="kpi-val">{{ sum_income_fact|intcomma }}</div>
+            <div class="kpi-delta {% if income_delta >= 0 %}pos{% else %}neg{% endif %}">
+                {% if income_delta >= 0 %}+{% endif %}{{ income_delta|intcomma }} vs план
+            </div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Итого расходы</div>
+            <div class="kpi-val">{{ sum_expense_fact|intcomma }}</div>
+            <div class="kpi-delta {% if expense_delta <= 0 %}pos{% else %}neg{% endif %}">
+                {% if expense_delta >= 0 %}+{% endif %}{{ expense_delta|intcomma }} vs план
+            </div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Сальдо факт</div>
+            <div class="kpi-val">{{ balance_fact|intcomma }}</div>
+            <div class="kpi-delta {% if balance_delta >= 0 %}pos{% else %}neg{% endif %}">
+                {% if balance_delta >= 0 %}+{% endif %}{{ balance_delta|intcomma }} vs план
+            </div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-label">Исполнение расходов</div>
+            <div class="kpi-val">{{ expense_ratio }}%</div>
+            <div class="kpi-delta {% if expense_ratio <= 100 %}pos{% else %}neg{% endif %}">
+                {% if expense_ratio <= 100 %}В рамках плана{% else %}Превышение{% endif %}
             </div>
         </div>
     </div>
+
+    <div class="charts-row" style="grid-template-columns:1fr">
+        <div class="card">
+            <div class="card-title">Доходы: план vs факт</div>
+            <div class="legend">
+                <span class="leg-item"><span class="leg-dot" style="background:#B5D4F4"></span>план</span>
+                <span class="leg-item"><span class="leg-dot" style="background:#378ADD"></span>факт</span>
+            </div>
+            <div style="position:relative;height:220px">
+                <canvas id="incChart"></canvas>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">Расходы: план vs факт</div>
+            <div class="legend">
+                <span class="leg-item"><span class="leg-dot" style="background:#F5C4B3"></span>план</span>
+                <span class="leg-item"><span class="leg-dot" style="background:#D85A30"></span>факт</span>
+            </div>
+            <div style="position:relative;height:220px">
+                <canvas id="expChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-title">Структура расходов (факт)</div>
+        <div style="display:flex;justify-content:center;margin-bottom:16px">
+            <div style="position:relative;height:240px;width:240px">
+                <canvas id="pieChart"></canvas>
+            </div>
+        </div>
+        <div id="pie-legend" style="font-size:13px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center"></div>
+    </div>
+
+    <div class="bottom-grid">
+        <div class="card">
+            <div class="card-title">Доходы</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Группа</th><th class="num">План</th><th class="num">Факт</th></tr></thead>
+                    <tbody id="inc-table"></tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-title">Расходы</div>
+            <div class="table-wrap">
+                <table>
+                    <thead><tr><th>Группа</th><th class="num">Факт</th><th class="num">%</th></tr></thead>
+                    <tbody id="exp-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_scripts %}
+    {{ incomes_json|json_script:"inc-data" }}
+    {{ expenses_json|json_script:"exp-data" }}
+    <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}
