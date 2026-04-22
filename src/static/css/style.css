@@ -415,15 +415,17 @@ tr:last-child td { border-bottom: none; }
     flex: 1;
     padding: 8px;
     font-size: 13px;
-    border-radius: var(--radius-md);
-    border: 0.5px solid var(--border-md);
-    background: var(--bg-secondary);
-    color: var(--text-secondary);
+    border-radius: var(--radius-md) !important;
+    border: 0.5px solid var(--border-md) !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-secondary) !important;
     cursor: pointer;
     transition: background 0.15s, color 0.15s;
+    box-shadow: none !important;
+    outline: none !important;
 }
-.type-toggle-btn.active[data-type="expense"] { background: var(--red); color: #fff; border-color: var(--red); }
-.type-toggle-btn.active[data-type="income"] { background: var(--green); color: #fff; border-color: var(--green); }
+.type-toggle-btn.active[data-type="expense"] { background: var(--red) !important; color: #fff !important; border-color: var(--red) !important; }
+.type-toggle-btn.active[data-type="income"] { background: var(--green) !important; color: #fff !important; border-color: var(--green) !important; }
 
 .submit-btn {
     width: 100%;
@@ -441,6 +443,49 @@ tr:last-child td { border-bottom: none; }
 .submit-btn:hover { opacity: 0.88; }
 .submit-btn.submit-expense { background: var(--red); }
 .submit-btn.submit-income { background: var(--green); }
+
+.group-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+.group-pill {
+    display: inline-block;
+    padding: 6px 14px;
+    font-size: 13px;
+    border-radius: 20px;
+    border: 0.5px solid var(--border-md);
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    user-select: none;
+}
+.group-pill:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+}
+.group-pill.selected {
+    background: var(--blue);
+    color: #fff;
+    border-color: var(--blue);
+}
+
+.delete-btn {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: var(--radius-md);
+    border: 0.5px solid var(--border-md);
+    background: none;
+    color: var(--red);
+    cursor: pointer;
+    transition: background 0.15s;
+}
+.delete-btn:hover { background: #FAECE7; }
+@media (prefers-color-scheme: dark) {
+    .delete-btn:hover { background: #712B13; }
+}
 
 .alert-msg {
     padding: 10px 14px;

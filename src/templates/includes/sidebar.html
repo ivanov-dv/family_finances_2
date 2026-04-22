@@ -1,13 +1,11 @@
 <aside class="sidebar">
     <a class="sidebar-logo" href="{% url 'transactions:home' %}">{{ title }}</a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
-       href="{% url 'transactions:home' %}">Главная</a>
+    <a class="nav-link {% if request.resolver_match.url_name == 'add_transaction' %}active{% endif %}"
+       href="{% url 'transactions:add_transaction' %}">Добавить операцию</a>
+    <a class="nav-link {% if request.resolver_match.url_name == 'add_summary' %}active{% endif %}"
+       href="{% url 'transactions:add_summary' %}">Статьи</a>
     <a class="nav-link {% if request.resolver_match.url_name == 'summary' %}active{% endif %}"
        href="{% url 'transactions:summary' %}">Отчёт</a>
     <a class="nav-link {% if request.resolver_match.url_name == 'transactions' %}active{% endif %}"
        href="{% url 'transactions:transactions' %}">Детализация</a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'add_transaction' %}active{% endif %}"
-       href="{% url 'transactions:add_transaction' %}">Добавить операцию</a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'add_summary' %}active{% endif %}"
-       href="{% url 'transactions:add_summary' %}">Создать статью</a>
 </aside>

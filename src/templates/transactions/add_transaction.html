@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
     <div class="header">
@@ -30,10 +31,10 @@
             </div>
 
             <div class="form-group">
-                <label class="form-label" for="group_name">Статья</label>
-                <select class="form-select" name="group_name" id="group_name" required>
-                    <option value="">— выберите статью —</option>
-                </select>
+                <label class="form-label">Статья</label>
+                <div class="group-pills" id="group-pills"></div>
+                <input type="hidden" name="group_name" id="group_name">
+                <div id="group-error" style="display:none;font-size:12px;color:var(--red);margin-top:6px">Выберите статью</div>
             </div>
 
             <div class="form-group">
@@ -48,7 +49,7 @@
                        maxlength="200" placeholder="Краткое описание">
             </div>
 
-            <button type="submit" class="submit-btn" id="submit-btn">Добавить</button>
+            <button type="submit" class="submit-btn submit-expense" id="submit-btn">Добавить расход</button>
         </form>
     </div>
 {% endblock %}
@@ -56,39 +57,5 @@
 {% block extra_scripts %}
     {{ income_groups|json_script:"income-groups-data" }}
     {{ expense_groups|json_script:"expense-groups-data" }}
-    <script>
-    (function () {
-        const incomeGroups = JSON.parse(document.getElementById('income-groups-data').textContent);
-        const expenseGroups = JSON.parse(document.getElementById('expense-groups-data').textContent);
-
-        const typeInput = document.getElementById('type_transaction');
-        const groupSelect = document.getElementById('group_name');
-        const toggleBtns = document.querySelectorAll('.type-toggle-btn');
-        const submitBtn = document.getElementById('submit-btn');
-
-        function fillGroups(type) {
-            const groups = type === 'income' ? incomeGroups : expenseGroups;
-            groupSelect.innerHTML = '<option value="">— выберите статью —</option>';
-            groups.forEach(g => {
-                const opt = document.createElement('option');
-                opt.value = g;
-                opt.textContent = g;
-                groupSelect.appendChild(opt);
-            });
-            submitBtn.textContent = type === 'income' ? 'Добавить доход' : 'Добавить расход';
-            submitBtn.className = 'submit-btn ' + (type === 'income' ? 'submit-income' : 'submit-expense');
-        }
-
-        toggleBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                toggleBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                typeInput.value = btn.dataset.type;
-                fillGroups(btn.dataset.type);
-            });
-        });
-
-        fillGroups('expense');
-    })();
-    </script>
+    <script src="{% static 'js/add_transaction.js' %}"></script>
 {% endblock %}

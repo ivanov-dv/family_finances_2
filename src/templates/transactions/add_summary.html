@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
     <div class="header">
@@ -45,29 +46,48 @@
             <button type="submit" class="submit-btn submit-expense" id="submit-btn">Создать статью расхода</button>
         </form>
     </div>
+
+    {% if summaries %}
+        <div class="card" style="margin-top:24px">
+            <div class="card-title">Статьи текущего периода</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Статья</th>
+                            <th>Тип</th>
+                            <th class="num">План</th>
+                            <th class="num">Факт</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for s in summaries %}
+                            <tr>
+                                <td>{{ s.group_name }}</td>
+                                <td>
+                                    <span class="type-badge {% if s.type_transaction == 'income' %}type-income{% else %}type-expense{% endif %}">
+                                        {% if s.type_transaction == 'income' %}Доход{% else %}Расход{% endif %}
+                                    </span>
+                                </td>
+                                <td class="num">{{ s.plan_value|floatformat:0 }}</td>
+                                <td class="num">{{ s.fact_value|floatformat:0 }}</td>
+                                <td style="text-align:right">
+                                    <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
+                                          onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="delete-btn">Удалить</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
 {% endblock %}
 
 {% block extra_scripts %}
-    <script>
-    (function () {
-        const typeInput = document.getElementById('type_transaction');
-        const toggleBtns = document.querySelectorAll('.type-toggle-btn');
-        const submitBtn = document.getElementById('submit-btn');
-
-        toggleBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                toggleBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                typeInput.value = btn.dataset.type;
-                if (btn.dataset.type === 'income') {
-                    submitBtn.textContent = 'Создать статью дохода';
-                    submitBtn.className = 'submit-btn submit-income';
-                } else {
-                    submitBtn.textContent = 'Создать статью расхода';
-                    submitBtn.className = 'submit-btn submit-expense';
-                }
-            });
-        });
-    })();
-    </script>
+    <script src="{% static 'js/add_summary.js' %}"></script>
 {% endblock %}
