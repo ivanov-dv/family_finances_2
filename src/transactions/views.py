@@ -16,6 +16,11 @@ from .models import Summary, Transaction
 class HomePageView(TemplateView):
     template_name = 'transactions/index.html'
 
+    def get(self, request, *args, **kwargs):
+        if request.user.is_authenticated:
+            return redirect('transactions:summary')
+        return super().get(request, *args, **kwargs)
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['title'] = settings.PROJECT_TITLE
@@ -233,8 +238,14 @@ class AddSummaryView(LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        summaries = Summary.objects.filter(
+            space=user.core_settings.current_space,
+            period_month=user.core_settings.current_month,
+            period_year=user.core_settings.current_year,
+        ).order_by('type_transaction', 'group_name')
         context.update({
             'title': settings.PROJECT_TITLE,
+            'summaries': summaries,
             'current_month': user.core_settings.current_month,
             'current_year': user.core_settings.current_year,
             'current_space': user.core_settings.current_space,
@@ -288,6 +299,24 @@ class AddSummaryView(LoginRequiredMixin, TemplateView):
 
         messages.success(request, f'Статья «{group_name}» создана.')
         return redirect('transactions:add_summary')
+
+
+@login_required
+def delete_summary(request, pk):
+    """Удаление статьи текущего пользователя."""
+    if request.method != 'POST':
+        return redirect('transactions:add_summary')
+    summary = Summary.objects.filter(
+        pk=pk,
+        space=request.user.core_settings.current_space,
+    ).first()
+    if not summary:
+        messages.error(request, 'Статья не найдена или недоступна.')
+    else:
+        name = summary.group_name
+        summary.delete()
+        messages.success(request, f'Статья «{name}» удалена.')
+    return redirect('transactions:add_summary')
 
 
 @login_required
