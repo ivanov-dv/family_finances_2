@@ -43,7 +43,7 @@
                                 <td style="color:var(--text-secondary);white-space:nowrap">{{ t.created_at|date:"d.m.Y" }}</td>
                                 <td><span class="type-badge type-income">Доход</span></td>
                                 <td>{{ t.group_name }}</td>
-                                <td style="text-align:right" class="val-income">+{{ t.value_transaction|intcomma }}</td>
+                                <td style="text-align:right" class="val-income">{% if t.value_transaction >= 0 %}+{% endif %}{{ t.value_transaction|intcomma }}</td>
                                 <td style="color:var(--text-secondary)">{{ t.description }}</td>
                                 <td style="color:var(--text-secondary);font-size:11px">{{ t.author.username }}</td>
                             </tr>
@@ -52,7 +52,7 @@
                                 <td style="color:var(--text-secondary);white-space:nowrap">{{ t.created_at|date:"d.m.Y" }}</td>
                                 <td><span class="type-badge type-expense">Расход</span></td>
                                 <td>{{ t.group_name }}</td>
-                                <td style="text-align:right" class="val-expense">−{{ t.value_transaction|intcomma }}</td>
+                                <td style="text-align:right" class="val-expense">{% if t.value_transaction >= 0 %}−{{ t.value_transaction|intcomma }}{% else %}+{{ t.value_transaction|intcomma|cut:"-" }}{% endif %}</td>
                                 <td style="color:var(--text-secondary)">{{ t.description }}</td>
                                 <td style="color:var(--text-secondary);font-size:11px">{{ t.author.username }}</td>
                             </tr>
