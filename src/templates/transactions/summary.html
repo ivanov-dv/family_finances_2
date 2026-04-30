@@ -12,7 +12,7 @@
             <div class="header-title">Финансовый отчёт</div>
             <div class="header-sub">Счёт {{ current_space.user.username }}</div>
         </div>
-        <span class="badge">{{ current_month }}.{{ current_year }}</span>
+        <span class="badge">{% include 'includes/_period.html' %}</span>
     </div>
 
     <div class="kpi-grid">

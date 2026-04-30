@@ -5,7 +5,7 @@
     <div class="ops-header">
         <div class="ops-title">Операции</div>
         <div class="ops-meta">
-            <span>{{ current_month }}.{{ current_year }}</span>
+            <span style="font-weight:500;color:var(--text-primary)">{% include 'includes/_period.html' %}</span>
             <a href="{% url 'export:excel' %}"
                class="export-btn"
                data-bs-toggle="popover"

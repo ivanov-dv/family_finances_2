@@ -1,5 +1,16 @@
 {% extends 'base.html' %}
 
+{% block extra_scripts %}
+<script>
+const MONTH_NAMES = ['','Январь','Февраль','Март','Апрель','Май','Июнь',
+                     'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+document.querySelectorAll('.period-item').forEach(el => {
+    const [year, month] = el.textContent.trim().split('_');
+    el.textContent = MONTH_NAMES[parseInt(month)] + ' ' + year;
+});
+</script>
+{% endblock %}
+
 {% block content %}
     <div class="header">
         <div>

@@ -5,7 +5,7 @@
     <div class="header">
         <div>
             <div class="header-title">Создать статью</div>
-            <div class="header-sub">{{ current_month }}.{{ current_year }} &middot; {{ current_space.name }}</div>
+            <div class="header-sub"><span style="color:var(--text-primary);font-weight:500">{% include 'includes/_period.html' %}</span> &middot; {{ current_space.name }}</div>
         </div>
     </div>
 
@@ -17,7 +17,7 @@
         {% endfor %}
     {% endif %}
 
-    <div class="card" style="max-width:480px">
+    <div class="card">
         <form method="post">
             {% csrf_token %}
 
@@ -48,42 +48,72 @@
     </div>
 
     {% if summaries %}
-        <div class="card" style="margin-top:24px">
-            <div class="card-title">Статьи текущего периода</div>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Статья</th>
-                            <th>Тип</th>
-                            <th class="num">План</th>
-                            <th class="num">Факт</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for s in summaries %}
+        <div style="margin-top:24px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+
+            <div class="card" style="flex:1;min-width:280px">
+                <div class="card-title" style="color:var(--income-color, #2ecc71)">Доходы</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
                             <tr>
-                                <td>{{ s.group_name }}</td>
-                                <td>
-                                    <span class="type-badge {% if s.type_transaction == 'income' %}type-income{% else %}type-expense{% endif %}">
-                                        {% if s.type_transaction == 'income' %}Доход{% else %}Расход{% endif %}
-                                    </span>
-                                </td>
-                                <td class="num">{{ s.plan_value|floatformat:0 }}</td>
-                                <td class="num">{{ s.fact_value|floatformat:0 }}</td>
-                                <td style="text-align:right">
-                                    <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
-                                          onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')">
-                                        {% csrf_token %}
-                                        <button type="submit" class="delete-btn">Удалить</button>
-                                    </form>
-                                </td>
+                                <th>Статья</th>
+                                <th class="num">План</th>
+                                <th class="num">Факт</th>
+                                <th></th>
                             </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {% for s in summaries %}{% if s.type_transaction == 'income' %}
+                                <tr>
+                                    <td>{{ s.group_name }}</td>
+                                    <td class="num">{{ s.plan_value|floatformat:0 }}</td>
+                                    <td class="num">{{ s.fact_value|floatformat:0 }}</td>
+                                    <td style="text-align:right">
+                                        <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
+                                              onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="delete-btn">Удалить</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
+
+            <div class="card" style="flex:1;min-width:280px">
+                <div class="card-title" style="color:var(--expense-color, #e74c3c)">Расходы</div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Статья</th>
+                                <th class="num">План</th>
+                                <th class="num">Факт</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in summaries %}{% if s.type_transaction == 'expense' %}
+                                <tr>
+                                    <td>{{ s.group_name }}</td>
+                                    <td class="num">{{ s.plan_value|floatformat:0 }}</td>
+                                    <td class="num">{{ s.fact_value|floatformat:0 }}</td>
+                                    <td style="text-align:right">
+                                        <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
+                                              onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="delete-btn">Удалить</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}{% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
         </div>
     {% endif %}
 {% endblock %}
