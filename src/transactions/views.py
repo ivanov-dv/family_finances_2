@@ -190,10 +190,10 @@ class AddTransactionView(LoginRequiredMixin, TemplateView):
 
         try:
             value = Decimal(value_raw.replace(',', '.'))
-            if value <= 0:
+            if value == 0:
                 raise InvalidOperation
         except InvalidOperation:
-            messages.error(request, 'Введите корректную сумму (больше нуля).')
+            messages.error(request, 'Введите корректную сумму (не равную нулю).')
             return redirect('transactions:add_transaction')
 
         current_space = user.core_settings.current_space

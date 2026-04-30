@@ -2,7 +2,7 @@
     <div class="topbar-period">
         {% if current_month and current_year %}
             &#128197;
-            <a href="{% url 'transactions:change_period' %}?next={{ next|urlencode }}">{{ current_month }}.{{ current_year }}</a>
+            <a href="{% url 'transactions:change_period' %}?next={{ next|urlencode }}">{% include 'includes/_period.html' %}</a>
             {% if current_space %}
                 <span class="topbar-space">&nbsp;&middot;&nbsp;{{ current_space.name }}</span>
             {% endif %}
