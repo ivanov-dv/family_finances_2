@@ -4,7 +4,9 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
+    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800|jetbrains-mono:500,600,700&display=swap" rel="stylesheet">
     {% bootstrap_css %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <title>{{ title }}</title>
@@ -13,8 +15,11 @@
 
 <body class="{% if user.is_authenticated %}app-shell{% endif %}">
 
+    {% include 'includes/icons.html' %}
+
     {% if user.is_authenticated %}
         {% include 'includes/sidebar.html' %}
+        <div class="backdrop" id="sidebarBackdrop"></div>
     {% endif %}
 
     <div class="main">

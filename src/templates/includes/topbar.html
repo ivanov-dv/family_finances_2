@@ -1,24 +1,51 @@
 <div class="topbar">
+    <button class="icon-btn mobile-menu-btn" id="menuBtn" aria-label="Меню" type="button">
+        <svg class="icon"><use href="#i-menu"/></svg>
+    </button>
+
     <div class="topbar-period">
         {% if current_month and current_year %}
-            &#128197;
-            <a href="{% url 'transactions:change_period' %}?next={{ next|urlencode }}">{% include 'includes/_period.html' %}</a>
+            <svg class="icon icon-sm" style="color:var(--text-muted)"><use href="#i-calendar"/></svg>
+            <a href="{% url 'transactions:change_period' %}?next={{ next|urlencode }}">
+                <span>{% include 'includes/_period.html' %}</span>
+                <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
+            </a>
             {% if current_space %}
-                <span class="topbar-space">&nbsp;&middot;&nbsp;{{ current_space.name }}</span>
+                <span class="topbar-space">· {{ current_space.name }}</span>
             {% endif %}
         {% else %}
             <a href="{% url 'transactions:home' %}">{{ title }}</a>
         {% endif %}
     </div>
+
+    <div class="topbar-spacer"></div>
+
+    <div class="theme-toggle" id="themeToggle">
+        <button type="button" data-theme-set="light" title="Светлая тема">
+            <svg class="icon icon-sm"><use href="#i-sun"/></svg>
+        </button>
+        <button type="button" data-theme-set="dark" title="Тёмная тема">
+            <svg class="icon icon-sm"><use href="#i-moon"/></svg>
+        </button>
+    </div>
+
     <div class="profile-menu" id="profileMenu">
         <button type="button" class="profile-btn" id="profileMenuBtn">
-            {{ user.username }} &#9660;
+            <span class="avatar-sm">{{ user.username|slice:":1"|upper }}</span>
+            <span>{{ user.username }}</span>
+            <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
         </button>
         <div class="profile-menu-items">
-            <a class="profile-menu-item" href="{% url 'transactions:home' %}">Профиль</a>
-            <form method="post" action="{% url 'logout' %}">
+            <a class="profile-menu-item" href="{% url 'transactions:home' %}">
+                <svg class="icon icon-sm"><use href="#i-user"/></svg>
+                <span>Профиль</span>
+            </a>
+            <form method="post" action="{% url 'logout' %}" style="margin:0">
                 {% csrf_token %}
-                <button type="submit" class="profile-menu-item">Выйти</button>
+                <button type="submit" class="profile-menu-item">
+                    <svg class="icon icon-sm"><use href="#i-log-out"/></svg>
+                    <span>Выйти</span>
+                </button>
             </form>
         </div>
     </div>

@@ -4,7 +4,7 @@
 <script>
 const MONTH_NAMES = ['','Январь','Февраль','Март','Апрель','Май','Июнь',
                      'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-document.querySelectorAll('.period-item').forEach(el => {
+document.querySelectorAll('.period-item-text').forEach(el => {
     const [year, month] = el.textContent.trim().split('_');
     el.textContent = MONTH_NAMES[parseInt(month)] + ' ' + year;
 });
@@ -19,18 +19,23 @@ document.querySelectorAll('.period-item').forEach(el => {
         </div>
     </div>
 
-    <div class="card">
+    <div class="card" style="max-width:520px;width:100%">
         {% if periods %}
             <div class="period-list">
                 {% for period in periods %}
                     <a class="period-item"
                        href="{% url 'transactions:apply_period' %}?period={{ period|urlencode }}&next={{ next|urlencode }}">
-                        {{ period }}
+                        <svg class="icon icon-sm" style="color:var(--text-muted)"><use href="#i-calendar"/></svg>
+                        <span class="period-item-text">{{ period }}</span>
+                        <svg class="icon icon-sm" style="color:var(--text-muted);margin-left:auto"><use href="#i-chevron-right"/></svg>
                     </a>
                 {% endfor %}
             </div>
         {% else %}
-            <p style="color:var(--text-secondary);font-size:14px">Периоды не найдены.</p>
+            <div style="text-align:center;padding:24px 8px;color:var(--text-muted);font-size:14px">
+                <svg class="icon icon-lg" style="margin-bottom:12px"><use href="#i-calendar"/></svg>
+                <div>Периоды не найдены</div>
+            </div>
         {% endif %}
     </div>
 {% endblock %}

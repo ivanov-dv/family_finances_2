@@ -1,7 +1,12 @@
 <header class="guest-header">
-    <a class="brand" href="{% url 'transactions:home' %}">{{ title }}</a>
+    <a class="brand" href="{% url 'transactions:home' %}">
+        <span class="brand-mark">
+            <svg class="icon icon-lg"><use href="#i-piggy"/></svg>
+        </span>
+        <span>{{ title }}</span>
+    </a>
     <div class="auth-buttons">
-        <button class="profile-btn" data-bs-toggle="modal" data-bs-target="#loginModal">Войти</button>
-        <button class="profile-btn" data-bs-toggle="modal" data-bs-target="#registrationModal">Регистрация</button>
+        <button class="btn btn-ghost btn-sm" data-bs-toggle="modal" data-bs-target="#loginModal">Войти</button>
+        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#registrationModal">Регистрация</button>
     </div>
 </header>

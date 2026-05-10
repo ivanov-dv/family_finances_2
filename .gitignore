@@ -1,3 +1,4 @@
+.DS_Store
 .idea/
 .git/
 __pycache__/
@@ -6,3 +7,8 @@ collected_static/
 
 .env
 db.sqlite3
+
+.claude/
+plan/
+docs/
+CLAUDE.md
