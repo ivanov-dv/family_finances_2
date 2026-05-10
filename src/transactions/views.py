@@ -335,3 +335,109 @@ def apply_period(request):
         next_url = '/'
 
     return redirect(next_url)
+
+
+@login_required
+def create_period(request):
+    """Создание нового периода с автокопированием статей из последнего."""
+    if request.method != 'POST':
+        return redirect('transactions:change_period')
+
+    next_url = request.POST.get('next', '/')
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/'
+
+    user = request.user
+    space = user.core_settings.current_space
+
+    try:
+        period_month = int(request.POST.get('period_month', ''))
+        period_year = int(request.POST.get('period_year', ''))
+    except (TypeError, ValueError):
+        messages.error(request, 'Некорректный месяц или год.')
+        return redirect(next_url)
+
+    if not (1 <= period_month <= 12) or not (2020 <= period_year <= 2099):
+        messages.error(request, 'Месяц должен быть 1–12, год 2020–2099.')
+        return redirect(next_url)
+
+    already_exists = Summary.objects.filter(
+        space=space,
+        period_month=period_month,
+        period_year=period_year,
+    ).exists()
+
+    if already_exists:
+        user.core_settings.current_month = period_month
+        user.core_settings.current_year = period_year
+        user.core_settings.save()
+        messages.info(request, 'Этот период уже существует — переключились на него.')
+        return redirect(next_url)
+
+    last_period = (
+        Summary.objects
+        .filter(space=space)
+        .values('period_month', 'period_year')
+        .order_by('-period_year', '-period_month')
+        .first()
+    )
+
+    copied_count = 0
+    if last_period:
+        source = Summary.objects.filter(
+            space=space,
+            period_month=last_period['period_month'],
+            period_year=last_period['period_year'],
+        )
+
+        selected_ids_raw = request.POST.getlist('copy_summary_ids')
+        if 'copy_summary_ids' in request.POST:
+            try:
+                selected_ids = {int(pk) for pk in selected_ids_raw if pk}
+            except ValueError:
+                selected_ids = set()
+            source = source.filter(pk__in=selected_ids)
+
+        with db_transaction.atomic():
+            new_summaries = []
+            for s in source:
+                raw = request.POST.get(f'plan_value_{s.pk}', '').strip().replace(',', '.')
+                plan_value = s.plan_value
+                if raw:
+                    try:
+                        candidate = Decimal(raw)
+                        if candidate >= 0:
+                            plan_value = candidate
+                    except InvalidOperation:
+                        pass
+
+                new_summaries.append(
+                    Summary(
+                        space=space,
+                        period_month=period_month,
+                        period_year=period_year,
+                        type_transaction=s.type_transaction,
+                        group_name=s.group_name,
+                        plan_value=plan_value,
+                        fact_value=Decimal('0'),
+                    )
+                )
+            Summary.objects.bulk_create(new_summaries)
+            copied_count = len(new_summaries)
+
+    user.core_settings.current_month = period_month
+    user.core_settings.current_year = period_year
+    user.core_settings.save()
+
+    if copied_count:
+        messages.success(
+            request,
+            f'Период создан · скопировано статей: {copied_count}.',
+        )
+    else:
+        messages.info(
+            request,
+            'Период создан. Добавьте статьи бюджета на странице «Статьи».',
+        )
+
+    return redirect(next_url)

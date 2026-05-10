@@ -19,6 +19,7 @@
 
     {% if user.is_authenticated %}
         {% include 'includes/sidebar.html' %}
+        {% include 'includes/modal_new_period.html' %}
         <div class="backdrop" id="sidebarBackdrop"></div>
     {% endif %}
 
