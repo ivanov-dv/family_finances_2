@@ -6,3 +6,8 @@ collected_static/
 
 .env
 db.sqlite3
+
+.claude/
+plan/
+docs/
+CLAUDE.md
