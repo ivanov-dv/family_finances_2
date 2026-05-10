@@ -9,6 +9,47 @@ document.addEventListener('DOMContentLoaded', () => {
         return cookieValue ? cookieValue[1] : '';
     }
 
+    // ============== Универсальное открытие/закрытие .app-modal-backdrop ==============
+    function openAppModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (!modal) return;
+        modal.removeAttribute('hidden');
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        const firstInput = modal.querySelector('input:not([type="hidden"]), select, textarea');
+        if (firstInput) setTimeout(() => firstInput.focus(), 100);
+    }
+    function closeAppModal(modal) {
+        if (!modal) return;
+        modal.setAttribute('hidden', '');
+        modal.hidden = true;
+        document.body.style.overflow = '';
+    }
+
+    document.addEventListener('click', e => {
+        const opener = e.target.closest('[data-open-app-modal]');
+        if (opener) {
+            e.preventDefault();
+            openAppModal(opener.dataset.openAppModal);
+            return;
+        }
+        const closer = e.target.closest('[data-close-app-modal]');
+        if (closer) {
+            e.preventDefault();
+            closeAppModal(closer.closest('.app-modal-backdrop'));
+            return;
+        }
+        // Клик по фону модалки
+        if (e.target.classList && e.target.classList.contains('app-modal-backdrop')) {
+            closeAppModal(e.target);
+        }
+    });
+    document.addEventListener('keydown', e => {
+        if (e.key !== 'Escape') return;
+        const openModals = document.querySelectorAll('.app-modal-backdrop:not([hidden])');
+        openModals.forEach(closeAppModal);
+    });
+
     if (loginForm) {
         loginForm.addEventListener('submit', async (event) => {
             event.preventDefault();

@@ -25,8 +25,8 @@
         {% else %}
             <p>Сервис управления семейным бюджетом. Для продолжения работы необходимо авторизоваться.</p>
             <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Войти</button>
-                <button class="btn btn-ghost" data-bs-toggle="modal" data-bs-target="#registrationModal">Регистрация</button>
+                <button type="button" class="btn btn-primary" data-open-app-modal="loginModal">Войти</button>
+                <button type="button" class="btn btn-ghost" data-open-app-modal="registrationModal">Регистрация</button>
             </div>
         {% endif %}
     </div>

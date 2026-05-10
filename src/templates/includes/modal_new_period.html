@@ -1,0 +1,101 @@
+<div class="app-modal-backdrop" id="newPeriodModal" hidden
+     data-current-month="{{ current_month|default:0 }}"
+     data-current-year="{{ current_year|default:0 }}">
+    <div class="app-modal" role="dialog" aria-labelledby="newPeriodTitle">
+        <button type="button" class="app-modal-close" data-close-period-modal aria-label="Закрыть">
+            <svg class="icon"><use href="#i-x"/></svg>
+        </button>
+        <div class="app-modal-title" id="newPeriodTitle">Новый период</div>
+        <div class="app-modal-subtitle">
+            {% if last_period_label %}
+                Скопируем выбранные статьи из периода «{{ last_period_label }}» с обнулённым фактом
+            {% else %}
+                В пространстве пока нет периодов — создадим пустой
+            {% endif %}
+        </div>
+
+        <form method="post" action="{% url 'transactions:create_period' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+
+            <div class="form-group">
+                <label class="form-label" for="newPeriodMonth">Месяц</label>
+                <select class="form-input" name="period_month" id="newPeriodMonth" required>
+                    <option value="1">Январь</option>
+                    <option value="2">Февраль</option>
+                    <option value="3">Март</option>
+                    <option value="4">Апрель</option>
+                    <option value="5">Май</option>
+                    <option value="6">Июнь</option>
+                    <option value="7">Июль</option>
+                    <option value="8">Август</option>
+                    <option value="9">Сентябрь</option>
+                    <option value="10">Октябрь</option>
+                    <option value="11">Ноябрь</option>
+                    <option value="12">Декабрь</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="newPeriodYear">Год</label>
+                <select class="form-input" name="period_year" id="newPeriodYear" required></select>
+            </div>
+
+            {% if last_period_summaries %}
+                <div class="form-group">
+                    <div class="copy-list-header">
+                        <label class="form-label" style="margin:0">Статьи и плановые суммы</label>
+                        <button type="button" class="copy-list-toggle" id="copyAllToggle" data-state="all">
+                            Снять все
+                        </button>
+                    </div>
+                    <div class="copy-list-hint">Можно изменить план — или оставить как было</div>
+
+                    {% regroup last_period_summaries by type_transaction as type_groups %}
+                    <div class="copy-list">
+                        {% for group in type_groups %}
+                            <div class="copy-list-section">
+                                <div class="copy-list-section-title">
+                                    {% if group.grouper == 'income' %}
+                                        <span class="badge badge-green">
+                                            <svg class="icon icon-sm"><use href="#i-arrow-down-circle"/></svg>
+                                            Доходы
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-red">
+                                            <svg class="icon icon-sm"><use href="#i-arrow-up-circle"/></svg>
+                                            Расходы
+                                        </span>
+                                    {% endif %}
+                                </div>
+                                {% for s in group.list %}
+                                    <div class="copy-row">
+                                        <input type="checkbox" name="copy_summary_ids" value="{{ s.pk }}" id="cs_{{ s.pk }}" checked>
+                                        <label class="copy-row-name" for="cs_{{ s.pk }}">{{ s.group_name }}</label>
+                                        <div class="copy-row-amount">
+                                            <input type="number"
+                                                   class="copy-row-input mono"
+                                                   name="plan_value_{{ s.pk }}"
+                                                   value="{{ s.plan_value|floatformat:0 }}"
+                                                   step="0.01"
+                                                   min="0"
+                                                   inputmode="decimal"
+                                                   data-original="{{ s.plan_value|floatformat:0 }}"
+                                                   aria-label="План для статьи {{ s.group_name }}">
+                                            <span class="copy-row-currency">₽</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+
+            <button type="submit" class="submit-btn">
+                <svg class="icon"><use href="#i-plus"/></svg>
+                <span>Создать период</span>
+            </button>
+        </form>
+    </div>
+</div>
