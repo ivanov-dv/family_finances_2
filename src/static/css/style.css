@@ -202,11 +202,34 @@ input, textarea, select { font-family: inherit; }
 
 [hidden] { display: none !important; }
 
+/* SVG icons sprite — must be invisible (только defs/symbol для use) */
+.icon-sprite {
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    overflow: hidden !important;
+    pointer-events: none !important;
+    visibility: hidden !important;
+}
+
 /* SVG icons */
-.icon { width: 20px; height: 20px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-.icon-sm { width: 16px; height: 16px; }
-.icon-lg { width: 24px; height: 24px; }
-.icon-xl { width: 32px; height: 32px; }
+svg.icon {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    min-height: 20px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+    display: inline-block;
+    vertical-align: middle;
+}
+svg.icon-sm { width: 16px; height: 16px; min-width: 16px; min-height: 16px; }
+svg.icon-lg { width: 24px; height: 24px; min-width: 24px; min-height: 24px; }
+svg.icon-xl { width: 32px; height: 32px; min-width: 32px; min-height: 32px; }
 
 /* =================================================================
    APP SHELL
@@ -804,7 +827,7 @@ body.app-shell {
     color: var(--text-primary);
 }
 
-@media (max-width: 820px) {
+@media (max-width: 960px) {
     .hero { padding: 22px; }
     .hero-grid { grid-template-columns: 1fr; gap: 20px; }
     .hero-balance { font-size: 40px; }
@@ -1862,6 +1885,127 @@ input.amount-input::-moz-placeholder,
     margin-bottom: 24px;
 }
 
+/* Список статей в модалке создания периода */
+.copy-list-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+.copy-list-toggle {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--blue);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: background var(--t-fast);
+}
+.copy-list-toggle:hover { background: var(--blue-soft); }
+.copy-list-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+.copy-list {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 8px;
+    max-height: 320px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.copy-list-section { display: flex; flex-direction: column; gap: 2px; }
+.copy-list-section + .copy-list-section { margin-top: 8px; }
+.copy-list-section-title {
+    padding: 6px 8px 4px;
+}
+.copy-list-section-title .badge { font-size: 11px; }
+.copy-row {
+    display: grid;
+    grid-template-columns: 20px 1fr 140px;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
+    transition: background var(--t-fast);
+}
+.copy-row:hover { background: var(--bg-tertiary); }
+.copy-row input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--blue);
+    cursor: pointer;
+    margin: 0;
+}
+.copy-row-name {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+}
+.copy-row-amount {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.copy-row-input {
+    width: 100%;
+    background: var(--bg-base);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 6px 24px 6px 10px;
+    font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 13px;
+    font-weight: 600;
+    text-align: right;
+    outline: none;
+    -moz-appearance: textfield;
+    appearance: textfield;
+    transition: border-color var(--t-fast), background var(--t-fast);
+}
+.copy-row-input:focus {
+    border-color: var(--blue);
+    background: var(--bg-primary);
+}
+.copy-row-input::-webkit-outer-spin-button,
+.copy-row-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.copy-row-input.is-changed { border-color: var(--blue); }
+.copy-row-currency {
+    position: absolute;
+    right: 9px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+.copy-row:has(input[type="checkbox"]:not(:checked)) .copy-row-name {
+    opacity: 0.45;
+    text-decoration: line-through;
+}
+.copy-row:has(input[type="checkbox"]:not(:checked)) .copy-row-input,
+.copy-row:has(input[type="checkbox"]:not(:checked)) .copy-row-currency {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+@media (max-width: 540px) {
+    .copy-row { grid-template-columns: 20px 1fr 110px; gap: 8px; }
+}
+
 /* =================================================================
    INTRO CARD
 ================================================================= */
@@ -1910,7 +2054,7 @@ input.amount-input::-moz-placeholder,
     .charts-row, .bottom-grid, .cats-grid { grid-template-columns: 1fr; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
-@media (max-width: 820px) {
+@media (max-width: 960px) {
     body.app-shell { padding-left: 0; }
     .sidebar {
         width: 280px;
@@ -1948,7 +2092,7 @@ input.amount-input::-moz-placeholder,
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .mobile-menu-btn { display: none; }
-@media (max-width: 820px) {
+@media (max-width: 960px) {
     .mobile-menu-btn { display: grid; }
 }
 

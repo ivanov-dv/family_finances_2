@@ -1,27 +1,30 @@
-<!-- Login Modal -->
-<div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="loginModalLabel">Вход</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+<div class="app-modal-backdrop" id="loginModal" hidden>
+    <div class="app-modal" role="dialog" aria-labelledby="loginModalTitle">
+        <button type="button" class="app-modal-close" data-close-app-modal aria-label="Закрыть">
+            <svg class="icon"><use href="#i-x"/></svg>
+        </button>
+        <div class="app-modal-title" id="loginModalTitle">Вход</div>
+        <div class="app-modal-subtitle">Введите логин и пароль</div>
+
+        <form id="loginForm">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="username">Логин</label>
+                <input class="form-input" type="text" id="username" placeholder="Введите логин" required>
             </div>
-            <div class="modal-body">
-                <form id="loginForm">
-                    {% csrf_token %}
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Логин</label>
-                        <input type="text" class="form-control" id="username" placeholder="Введите логин" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Пароль</label>
-                        <input type="password" class="form-control" id="password" placeholder="Введите пароль" required>
-                    </div>
-                    <button type="submit" class="btn btn-dark w-100">Войти</button>
-                    <div id="loginError" class="text-danger mt-2"></div>
-                </form>
-                {% include 'includes/auth_telegram.html' %}
+            <div class="form-group">
+                <label class="form-label" for="password">Пароль</label>
+                <input class="form-input" type="password" id="password" placeholder="Введите пароль" required>
             </div>
+            <button type="submit" class="submit-btn">
+                <svg class="icon"><use href="#i-check"/></svg>
+                <span>Войти</span>
+            </button>
+            <div id="loginError" style="color:var(--red);font-size:13px;margin-top:12px;font-weight:500;text-align:center"></div>
+        </form>
+
+        <div style="margin-top:18px;padding-top:18px;border-top:1px solid var(--border);display:flex;justify-content:center">
+            {% include 'includes/auth_telegram.html' %}
         </div>
     </div>
 </div>
