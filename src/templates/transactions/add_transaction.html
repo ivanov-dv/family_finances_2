@@ -2,10 +2,11 @@
 {% load static %}
 
 {% block content %}
+<div style="max-width:680px;width:100%;margin:0 auto;display:flex;flex-direction:column;gap:18px">
     <div class="header">
         <div>
             <div class="header-title">Новая операция</div>
-            <div class="header-sub">{% include 'includes/_period.html' %} · {{ current_space.name }}</div>
+            <div class="header-sub">Запишите доход или расход за {% include 'includes/_period.html' %}</div>
         </div>
     </div>
 
@@ -18,57 +19,72 @@
         {% endfor %}
     {% endif %}
 
-    <div class="card" style="max-width:680px;width:100%">
-        <form method="post" id="add-form">
-            {% csrf_token %}
+    <form method="post" id="add-form" style="display:flex;flex-direction:column;gap:18px">
+        {% csrf_token %}
 
-            <div class="form-group">
-                <label class="form-label">Тип операции</label>
-                <div class="type-toggle">
-                    <button type="button" class="type-toggle-btn active" data-type="expense">
-                        <svg class="icon"><use href="#i-arrow-up-circle"/></svg>
-                        <span>Расход</span>
-                    </button>
-                    <button type="button" class="type-toggle-btn" data-type="income">
-                        <svg class="icon"><use href="#i-arrow-down-circle"/></svg>
-                        <span>Доход</span>
-                    </button>
-                </div>
-                <input type="hidden" name="type_transaction" id="type_transaction" value="expense">
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Статья</label>
-                <div class="group-pills" id="group-pills"></div>
-                <input type="hidden" name="group_name" id="group_name">
-                <div id="group-error" style="display:none;font-size:12px;color:var(--red);margin-top:8px;font-weight:500">
-                    Выберите статью
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="value_transaction">Сумма</label>
-                <div class="amount-input-wrap">
-                    <input class="amount-input mono" type="number" name="value_transaction" id="value_transaction"
-                           step="0.01" placeholder="0" required>
-                    <span class="amount-input-currency">₽</span>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label" for="description">
-                    Описание <span style="color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">(необязательно)</span>
-                </label>
-                <input class="form-input" type="text" name="description" id="description"
-                       maxlength="200" placeholder="Например: Пятёрочка · недельная закупка">
-            </div>
-
-            <button type="submit" class="submit-btn submit-expense" id="submit-btn">
-                <svg class="icon"><use href="#i-check"/></svg>
-                <span>Добавить расход</span>
+        <div class="type-toggle">
+            <button type="button" class="type-toggle-btn active" data-type="expense">
+                <span class="type-icon"><svg class="icon icon-lg"><use href="#i-arrow-up-circle"/></svg></span>
+                <span class="type-text">
+                    <span class="type-name">Расход</span>
+                    <span class="type-desc">Выберите статью расхода</span>
+                </span>
             </button>
-        </form>
-    </div>
+            <button type="button" class="type-toggle-btn" data-type="income">
+                <span class="type-icon"><svg class="icon icon-lg"><use href="#i-arrow-down-circle"/></svg></span>
+                <span class="type-text">
+                    <span class="type-name">Доход</span>
+                    <span class="type-desc">Зарплата, подработка и др.</span>
+                </span>
+            </button>
+        </div>
+        <input type="hidden" name="type_transaction" id="type_transaction" value="expense">
+
+        <div class="amount-card">
+            <div class="amount-label">Сумма операции</div>
+            <div class="amount-display expense" id="amountDisplay">
+                <span id="amountIntegerPart">0</span><span class="dec">,00</span><span class="currency">₽</span>
+            </div>
+            <div class="numpad" id="numpad">
+                <button type="button" data-np="digit" data-d="1">1</button>
+                <button type="button" data-np="digit" data-d="2">2</button>
+                <button type="button" data-np="digit" data-d="3">3</button>
+                <button type="button" data-np="digit" data-d="4">4</button>
+                <button type="button" data-np="digit" data-d="5">5</button>
+                <button type="button" data-np="digit" data-d="6">6</button>
+                <button type="button" data-np="digit" data-d="7">7</button>
+                <button type="button" data-np="digit" data-d="8">8</button>
+                <button type="button" data-np="digit" data-d="9">9</button>
+                <button type="button" data-np="comma">,</button>
+                <button type="button" data-np="digit" data-d="0">0</button>
+                <button type="button" data-np="back" title="Удалить"><svg class="icon"><use href="#i-x"/></svg></button>
+            </div>
+            <input type="hidden" name="value_transaction" id="value_transaction" value="0" required>
+        </div>
+
+        <div class="card">
+            <label class="form-label">Статья</label>
+            <div class="group-pills" id="group-pills"></div>
+            <input type="hidden" name="group_name" id="group_name">
+            <div id="group-error" style="display:none;font-size:12px;color:var(--red);margin-top:8px;font-weight:500">
+                Выберите статью
+            </div>
+        </div>
+
+        <div class="card">
+            <label class="form-label" for="description">
+                Описание <span style="color:var(--text-faint);font-weight:400;text-transform:none;letter-spacing:0">(необязательно)</span>
+            </label>
+            <input class="form-input" type="text" name="description" id="description"
+                   maxlength="200" placeholder="Например: Пятёрочка · недельная закупка">
+        </div>
+
+        <button type="submit" class="submit-btn submit-expense" id="submit-btn">
+            <svg class="icon"><use href="#i-check"/></svg>
+            <span>Добавить расход</span>
+        </button>
+    </form>
+</div>
 {% endblock %}
 
 {% block extra_scripts %}

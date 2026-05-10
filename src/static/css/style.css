@@ -1371,7 +1371,7 @@ tr:last-child td { border-bottom: none; }
 }
 .form-input::placeholder { color: var(--text-faint); }
 
-/* Big amount input (forms) */
+/* Big amount input (forms — old simple version, used in add_summary) */
 .amount-input-wrap {
     display: flex;
     align-items: baseline;
@@ -1418,39 +1418,136 @@ tr:last-child td { border-bottom: none; }
     .amount-input-wrap { padding: 18px 20px; }
 }
 
-/* Type toggle: two big cards */
+/* Type toggle: two big cards (with icon + name + description) */
 .type-toggle {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 12px;
 }
 .type-toggle-btn {
-    padding: 14px 16px;
-    font-size: 14px;
-    font-weight: 600;
-    border-radius: var(--radius-md);
+    padding: 22px;
+    border-radius: var(--radius-lg);
     border: 1.5px solid var(--border);
     background: var(--bg-primary);
     color: var(--text-secondary);
     cursor: pointer;
     transition: all var(--t-base);
-    display: inline-flex;
+    display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    gap: 14px;
+    text-align: left;
+    font-size: 14px;
+    font-weight: 600;
 }
 .type-toggle-btn:hover { background: var(--bg-secondary); }
+.type-toggle-btn .type-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    flex-shrink: 0;
+    transition: transform var(--t-base);
+}
+.type-toggle-btn[data-type="expense"] .type-icon { background: var(--red-soft); color: var(--red); }
+.type-toggle-btn[data-type="income"] .type-icon { background: var(--green-soft); color: var(--green); }
+.type-toggle-btn .type-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.type-toggle-btn .type-name { font-weight: 700; font-size: 15px; color: var(--text-primary); line-height: 1.2; }
+.type-toggle-btn .type-desc { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+
 .type-toggle-btn.active[data-type="expense"] {
     border-color: var(--red);
     background: linear-gradient(135deg, var(--red-soft), transparent 60%);
-    color: var(--red);
     box-shadow: var(--shadow-glow-red);
 }
+.type-toggle-btn.active[data-type="expense"] .type-name { color: var(--red); }
 .type-toggle-btn.active[data-type="income"] {
     border-color: var(--green);
     background: linear-gradient(135deg, var(--green-soft), transparent 60%);
-    color: var(--green);
     box-shadow: var(--shadow-glow-green);
+}
+.type-toggle-btn.active[data-type="income"] .type-name { color: var(--green); }
+.type-toggle-btn.active .type-icon { transform: scale(1.06); }
+
+/* Compact variant — для add_summary.html, без описания */
+.type-toggle-btn.is-compact {
+    padding: 14px 16px;
+    gap: 10px;
+}
+.type-toggle-btn.is-compact .type-icon { width: 36px; height: 36px; border-radius: 10px; }
+
+/* =================================================================
+   AMOUNT CARD + NUMPAD (add_transaction)
+================================================================= */
+
+.amount-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 28px;
+    box-shadow: var(--shadow-card);
+    text-align: center;
+}
+.amount-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.amount-display {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    font-size: 64px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    margin: 12px 0 22px;
+    color: var(--text-primary);
+    transition: color var(--t-base);
+    user-select: none;
+}
+.amount-display.expense { color: var(--red); }
+.amount-display.income { color: var(--green); }
+.amount-display .dec {
+    color: var(--text-muted);
+    font-size: 0.56em;
+    margin-left: 2px;
+    font-weight: 500;
+}
+.amount-display .currency {
+    color: var(--text-muted);
+    font-size: 0.56em;
+    margin-left: 6px;
+    font-weight: 500;
+}
+
+.numpad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+.numpad button {
+    height: 56px;
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace;
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--text-primary);
+    transition: background var(--t-fast), transform var(--t-fast);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+}
+.numpad button:hover { background: var(--bg-elevated); }
+.numpad button:active { transform: scale(0.96); }
+.numpad button .icon { color: var(--text-secondary); }
+
+@media (max-width: 540px) {
+    .amount-card { padding: 22px; }
+    .amount-display { font-size: 44px; margin: 8px 0 16px; }
+    .numpad button { height: 48px; font-size: 20px; }
 }
 
 /* Submit button */
