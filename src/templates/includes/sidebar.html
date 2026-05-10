@@ -19,20 +19,29 @@
     <a class="nav-link {% if request.resolver_match.url_name == 'transactions' %}active{% endif %}"
        href="{% url 'transactions:transactions' %}">
         <svg class="icon"><use href="#i-list"/></svg>
-        <span>Детализация</span>
-    </a>
-
-    <span class="nav-section-label">Управление</span>
-
-    <a class="nav-link {% if request.resolver_match.url_name == 'add_transaction' %}active{% endif %}"
-       href="{% url 'transactions:add_transaction' %}">
-        <svg class="icon"><use href="#i-plus"/></svg>
-        <span>Добавить операцию</span>
+        <span>Операции</span>
+        {% if transactions_count %}<span class="nav-badge">{{ transactions_count }}</span>{% endif %}
     </a>
     <a class="nav-link {% if request.resolver_match.url_name == 'add_summary' %}active{% endif %}"
        href="{% url 'transactions:add_summary' %}">
         <svg class="icon"><use href="#i-layers"/></svg>
-        <span>Статьи</span>
+        <span>Статьи бюджета</span>
+    </a>
+    <a class="nav-link {% if request.resolver_match.url_name == 'add_transaction' %}active{% endif %}"
+       href="{% url 'transactions:add_transaction' %}">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        <span>Добавить</span>
+    </a>
+
+    <span class="nav-section-label">Инструменты</span>
+
+    <a class="nav-link" href="{% url 'export:excel' %}">
+        <svg class="icon"><use href="#i-export"/></svg>
+        <span>Экспорт в Excel</span>
+    </a>
+    <a class="nav-link" href="#" title="Скоро">
+        <svg class="icon"><use href="#i-settings"/></svg>
+        <span>Настройки</span>
     </a>
 
     <div class="sidebar-spacer"></div>
