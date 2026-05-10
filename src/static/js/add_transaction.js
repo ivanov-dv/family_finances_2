@@ -10,6 +10,31 @@
     const submitBtn = document.getElementById('submit-btn');
     const form = document.getElementById('add-form');
 
+    // Маппинг категорий на иконки
+    const catRules = [
+        { keys: ['зарплат', 'оклад', 'аванс'], icon: '#i-briefcase' },
+        { keys: ['подработ', 'фриланс'], icon: '#i-zap' },
+        { keys: ['инвест', 'дивиденд', 'процент'], icon: '#i-trend-up' },
+        { keys: ['продукт', 'еда', 'магаз'], icon: '#i-shopping-cart' },
+        { keys: ['аренд', 'квартир', 'жил'], icon: '#i-home-house' },
+        { keys: ['транспорт', 'такси', 'бенз', 'авто', 'метро'], icon: '#i-car' },
+        { keys: ['развлеч', 'кино', 'театр'], icon: '#i-film' },
+        { keys: ['коммун', 'свет', 'газ', 'вода'], icon: '#i-zap' },
+        { keys: ['здоров', 'медиц', 'лекарств', 'аптек'], icon: '#i-heart' },
+        { keys: ['одежд', 'обув'], icon: '#i-shirt' },
+        { keys: ['кафе', 'ресторан'], icon: '#i-utensils' },
+        { keys: ['кофе'], icon: '#i-coffee' },
+        { keys: ['образован', 'учеб', 'курс', 'книг'], icon: '#i-book' },
+    ];
+
+    function getIcon(name) {
+        const lower = (name || '').toLowerCase();
+        for (const rule of catRules) {
+            if (rule.keys.some(k => lower.includes(k))) return rule.icon;
+        }
+        return '#i-package';
+    }
+
     function renderPills(type) {
         const groups = type === 'income' ? incomeGroups : expenseGroups;
         groupInput.value = '';
@@ -17,48 +42,26 @@
         pillsContainer.innerHTML = '';
 
         if (!groups.length) {
-            pillsContainer.innerHTML = '<span style="font-size:13px;color:var(--text-secondary)">Нет статей для этого типа</span>';
+            const empty = document.createElement('div');
+            empty.style.cssText = 'font-size:13px;color:var(--text-muted);padding:8px 0';
+            empty.textContent = 'Нет статей для этого типа. Создайте статью на странице «Статьи».';
+            pillsContainer.appendChild(empty);
             return;
         }
 
         groups.forEach(g => {
-            const pill = document.createElement('span');
-            pill.textContent = g;
-            Object.assign(pill.style, {
-                display: 'inline-block',
-                padding: '6px 14px',
-                fontSize: '13px',
-                borderRadius: '20px',
-                border: '1px solid #ccc',
-                background: '#f0f0ee',
-                color: '#6b6b67',
-                cursor: 'pointer',
-                userSelect: 'none',
-                transition: 'background 0.15s, color 0.15s'
-            });
-            pill.addEventListener('mouseenter', () => {
-                if (pill.dataset.selected !== '1') {
-                    pill.style.background = '#e8e6e1';
-                    pill.style.color = '#1a1a18';
-                }
-            });
-            pill.addEventListener('mouseleave', () => {
-                if (pill.dataset.selected !== '1') {
-                    pill.style.background = '#f0f0ee';
-                    pill.style.color = '#6b6b67';
-                }
-            });
+            const pill = document.createElement('button');
+            pill.type = 'button';
+            pill.className = 'group-pill';
+            pill.dataset.type = type;
+            pill.innerHTML = `<svg class="icon"><use href="${getIcon(g)}"/></svg><span>${g}</span>`;
             pill.addEventListener('click', () => {
-                pillsContainer.querySelectorAll('span').forEach(p => {
-                    p.dataset.selected = '';
-                    p.style.background = '#f0f0ee';
-                    p.style.color = '#6b6b67';
-                    p.style.border = '1px solid #ccc';
+                pillsContainer.querySelectorAll('.group-pill').forEach(p => {
+                    p.classList.remove('selected');
+                    p.removeAttribute('data-type');
                 });
-                pill.dataset.selected = '1';
-                pill.style.background = '#2e2e2b';
-                pill.style.color = '#f0ede8';
-                pill.style.border = '1px solid #2e2e2b';
+                pill.classList.add('selected');
+                pill.dataset.type = type;
                 groupInput.value = g;
                 groupError.style.display = 'none';
             });
@@ -70,10 +73,15 @@
         btn.addEventListener('click', () => {
             toggleBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            typeInput.value = btn.dataset.type;
-            renderPills(btn.dataset.type);
-            submitBtn.textContent = btn.dataset.type === 'income' ? 'Добавить доход' : 'Добавить расход';
-            submitBtn.className = 'submit-btn ' + (btn.dataset.type === 'income' ? 'submit-income' : 'submit-expense');
+            const type = btn.dataset.type;
+            typeInput.value = type;
+            renderPills(type);
+
+            const submitText = submitBtn.querySelector('span');
+            if (submitText) {
+                submitText.textContent = type === 'income' ? 'Добавить доход' : 'Добавить расход';
+            }
+            submitBtn.className = 'submit-btn ' + (type === 'income' ? 'submit-income' : 'submit-expense');
         });
     });
 

@@ -78,4 +78,45 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // Theme toggle
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const stored = localStorage.getItem('ff-theme');
+        const systemDark = matchMedia('(prefers-color-scheme: dark)').matches;
+        const initial = stored || (systemDark ? 'dark' : 'light');
+        applyTheme(initial);
+
+        themeToggle.querySelectorAll('[data-theme-set]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                applyTheme(btn.dataset.themeSet);
+            });
+        });
+    }
+    function applyTheme(theme) {
+        document.documentElement.dataset.theme = theme;
+        localStorage.setItem('ff-theme', theme);
+        document.querySelectorAll('[data-theme-set]').forEach(b => {
+            b.classList.toggle('is-active', b.dataset.themeSet === theme);
+        });
+    }
+
+    const sidebar = document.getElementById('sidebar');
+    const sidebarBackdrop = document.getElementById('sidebarBackdrop');
+    const menuBtn = document.getElementById('menuBtn');
+    if (sidebar && menuBtn) {
+        const closeSidebar = () => {
+            sidebar.classList.remove('is-open');
+            if (sidebarBackdrop) sidebarBackdrop.classList.remove('is-visible');
+        };
+        menuBtn.addEventListener('click', (event) => {
+            event.stopPropagation();
+            sidebar.classList.add('is-open');
+            if (sidebarBackdrop) sidebarBackdrop.classList.add('is-visible');
+        });
+        if (sidebarBackdrop) sidebarBackdrop.addEventListener('click', closeSidebar);
+        sidebar.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', closeSidebar);
+        });
+    }
 });

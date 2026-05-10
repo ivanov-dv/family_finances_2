@@ -1,19 +1,32 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <div class="card intro-card">
+    <div class="intro-card">
+        <div style="display:inline-grid;place-items:center;width:64px;height:64px;border-radius:18px;background:var(--grad-blue);box-shadow:var(--shadow-glow-blue);color:#fff;margin-bottom:20px">
+            <svg class="icon icon-xl"><use href="#i-piggy"/></svg>
+        </div>
         <div class="header-title">Добро пожаловать!</div>
         {% if user.is_authenticated %}
-            <p>Используйте меню слева, чтобы посмотреть отчёт или детализацию операций.</p>
-            <div style="margin-top:20px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">
-                <a href="{% url 'transactions:summary' %}" class="filter-btn active-f">Открыть отчёт</a>
-                <a href="{% url 'transactions:transactions' %}" class="filter-btn">Открыть детализацию</a>
+            <p>Используйте меню слева, чтобы посмотреть отчёт, добавить операцию или настроить статьи бюджета.</p>
+            <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <a href="{% url 'transactions:summary' %}" class="btn btn-primary">
+                    <svg class="icon icon-sm"><use href="#i-target"/></svg>
+                    Открыть отчёт
+                </a>
+                <a href="{% url 'transactions:transactions' %}" class="btn btn-ghost">
+                    <svg class="icon icon-sm"><use href="#i-list"/></svg>
+                    Детализация
+                </a>
+                <a href="{% url 'transactions:add_transaction' %}" class="btn btn-ghost">
+                    <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+                    Добавить операцию
+                </a>
             </div>
         {% else %}
-            <p>Для продолжения работы необходимо авторизоваться.</p>
-            <div style="margin-top:20px;display:flex;gap:8px;justify-content:center">
-                <button class="filter-btn active-f" data-bs-toggle="modal" data-bs-target="#loginModal">Войти</button>
-                <button class="filter-btn" data-bs-toggle="modal" data-bs-target="#registrationModal">Регистрация</button>
+            <p>Сервис управления семейным бюджетом. Для продолжения работы необходимо авторизоваться.</p>
+            <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#loginModal">Войти</button>
+                <button class="btn btn-ghost" data-bs-toggle="modal" data-bs-target="#registrationModal">Регистрация</button>
             </div>
         {% endif %}
     </div>

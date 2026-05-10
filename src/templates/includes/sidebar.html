@@ -1,11 +1,49 @@
-<aside class="sidebar">
-    <a class="sidebar-logo" href="{% url 'transactions:home' %}">{{ title }}</a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'add_transaction' %}active{% endif %}"
-       href="{% url 'transactions:add_transaction' %}">Добавить операцию</a>
-    <a class="nav-link {% if request.resolver_match.url_name == 'add_summary' %}active{% endif %}"
-       href="{% url 'transactions:add_summary' %}">Статьи</a>
+<aside class="sidebar" id="sidebar">
+    <a class="sidebar-logo" href="{% url 'transactions:summary' %}">
+        <span class="sidebar-logo-mark">
+            <svg class="icon icon-lg"><use href="#i-piggy"/></svg>
+        </span>
+        <span class="sidebar-logo-text">
+            <span>{{ title }}</span>
+            <span class="sidebar-logo-tag">Семейный бюджет</span>
+        </span>
+    </a>
+
+    <span class="nav-section-label">Главное</span>
+
     <a class="nav-link {% if request.resolver_match.url_name == 'summary' %}active{% endif %}"
-       href="{% url 'transactions:summary' %}">Отчёт</a>
+       href="{% url 'transactions:summary' %}">
+        <svg class="icon"><use href="#i-home"/></svg>
+        <span>Дашборд</span>
+    </a>
     <a class="nav-link {% if request.resolver_match.url_name == 'transactions' %}active{% endif %}"
-       href="{% url 'transactions:transactions' %}">Детализация</a>
+       href="{% url 'transactions:transactions' %}">
+        <svg class="icon"><use href="#i-list"/></svg>
+        <span>Детализация</span>
+    </a>
+
+    <span class="nav-section-label">Управление</span>
+
+    <a class="nav-link {% if request.resolver_match.url_name == 'add_transaction' %}active{% endif %}"
+       href="{% url 'transactions:add_transaction' %}">
+        <svg class="icon"><use href="#i-plus"/></svg>
+        <span>Добавить операцию</span>
+    </a>
+    <a class="nav-link {% if request.resolver_match.url_name == 'add_summary' %}active{% endif %}"
+       href="{% url 'transactions:add_summary' %}">
+        <svg class="icon"><use href="#i-layers"/></svg>
+        <span>Статьи</span>
+    </a>
+
+    <div class="sidebar-spacer"></div>
+
+    {% if current_space %}
+        <div class="space-card">
+            <div class="space-avatar">{{ current_space.name|slice:":1"|upper }}</div>
+            <div style="min-width:0;flex:1">
+                <div class="space-name">{{ current_space.name }}</div>
+                <div class="space-meta">Активное пространство</div>
+            </div>
+        </div>
+    {% endif %}
 </aside>

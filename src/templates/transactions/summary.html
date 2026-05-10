@@ -7,97 +7,127 @@
 {% endblock %}
 
 {% block content %}
-    <div class="header">
-        <div>
-            <div class="header-title">Финансовый отчёт</div>
-            <div class="header-sub">Счёт {{ current_space.user.username }}</div>
+    <div class="hero">
+        <div class="hero-grid">
+            <div>
+                <div class="hero-label">
+                    <span class="dot"></span>
+                    <span>Сальдо месяца</span>
+                </div>
+                <div class="hero-balance {% if balance_fact > 0 %}pos{% elif balance_fact < 0 %}neg{% endif %}">
+                    {% if balance_fact >= 0 %}+{% endif %}{{ balance_fact|intcomma }}<span class="currency">₽</span>
+                </div>
+                <div class="hero-meta">
+                    <span>{% include 'includes/_period.html' %} · {{ current_space.name }}</span>
+                    {% if expense_ratio <= 100 %}
+                        <span class="badge badge-green">
+                            <svg class="icon icon-sm"><use href="#i-target"/></svg>
+                            В рамках плана · {{ expense_ratio }}%
+                        </span>
+                    {% else %}
+                        <span class="badge badge-red">
+                            <svg class="icon icon-sm"><use href="#i-target"/></svg>
+                            Превышение · {{ expense_ratio }}%
+                        </span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="hero-side">
+                <div class="hero-stat">
+                    <div class="hero-stat-icon" style="background:var(--green-soft);color:var(--green)">
+                        <svg class="icon"><use href="#i-arrow-down-circle"/></svg>
+                    </div>
+                    <div style="min-width:0;flex:1">
+                        <div class="hero-stat-label">Доходы</div>
+                        <div class="hero-stat-value text-green">+ {{ sum_income_fact|intcomma }} ₽</div>
+                    </div>
+                </div>
+                <div class="hero-stat">
+                    <div class="hero-stat-icon" style="background:var(--red-soft);color:var(--red)">
+                        <svg class="icon"><use href="#i-arrow-up-circle"/></svg>
+                    </div>
+                    <div style="min-width:0;flex:1">
+                        <div class="hero-stat-label">Расходы</div>
+                        <div class="hero-stat-value text-red">− {{ sum_expense_fact|intcomma }} ₽</div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <span class="badge">{% include 'includes/_period.html' %}</span>
     </div>
 
-    <div class="kpi-grid">
-        <div class="kpi">
-            <div class="kpi-label">Итого доходы</div>
-            <div class="kpi-val">{{ sum_income_fact|intcomma }}</div>
-            <div class="kpi-delta {% if income_delta >= 0 %}pos{% else %}neg{% endif %}">
-                {% if income_delta >= 0 %}+{% endif %}{{ income_delta|intcomma }} vs план
+    <div class="planfact-grid">
+        <div class="card planfact-card">
+            <div class="card-header">
+                <div class="card-title-row">
+                    <span class="pf-pill green">
+                        <svg class="icon icon-sm"><use href="#i-arrow-down-circle"/></svg>
+                        Доходы
+                    </span>
+                    <span class="card-title" style="margin:0">План vs Факт</span>
+                </div>
+                <span class="card-subtitle mono" id="inc-totals"></span>
             </div>
+            <div class="pf-list" id="inc-pflist"></div>
         </div>
-        <div class="kpi">
-            <div class="kpi-label">Итого расходы</div>
-            <div class="kpi-val">{{ sum_expense_fact|intcomma }}</div>
-            <div class="kpi-delta {% if expense_delta <= 0 %}pos{% else %}neg{% endif %}">
-                {% if expense_delta >= 0 %}+{% endif %}{{ expense_delta|intcomma }} vs план
+
+        <div class="card planfact-card">
+            <div class="card-header">
+                <div class="card-title-row">
+                    <span class="pf-pill red">
+                        <svg class="icon icon-sm"><use href="#i-arrow-up-circle"/></svg>
+                        Расходы
+                    </span>
+                    <span class="card-title" style="margin:0">План vs Факт</span>
+                </div>
+                <span class="card-subtitle mono" id="exp-totals"></span>
             </div>
-        </div>
-        <div class="kpi">
-            <div class="kpi-label">Сальдо факт</div>
-            <div class="kpi-val">{{ balance_fact|intcomma }}</div>
-            <div class="kpi-delta {% if balance_delta >= 0 %}pos{% else %}neg{% endif %}">
-                {% if balance_delta >= 0 %}+{% endif %}{{ balance_delta|intcomma }} vs план
-            </div>
-        </div>
-        <div class="kpi">
-            <div class="kpi-label">Исполнение расходов</div>
-            <div class="kpi-val">{{ expense_ratio }}%</div>
-            <div class="kpi-delta {% if expense_ratio <= 100 %}pos{% else %}neg{% endif %}">
-                {% if expense_ratio <= 100 %}В рамках плана{% else %}Превышение{% endif %}
-            </div>
+            <div class="pf-list" id="exp-pflist"></div>
         </div>
     </div>
 
-    <div class="charts-row" style="grid-template-columns:1fr">
+    <div class="charts-row">
         <div class="card">
-            <div class="card-title">Доходы: план vs факт</div>
-            <div class="legend">
-                <span class="leg-item"><span class="leg-dot" style="background:#B5D4F4"></span>план</span>
-                <span class="leg-item"><span class="leg-dot" style="background:#378ADD"></span>факт</span>
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Доходы: план vs факт</div>
+                    <div class="card-subtitle">Сравнение по статьям</div>
+                </div>
+                <div class="legend" style="margin-bottom:0">
+                    <span class="leg-item"><span class="leg-dot" style="background:#B5D4F4"></span>план</span>
+                    <span class="leg-item"><span class="leg-dot" style="background:#3D6BE6"></span>факт</span>
+                </div>
             </div>
-            <div style="position:relative;height:220px">
+            <div style="position:relative;height:240px">
                 <canvas id="incChart"></canvas>
             </div>
         </div>
         <div class="card">
-            <div class="card-title">Расходы: план vs факт</div>
-            <div class="legend">
-                <span class="leg-item"><span class="leg-dot" style="background:#F5C4B3"></span>план</span>
-                <span class="leg-item"><span class="leg-dot" style="background:#D85A30"></span>факт</span>
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Расходы: план vs факт</div>
+                    <div class="card-subtitle">Сравнение по статьям</div>
+                </div>
+                <div class="legend" style="margin-bottom:0">
+                    <span class="leg-item"><span class="leg-dot" style="background:#F5C4B3"></span>план</span>
+                    <span class="leg-item"><span class="leg-dot" style="background:#E63E3E"></span>факт</span>
+                </div>
             </div>
-            <div style="position:relative;height:220px">
+            <div style="position:relative;height:240px">
                 <canvas id="expChart"></canvas>
             </div>
         </div>
     </div>
 
     <div class="card">
-        <div class="card-title">Структура расходов (факт)</div>
-        <div style="display:flex;justify-content:center;margin-bottom:16px">
-            <div style="position:relative;height:240px;width:240px">
-                <canvas id="pieChart"></canvas>
+        <div class="card-header">
+            <div>
+                <div class="card-title">Структура расходов</div>
+                <div class="card-subtitle">
+                    Доли статей в общих расходах · <span class="mono" id="treemap-total"></span>
+                </div>
             </div>
         </div>
-        <div id="pie-legend" style="font-size:13px;display:flex;flex-wrap:wrap;gap:10px;justify-content:center"></div>
-    </div>
-
-    <div class="bottom-grid">
-        <div class="card">
-            <div class="card-title">Доходы</div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Группа</th><th class="num">План</th><th class="num">Факт</th></tr></thead>
-                    <tbody id="inc-table"></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="card">
-            <div class="card-title">Расходы</div>
-            <div class="table-wrap">
-                <table>
-                    <thead><tr><th>Группа</th><th class="num">Факт</th><th class="num">%</th></tr></thead>
-                    <tbody id="exp-table"></tbody>
-                </table>
-            </div>
-        </div>
+        <div class="treemap" id="treemap"></div>
     </div>
 {% endblock %}
 

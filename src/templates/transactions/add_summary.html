@@ -4,28 +4,41 @@
 {% block content %}
     <div class="header">
         <div>
-            <div class="header-title">Создать статью</div>
-            <div class="header-sub"><span style="color:var(--text-primary);font-weight:500">{% include 'includes/_period.html' %}</span> &middot; {{ current_space.name }}</div>
+            <div class="header-title">Статьи бюджета</div>
+            <div class="header-sub">{% include 'includes/_period.html' %} · {{ current_space.name }}</div>
         </div>
     </div>
 
     {% if messages %}
         {% for message in messages %}
             <div class="alert-msg {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
-                {{ message }}
+                <svg class="icon icon-sm"><use href="{% if message.tags == 'success' %}#i-check{% else %}#i-info{% endif %}"/></svg>
+                <span>{{ message }}</span>
             </div>
         {% endfor %}
     {% endif %}
 
-    <div class="card">
+    <div class="card" style="max-width:680px;width:100%">
+        <div class="card-header">
+            <div>
+                <div class="card-title" style="margin:0">Создать новую статью</div>
+                <div class="card-subtitle">Задайте плановую сумму на период</div>
+            </div>
+        </div>
         <form method="post">
             {% csrf_token %}
 
             <div class="form-group">
                 <label class="form-label">Тип статьи</label>
                 <div class="type-toggle">
-                    <button type="button" class="type-toggle-btn active" data-type="expense">Расход</button>
-                    <button type="button" class="type-toggle-btn" data-type="income">Доход</button>
+                    <button type="button" class="type-toggle-btn active" data-type="expense">
+                        <svg class="icon"><use href="#i-arrow-up-circle"/></svg>
+                        <span>Расход</span>
+                    </button>
+                    <button type="button" class="type-toggle-btn" data-type="income">
+                        <svg class="icon"><use href="#i-arrow-down-circle"/></svg>
+                        <span>Доход</span>
+                    </button>
                 </div>
                 <input type="hidden" name="type_transaction" id="type_transaction" value="expense">
             </div>
@@ -34,86 +47,121 @@
                 <label class="form-label" for="group_name">Название статьи</label>
                 <input class="form-input" type="text" name="group_name" id="group_name"
                        maxlength="30" placeholder="Например: Продукты" required>
-                <div style="font-size:11px;color:var(--text-secondary);margin-top:4px">Максимум 30 символов</div>
+                <div style="font-size:11px;color:var(--text-faint);margin-top:6px">Максимум 30 символов</div>
             </div>
 
             <div class="form-group">
                 <label class="form-label" for="plan_value">Плановая сумма</label>
-                <input class="form-input" type="number" name="plan_value" id="plan_value"
-                       step="0.01" min="0" placeholder="0.00" required>
+                <div class="amount-input-wrap">
+                    <input class="amount-input mono" type="number" name="plan_value" id="plan_value"
+                           step="0.01" min="0" placeholder="0" required>
+                    <span class="amount-input-currency">₽</span>
+                </div>
             </div>
 
-            <button type="submit" class="submit-btn submit-expense" id="submit-btn">Создать статью расхода</button>
+            <button type="submit" class="submit-btn submit-expense" id="submit-btn">
+                <svg class="icon"><use href="#i-plus"/></svg>
+                <span>Создать статью расхода</span>
+            </button>
         </form>
     </div>
 
     {% if summaries %}
-        <div style="margin-top:24px;display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
-
-            <div class="card" style="flex:1;min-width:280px">
-                <div class="card-title" style="color:var(--income-color, #2ecc71)">Доходы</div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Статья</th>
-                                <th class="num">План</th>
-                                <th class="num">Факт</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in summaries %}{% if s.type_transaction == 'income' %}
-                                <tr>
-                                    <td>{{ s.group_name }}</td>
-                                    <td class="num">{{ s.plan_value|floatformat:0 }}</td>
-                                    <td class="num">{{ s.fact_value|floatformat:0 }}</td>
-                                    <td style="text-align:right">
-                                        <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
-                                              onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')">
-                                            {% csrf_token %}
-                                            <button type="submit" class="delete-btn">Удалить</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endif %}{% endfor %}
-                        </tbody>
-                    </table>
+        <div class="cats-grid">
+            <div>
+                <div class="cats-col-header">
+                    <div class="cats-col-title">
+                        <span class="badge badge-green">
+                            <svg class="icon icon-sm"><use href="#i-arrow-down-circle"/></svg>
+                            Доходы
+                        </span>
+                    </div>
+                </div>
+                <div class="cats-list">
+                    {% for s in summaries %}{% if s.type_transaction == 'income' %}
+                        <div class="cat-card">
+                            <div class="cat-top">
+                                <div class="cat-name-row">
+                                    <span class="cat-icon cat-icon-sm" data-cat-icon data-group="{{ s.group_name }}">
+                                        <svg class="icon icon-sm"><use href="#i-package"/></svg>
+                                    </span>
+                                    <span class="cat-name">{{ s.group_name }}</span>
+                                </div>
+                                <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
+                                      onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')" style="margin:0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="delete-btn">
+                                        <svg class="icon icon-sm"><use href="#i-trash"/></svg>
+                                        <span>Удалить</span>
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="cat-bottom">
+                                <div class="cat-progress">
+                                    <div class="progress-bar">
+                                        {% if s.plan_value > 0 %}
+                                            <div class="progress-fill is-green"
+                                                 data-fact="{{ s.fact_value }}"
+                                                 data-plan="{{ s.plan_value }}"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="cat-amounts">
+                                    <strong>{{ s.fact_value|floatformat:0 }}</strong> / {{ s.plan_value|floatformat:0 }} ₽
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}{% endfor %}
                 </div>
             </div>
 
-            <div class="card" style="flex:1;min-width:280px">
-                <div class="card-title" style="color:var(--expense-color, #e74c3c)">Расходы</div>
-                <div class="table-wrap">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Статья</th>
-                                <th class="num">План</th>
-                                <th class="num">Факт</th>
-                                <th></th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for s in summaries %}{% if s.type_transaction == 'expense' %}
-                                <tr>
-                                    <td>{{ s.group_name }}</td>
-                                    <td class="num">{{ s.plan_value|floatformat:0 }}</td>
-                                    <td class="num">{{ s.fact_value|floatformat:0 }}</td>
-                                    <td style="text-align:right">
-                                        <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
-                                              onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')">
-                                            {% csrf_token %}
-                                            <button type="submit" class="delete-btn">Удалить</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                            {% endif %}{% endfor %}
-                        </tbody>
-                    </table>
+            <div>
+                <div class="cats-col-header">
+                    <div class="cats-col-title">
+                        <span class="badge badge-red">
+                            <svg class="icon icon-sm"><use href="#i-arrow-up-circle"/></svg>
+                            Расходы
+                        </span>
+                    </div>
+                </div>
+                <div class="cats-list">
+                    {% for s in summaries %}{% if s.type_transaction == 'expense' %}
+                        <div class="cat-card">
+                            <div class="cat-top">
+                                <div class="cat-name-row">
+                                    <span class="cat-icon cat-icon-sm" data-cat-icon data-group="{{ s.group_name }}">
+                                        <svg class="icon icon-sm"><use href="#i-package"/></svg>
+                                    </span>
+                                    <span class="cat-name">{{ s.group_name }}</span>
+                                </div>
+                                <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
+                                      onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')" style="margin:0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="delete-btn">
+                                        <svg class="icon icon-sm"><use href="#i-trash"/></svg>
+                                        <span>Удалить</span>
+                                    </button>
+                                </form>
+                            </div>
+                            <div class="cat-bottom">
+                                <div class="cat-progress">
+                                    <div class="progress-bar">
+                                        {% if s.plan_value > 0 %}
+                                            <div class="progress-fill"
+                                                 data-fact="{{ s.fact_value }}"
+                                                 data-plan="{{ s.plan_value }}"
+                                                 data-expense="1"></div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="cat-amounts">
+                                    <strong>{{ s.fact_value|floatformat:0 }}</strong> / {{ s.plan_value|floatformat:0 }} ₽
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}{% endfor %}
                 </div>
             </div>
-
         </div>
     {% endif %}
 {% endblock %}

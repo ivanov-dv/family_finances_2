@@ -3,88 +3,145 @@
 
 {% block content %}
     <div class="ops-header">
-        <div class="ops-title">Операции</div>
+        <div>
+            <div class="ops-title">Операции</div>
+            <div class="header-sub">{% include 'includes/_period.html' %} · {{ current_space.name }}</div>
+        </div>
         <div class="ops-meta">
-            <span style="font-weight:500;color:var(--text-primary)">{% include 'includes/_period.html' %}</span>
             <a href="{% url 'export:excel' %}"
                class="export-btn"
                data-bs-toggle="popover"
                data-bs-placement="bottom"
                data-bs-trigger="focus"
                data-bs-content="Кнопка не доступна из Telegram Webapp. Для Telegram перейдите в меню бота — 'Просмотр'.">
-                Экспорт в Excel
+                <svg class="icon icon-sm"><use href="#i-export"/></svg>
+                <span>Excel</span>
+            </a>
+            <a href="{% url 'transactions:add_transaction' %}" class="btn btn-primary btn-sm">
+                <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+                <span>Добавить</span>
             </a>
         </div>
     </div>
 
     <div class="filter-row">
-        <button type="button" class="filter-btn active-f" data-filter="all">Все</button>
-        <button type="button" class="filter-btn" data-filter="income">Доходы</button>
-        <button type="button" class="filter-btn" data-filter="expense">Расходы</button>
+        <div class="segmented">
+            <button type="button" class="filter-btn active-f" data-filter="all">Все</button>
+            <button type="button" class="filter-btn" data-filter="income">Доходы</button>
+            <button type="button" class="filter-btn" data-filter="expense">Расходы</button>
+        </div>
     </div>
 
-    <div class="card">
-        <div class="ops-table-wrap">
-            <table class="ops-table" id="ops-table">
-                <thead>
-                    <tr>
-                        <th>Дата</th>
-                        <th>Тип</th>
-                        <th>Статья</th>
-                        <th style="text-align:right">Значение</th>
-                        <th>Описание</th>
-                        <th>Автор</th>
-                    </tr>
-                </thead>
-                <tbody id="ops-body">
-                    {% for t in transactions %}
+    <div id="ops-list" class="day-group">
+        {% for t in transactions %}
+            <div class="tx-card" data-type="{{ t.type_transaction }}" data-group="{{ t.group_name }}">
+                <div class="cat-icon" data-cat-icon>
+                    <svg class="icon"><use href="#i-package"/></svg>
+                </div>
+                <div class="tx-info">
+                    <div class="tx-name">{{ t.group_name }}</div>
+                    {% if t.description %}
+                        <div class="tx-desc">{{ t.description }}</div>
+                    {% endif %}
+                    <div class="tx-tags">
                         {% if t.type_transaction == 'income' %}
-                            <tr data-type="income">
-                                <td style="color:var(--text-secondary);white-space:nowrap">{{ t.created_at|date:"d.m.Y" }}</td>
-                                <td><span class="type-badge type-income">Доход</span></td>
-                                <td>{{ t.group_name }}</td>
-                                <td style="text-align:right" class="val-income">{% if t.value_transaction >= 0 %}+{% endif %}{{ t.value_transaction|intcomma }}</td>
-                                <td style="color:var(--text-secondary)">{{ t.description }}</td>
-                                <td style="color:var(--text-secondary);font-size:11px">{{ t.author.username }}</td>
-                            </tr>
+                            <span class="type-badge type-income">
+                                <svg class="icon icon-sm"><use href="#i-arrow-down-circle"/></svg>
+                                Доход
+                            </span>
                         {% else %}
-                            <tr data-type="expense">
-                                <td style="color:var(--text-secondary);white-space:nowrap">{{ t.created_at|date:"d.m.Y" }}</td>
-                                <td><span class="type-badge type-expense">Расход</span></td>
-                                <td>{{ t.group_name }}</td>
-                                <td style="text-align:right" class="val-expense">{% if t.value_transaction >= 0 %}−{{ t.value_transaction|intcomma }}{% else %}+{{ t.value_transaction|intcomma|cut:"-" }}{% endif %}</td>
-                                <td style="color:var(--text-secondary)">{{ t.description }}</td>
-                                <td style="color:var(--text-secondary);font-size:11px">{{ t.author.username }}</td>
-                            </tr>
+                            <span class="type-badge type-expense">
+                                <svg class="icon icon-sm"><use href="#i-arrow-up-circle"/></svg>
+                                Расход
+                            </span>
                         {% endif %}
-                    {% empty %}
-                        <tr><td colspan="6" style="text-align:center;color:var(--text-secondary)">Нет данных</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                        <span class="author-chip">
+                            <span class="author-dot">{{ t.author.username|slice:":1"|upper }}</span>
+                            {{ t.author.username }}
+                        </span>
+                        <span class="text-muted" style="font-size:11px">{{ t.created_at|date:"d.m.Y" }}</span>
+                    </div>
+                </div>
+                {% if t.type_transaction == 'income' %}
+                    <div class="tx-amount income">
+                        {% if t.value_transaction >= 0 %}+ {% endif %}{{ t.value_transaction|intcomma }} ₽
+                    </div>
+                {% else %}
+                    <div class="tx-amount expense">
+                        {% if t.value_transaction >= 0 %}− {{ t.value_transaction|intcomma }}{% else %}+ {{ t.value_transaction|intcomma|cut:"-" }}{% endif %} ₽
+                    </div>
+                {% endif %}
+            </div>
+        {% empty %}
+            <div class="card" style="text-align:center;padding:48px 24px">
+                <div style="display:inline-grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--bg-secondary);margin-bottom:16px">
+                    <svg class="icon icon-lg" style="color:var(--text-muted)"><use href="#i-package"/></svg>
+                </div>
+                <div style="font-weight:600;font-size:16px;margin-bottom:6px">Пока нет операций</div>
+                <div class="text-muted" style="font-size:13px;margin-bottom:20px">В этом периоде ещё не добавлено ни одной операции</div>
+                <a href="{% url 'transactions:add_transaction' %}" class="btn btn-primary btn-sm" style="margin:0 auto">
+                    <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+                    Добавить первую
+                </a>
+            </div>
+        {% endfor %}
     </div>
 {% endblock %}
 
 {% block extra_scripts %}
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
+        (function () {
+            // Маппинг категорий на иконки и цвета
+            const catRules = [
+                { keys: ['зарплат', 'оклад', 'аванс'], icon: '#i-briefcase', color: 'green' },
+                { keys: ['подработ', 'фриланс'], icon: '#i-zap', color: 'blue' },
+                { keys: ['инвест', 'дивиденд', 'процент'], icon: '#i-trend-up', color: 'purple' },
+                { keys: ['продукт', 'еда', 'магаз'], icon: '#i-shopping-cart', color: 'green' },
+                { keys: ['аренд', 'квартир', 'жил'], icon: '#i-home-house', color: 'orange' },
+                { keys: ['транспорт', 'такси', 'бенз', 'авто', 'метро'], icon: '#i-car', color: 'cyan' },
+                { keys: ['развлеч', 'кино', 'театр'], icon: '#i-film', color: 'pink' },
+                { keys: ['коммун', 'свет', 'газ', 'вода'], icon: '#i-zap', color: 'yellow' },
+                { keys: ['здоров', 'медиц', 'лекарств', 'аптек'], icon: '#i-heart', color: 'red' },
+                { keys: ['одежд', 'обув'], icon: '#i-shirt', color: 'purple' },
+                { keys: ['кафе', 'ресторан'], icon: '#i-utensils', color: 'orange' },
+                { keys: ['кофе'], icon: '#i-coffee', color: 'orange' },
+                { keys: ['образован', 'учеб', 'курс', 'книг'], icon: '#i-book', color: 'blue' },
+            ];
+            const defaultIcon = { icon: '#i-package', color: 'blue' };
+
+            function getCategoryStyle(name) {
+                const lower = (name || '').toLowerCase();
+                for (const rule of catRules) {
+                    if (rule.keys.some(k => lower.includes(k))) return rule;
+                }
+                return defaultIcon;
+            }
+
+            document.querySelectorAll('[data-cat-icon]').forEach(el => {
+                const card = el.closest('.tx-card');
+                const group = card?.dataset.group || '';
+                const style = getCategoryStyle(group);
+                el.classList.add(style.color);
+                el.innerHTML = `<svg class="icon"><use href="${style.icon}"/></svg>`;
+            });
+
+            // Фильтры
             const buttons = document.querySelectorAll('.filter-btn');
-            const rows = document.querySelectorAll('#ops-body tr');
+            const cards = document.querySelectorAll('#ops-list .tx-card');
             buttons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     const filter = btn.dataset.filter;
                     buttons.forEach(b => b.classList.remove('active-f'));
                     btn.classList.add('active-f');
-                    rows.forEach(row => {
-                        if (!row.dataset.type) return;
-                        row.style.display = (filter === 'all' || row.dataset.type === filter) ? '' : 'none';
+                    cards.forEach(card => {
+                        if (!card.dataset.type) return;
+                        card.style.display = (filter === 'all' || card.dataset.type === filter) ? '' : 'none';
                     });
                 });
             });
 
             const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
             [...popoverTriggerList].map(el => new bootstrap.Popover(el));
-        });
+        })();
     </script>
 {% endblock %}
