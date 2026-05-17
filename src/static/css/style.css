@@ -2051,7 +2051,7 @@ input.amount-input::-moz-placeholder,
 ================================================================= */
 
 @media (max-width: 1100px) {
-    .charts-row, .bottom-grid, .cats-grid { grid-template-columns: 1fr; }
+    .charts-row, .bottom-grid, .cats-grid, .planfact-grid { grid-template-columns: 1fr; }
     .kpi-grid { grid-template-columns: repeat(2, 1fr); }
 }
 @media (max-width: 960px) {
