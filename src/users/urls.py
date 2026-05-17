@@ -10,4 +10,10 @@ urlpatterns = [
     path('registration/', views.registration, name='registration'),
     path('webapp-auth/', views.webapp_auth, name='webapp_auth'),
     path('webapp/', views.webapp, name='webapp'),
+    path('profile/', views.ProfileView.as_view(), name='profile'),
+    path(
+        'profile/password/',
+        views.PasswordChangeView.as_view(),
+        name='password_change'
+    ),
 ]

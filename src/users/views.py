@@ -5,12 +5,17 @@ from operator import itemgetter
 from urllib.parse import parse_qsl
 
 from django.conf import settings
+from django.contrib import messages
 from django.contrib.auth import authenticate, login, get_user_model
+from django.contrib.auth import views as auth_views
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
+from django.db.models import Q
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import UpdateView
 from django_telegram_login.authentication import verify_telegram_authentication
 from django_telegram_login.errors import (
     TelegramDataIsOutdatedError,
@@ -18,7 +23,7 @@ from django_telegram_login.errors import (
 )
 
 from transactions.models import Space
-from .forms import RegistrationForm
+from .forms import ProfileForm, RegistrationForm
 from .models import TelegramSettings, CoreSettings
 
 User = get_user_model()
@@ -204,3 +209,57 @@ def webapp_auth(request):
         return JsonResponse({'success': True})
 
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+class ProfileView(LoginRequiredMixin, UpdateView):
+    form_class = ProfileForm
+    template_name = 'users/profile.html'
+    success_url = reverse_lazy('users:profile')
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Профиль обновлён')
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        core_settings = CoreSettings.objects.filter(user=user).first()
+        telegram_settings = TelegramSettings.objects.filter(user=user).first()
+        available_spaces = Space.objects.filter(
+            Q(user=user) | Q(available_linked_users=user)
+        ).distinct().order_by('name')
+        context.update({
+            'title': settings.PROJECT_TITLE,
+            'current_space': core_settings.current_space if core_settings else None,
+            'current_month': core_settings.current_month if core_settings else None,
+            'current_year': core_settings.current_year if core_settings else None,
+            'available_spaces': available_spaces,
+            'telegram_settings': telegram_settings,
+            'next': self.request.path,
+        })
+        return context
+
+
+class PasswordChangeView(LoginRequiredMixin, auth_views.PasswordChangeView):
+    template_name = 'users/password_change.html'
+    success_url = reverse_lazy('users:profile')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Пароль успешно изменён')
+        return super().form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        core_settings = CoreSettings.objects.filter(user=user).first()
+        context.update({
+            'title': settings.PROJECT_TITLE,
+            'current_space': core_settings.current_space if core_settings else None,
+            'current_month': core_settings.current_month if core_settings else None,
+            'current_year': core_settings.current_year if core_settings else None,
+            'next': self.request.path,
+        })
+        return context
