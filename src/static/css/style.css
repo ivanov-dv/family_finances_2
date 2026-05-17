@@ -2097,6 +2097,101 @@ input.amount-input::-moz-placeholder,
 }
 
 /* =================================================================
+   PROFILE PAGE
+================================================================= */
+
+.profile-page { display: flex; flex-direction: column; gap: 24px; }
+.profile-header {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+.profile-header-info { min-width: 0; }
+.profile-header-meta {
+    margin-top: 4px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.profile-avatar-lg {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: var(--grad-green);
+    display: grid;
+    place-items: center;
+    color: #04221A;
+    font-weight: 700;
+    font-size: 28px;
+    flex-shrink: 0;
+}
+.profile-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+.profile-readonly-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+}
+.profile-readonly-row:last-of-type { border-bottom: none; }
+.profile-readonly-label {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.profile-readonly-value {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+    text-align: right;
+}
+.profile-readonly-value.mono {
+    font-family: 'JetBrains Mono', 'SF Mono', Menlo, Consolas, ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+}
+.profile-form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 12px;
+}
+.profile-hint {
+    margin-top: 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+.profile-spaces { display: flex; flex-direction: column; gap: 10px; }
+.profile-space-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--bg-secondary);
+}
+.profile-space-name {
+    flex: 1;
+    min-width: 0;
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 14px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+    .profile-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 540px) {
+    .profile-header { gap: 14px; }
+    .profile-avatar-lg { width: 56px; height: 56px; font-size: 22px; }
+}
+
+/* =================================================================
    UTIL
 ================================================================= */
 
