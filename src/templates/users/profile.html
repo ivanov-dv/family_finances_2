@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load django_bootstrap5 %}
+
+{% block content %}
+<div class="profile-page">
+
+    <div class="profile-header">
+        <div class="profile-avatar-lg">{{ user.username|slice:":1"|upper }}</div>
+        <div class="profile-header-info">
+            <div class="header-title">{{ user.username }}</div>
+            <div class="profile-header-meta">
+                {% if user.email %}<span>{{ user.email }}</span> · {% endif %}
+                <span>С нами с {{ user.date_joined|date:"d.m.Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert-msg {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% endif %}">
+                <svg class="icon icon-sm"><use href="#i-check"/></svg>
+                <span>{{ message }}</span>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="profile-grid">
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Личные данные</div>
+                    <div class="card-subtitle">Логин изменить нельзя</div>
+                </div>
+            </div>
+            <div class="profile-readonly-row">
+                <span class="profile-readonly-label">Логин</span>
+                <span class="profile-readonly-value">{{ user.username }}</span>
+            </div>
+            <form method="post" novalidate>
+                {% csrf_token %}
+                {% bootstrap_form form %}
+                <div class="profile-form-actions">
+                    <button type="submit" class="btn btn-primary">Сохранить</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Telegram</div>
+                    <div class="card-subtitle">Привязка к Telegram-аккаунту</div>
+                </div>
+            </div>
+            {% if telegram_settings and telegram_settings.id_telegram %}
+                <div class="profile-readonly-row">
+                    <span class="profile-readonly-label">Статус</span>
+                    <span class="profile-readonly-value">
+                        <span class="pf-pill green">Подключён</span>
+                    </span>
+                </div>
+                <div class="profile-readonly-row">
+                    <span class="profile-readonly-label">Telegram ID</span>
+                    <span class="profile-readonly-value mono">{{ telegram_settings.id_telegram }}</span>
+                </div>
+                {% if telegram_settings.telegram_only %}
+                    <div class="profile-hint">
+                        Аккаунт создан через Telegram — вход только через Telegram.
+                    </div>
+                {% endif %}
+            {% else %}
+                <div class="profile-readonly-row">
+                    <span class="profile-readonly-label">Статус</span>
+                    <span class="profile-readonly-value">
+                        <span class="pf-pill red">Не подключён</span>
+                    </span>
+                </div>
+            {% endif %}
+        </div>
+
+        {% if not telegram_settings.telegram_only %}
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Безопасность</div>
+                        <div class="card-subtitle">Управление паролем</div>
+                    </div>
+                </div>
+                <div class="profile-form-actions">
+                    <a href="{% url 'users:password_change' %}" class="btn btn-ghost">
+                        Изменить пароль
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Пространства</div>
+                    <div class="card-subtitle">Доступные финансовые пространства</div>
+                </div>
+            </div>
+            {% if available_spaces %}
+                <div class="profile-spaces">
+                    {% for space in available_spaces %}
+                        <div class="profile-space-row">
+                            <div class="space-avatar">{{ space.name|slice:":1"|upper }}</div>
+                            <div class="profile-space-name">{{ space.name }}</div>
+                            {% if current_space and current_space.id == space.id %}
+                                <span class="pf-pill green">Активное</span>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="profile-hint">Нет доступных пространств.</div>
+            {% endif %}
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <div class="card-title">Выход из аккаунта</div>
+                    <div class="card-subtitle">Завершить текущую сессию</div>
+                </div>
+            </div>
+            <form method="post" action="{% url 'logout' %}" class="profile-form-actions">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-ghost">
+                    <svg class="icon icon-sm"><use href="#i-log-out"/></svg>
+                    <span>Выйти</span>
+                </button>
+            </form>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
