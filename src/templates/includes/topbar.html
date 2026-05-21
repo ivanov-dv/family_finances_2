@@ -19,21 +19,12 @@
     </div>
 
     {% if current_month and current_year %}
-        <button type="button" class="icon-btn" data-open-period-modal title="Новый период" aria-label="Новый период">
+        <a href="{% url 'transactions:add_transaction' %}" class="icon-btn icon-btn-accent" title="Новая операция" aria-label="Новая операция">
             <svg class="icon"><use href="#i-plus"/></svg>
-        </button>
+        </a>
     {% endif %}
 
     <div class="topbar-spacer"></div>
-
-    <div class="theme-toggle" id="themeToggle">
-        <button type="button" data-theme-set="light" title="Светлая тема">
-            <svg class="icon icon-sm"><use href="#i-sun"/></svg>
-        </button>
-        <button type="button" data-theme-set="dark" title="Тёмная тема">
-            <svg class="icon icon-sm"><use href="#i-moon"/></svg>
-        </button>
-    </div>
 
     <div class="profile-menu" id="profileMenu">
         <button type="button" class="profile-btn" id="profileMenuBtn">
@@ -42,6 +33,20 @@
             <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
         </button>
         <div class="profile-menu-items">
+            <div class="profile-menu-section">
+                <span class="profile-menu-label">Тема</span>
+                <div class="theme-toggle theme-toggle-menu" id="themeToggle">
+                    <button type="button" data-theme-set="light" title="Светлая тема">
+                        <svg class="icon icon-sm"><use href="#i-sun"/></svg>
+                        <span>Светлая</span>
+                    </button>
+                    <button type="button" data-theme-set="dark" title="Тёмная тема">
+                        <svg class="icon icon-sm"><use href="#i-moon"/></svg>
+                        <span>Тёмная</span>
+                    </button>
+                </div>
+            </div>
+            <div class="profile-menu-sep"></div>
             <a class="profile-menu-item" href="{% url 'users:profile' %}">
                 <svg class="icon icon-sm"><use href="#i-user"/></svg>
                 <span>Профиль</span>

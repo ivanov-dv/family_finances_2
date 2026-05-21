@@ -121,19 +121,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Theme toggle
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        const stored = localStorage.getItem('ff-theme');
-        const systemDark = matchMedia('(prefers-color-scheme: dark)').matches;
-        const initial = stored || (systemDark ? 'dark' : 'light');
-        applyTheme(initial);
+    const stored = localStorage.getItem('ff-theme');
+    const systemDark = matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(stored || (systemDark ? 'dark' : 'light'));
 
-        themeToggle.querySelectorAll('[data-theme-set]').forEach(btn => {
-            btn.addEventListener('click', () => {
-                applyTheme(btn.dataset.themeSet);
-            });
-        });
-    }
+    document.addEventListener('click', e => {
+        const themeBtn = e.target.closest('[data-theme-set]');
+        if (themeBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            applyTheme(themeBtn.dataset.themeSet);
+        }
+    });
     function applyTheme(theme) {
         document.documentElement.dataset.theme = theme;
         localStorage.setItem('ff-theme', theme);
@@ -159,6 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
         sidebar.querySelectorAll('.nav-link').forEach(link => {
             link.addEventListener('click', closeSidebar);
         });
+    }
+
+    // ============== Модалка «Экспорт в Excel» ==============
+    const exportModal = document.getElementById('exportModal');
+    if (exportModal) {
+        const confirmLink = exportModal.querySelector('[data-export-confirm]');
+        if (confirmLink) {
+            confirmLink.addEventListener('click', () => {
+                setTimeout(() => closeAppModal(exportModal), 150);
+            });
+        }
     }
 
     // ============== Модалка «Новый период» ==============
