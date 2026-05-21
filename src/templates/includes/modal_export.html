@@ -1,0 +1,19 @@
+<div class="app-modal-backdrop" id="exportModal" hidden>
+    <div class="app-modal" role="dialog" aria-labelledby="exportModalTitle">
+        <button type="button" class="app-modal-close" data-close-app-modal aria-label="Закрыть">
+            <svg class="icon"><use href="#i-x"/></svg>
+        </button>
+        <div class="app-modal-title" id="exportModalTitle">Экспорт в Excel</div>
+        <div class="app-modal-subtitle">
+            Выгрузим транзакции и сводки{% if current_space %} пространства «{{ current_space.name }}»{% endif %} в файл .xlsx
+        </div>
+
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+            <button type="button" class="btn btn-ghost btn-sm" data-close-app-modal>Отмена</button>
+            <a href="{% url 'export:excel' %}" class="btn btn-primary btn-sm" data-export-confirm>
+                <svg class="icon icon-sm"><use href="#i-export"/></svg>
+                <span>Скачать Excel</span>
+            </a>
+        </div>
+    </div>
+</div>
