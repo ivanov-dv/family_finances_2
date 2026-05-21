@@ -161,6 +161,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // ============== Модалка «Экспорт в Excel» ==============
+    const exportModal = document.getElementById('exportModal');
+    if (exportModal) {
+        const confirmLink = exportModal.querySelector('[data-export-confirm]');
+        if (confirmLink) {
+            confirmLink.addEventListener('click', () => {
+                setTimeout(() => closeAppModal(exportModal), 150);
+            });
+        }
+    }
+
     // ============== Модалка «Новый период» ==============
     const periodModal = document.getElementById('newPeriodModal');
     if (periodModal) {
