@@ -456,6 +456,19 @@ body.app-shell {
 }
 .icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
 
+.icon-btn-accent {
+    background: linear-gradient(135deg, var(--green-soft), transparent 80%);
+    border-color: rgba(0, 184, 132, 0.35);
+    color: var(--green);
+    box-shadow: 0 0 0 0 rgba(0, 184, 132, 0);
+}
+.icon-btn-accent:hover {
+    background: linear-gradient(135deg, var(--green-soft), var(--green-soft));
+    border-color: var(--green);
+    color: var(--green-2);
+    box-shadow: 0 4px 14px rgba(0, 184, 132, 0.28);
+}
+
 /* Search input in topbar */
 .search-input {
     flex: 1;
