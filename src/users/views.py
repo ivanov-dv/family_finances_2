@@ -67,6 +67,7 @@ def registration(request):
     with transaction.atomic():
         user = form.save(commit=False)
         user.set_password(form.cleaned_data['password'])
+        user.is_active = False
         user.save()
         TelegramSettings.objects.create(
             user=user,

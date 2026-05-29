@@ -98,9 +98,16 @@ document.addEventListener('DOMContentLoaded', () => {
             const data = await response.json();
 
             if (data.status === 'success') {
-                registrationSuccess.textContent = 'Регистрация прошла успешно!';
+                registrationSuccess.textContent = 'Заявка отправлена. Аккаунт будет доступен после подтверждения администратором.';
                 registrationSuccess.style.display = 'block';
                 registrationForm.style.display = 'none';
+                const modal = registrationForm.closest('.app-modal');
+                if (modal) {
+                    const title = modal.querySelector('.app-modal-title');
+                    const subtitle = modal.querySelector('.app-modal-subtitle');
+                    if (title) title.style.display = 'none';
+                    if (subtitle) subtitle.style.display = 'none';
+                }
             } else {
                 registrationError.textContent = data.message;
                 registrationError.style.display = 'block';

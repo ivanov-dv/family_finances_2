@@ -5,7 +5,7 @@ from django.conf import settings
 
 from tests.conftest import auth_header
 from transactions.models import Space
-from users.models import TelegramSettings, CoreSettings
+from users.models import User, TelegramSettings, CoreSettings
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -241,6 +241,43 @@ class TestUser:
             content_type='application/json'
         )
         assert response.status_code == 204
+
+
+class TestWebRegistration:
+
+    registration_url = '/users/registration/'
+    login_url = '/users/ajax-login/'
+
+    def test_registration_creates_inactive_user(self, client):
+        """Веб-регистрация создаёт неактивного юзера и связанные объекты."""
+        data = {'username': 'webuser', 'password': 'testpass1234'}
+        response = client.post(self.registration_url, data=data)
+        assert response.status_code == 200
+        assert response.json()['status'] == 'success'
+        user = User.objects.get(username='webuser')
+        assert user.is_active is False
+        assert TelegramSettings.objects.filter(user=user).exists()
+        assert CoreSettings.objects.filter(user=user).exists()
+        assert Space.objects.filter(user=user).exists()
+
+    def test_inactive_user_cannot_login(self, client):
+        """Неактивный юзер не может войти после регистрации."""
+        data = {'username': 'webuser', 'password': 'testpass1234'}
+        client.post(self.registration_url, data=data)
+        response = client.post(self.login_url, data=data)
+        assert response.status_code == 200
+        assert response.json()['status'] == 'error'
+
+    def test_activated_user_can_login(self, client):
+        """После активации (is_active=True) юзер успешно входит."""
+        data = {'username': 'webuser', 'password': 'testpass1234'}
+        client.post(self.registration_url, data=data)
+        user = User.objects.get(username='webuser')
+        user.is_active = True
+        user.save()
+        response = client.post(self.login_url, data=data)
+        assert response.status_code == 200
+        assert response.json()['status'] == 'success'
 
 
 class TestCoreSettings:
