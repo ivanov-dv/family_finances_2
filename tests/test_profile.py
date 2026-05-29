@@ -219,3 +219,21 @@ class TestPasswordChangeView:
         assert response.context['form'].errors
         user.refresh_from_db()
         assert user.check_password(old_password)
+
+
+class TestTopbarUserName:
+
+    url = reverse('users:profile')
+
+    def test_topbar_shows_first_name_when_set(self, user_1_client, user_1):
+        """В topbar показывается имя, если оно задано."""
+        user_1.first_name = 'Иван'
+        user_1.save()
+        response = user_1_client.get(self.url)
+        assert 'Иван' in response.content.decode()
+
+    def test_topbar_falls_back_to_username(self, user_1_client, user_1):
+        """Без имени в topbar показывается логин."""
+        assert user_1.first_name == ''
+        response = user_1_client.get(self.url)
+        assert user_1.username in response.content.decode()

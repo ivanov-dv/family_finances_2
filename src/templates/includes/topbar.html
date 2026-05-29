@@ -28,8 +28,8 @@
 
     <div class="profile-menu" id="profileMenu">
         <button type="button" class="profile-btn" id="profileMenuBtn">
-            <span class="avatar-sm">{{ user.username|slice:":1"|upper }}</span>
-            <span>{{ user.username }}</span>
+            <span class="avatar-sm">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
+            <span>{{ user.first_name|default:user.username }}</span>
             <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
         </button>
         <div class="profile-menu-items">
