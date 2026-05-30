@@ -7,12 +7,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction as db_transaction
 from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 
 from tools.transactions import get_summary_report
 from .models import Space, Summary, Transaction
 from .permissions import CurrentSpaceEditMixin, get_space_role, can_edit_space
-from . import services
+from .exceptions import SpaceError
+from .services import SpaceService
 
 
 class HomePageView(TemplateView):
@@ -325,60 +326,83 @@ def delete_summary(request, pk):
     return redirect('transactions:add_summary')
 
 
-@login_required
-def create_space(request):
+class SpaceActionView(LoginRequiredMixin, View):
+    """База POST-вьюх управления пространствами.
+
+    Валидирует next_url, ловит SpaceError → messages.error,
+    success-сообщение из perform() → messages.success, редиректит на next.
+    Сабкласс реализует perform() с бизнес-логикой.
+    """
+
+    def post(self, request, *args, **kwargs):
+        next_url = request.POST.get('next', '/')
+        if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+            next_url = '/'
+        try:
+            message = self.perform(request, *args, **kwargs)
+            if message:
+                messages.success(request, message)
+        except SpaceError as e:
+            messages.error(request, str(e))
+        return redirect(next_url)
+
+    def perform(self, request, *args, **kwargs) -> str | None:
+        """Выполнить операцию. Вернуть success-сообщение либо None."""
+        raise NotImplementedError
+
+    @staticmethod
+    def _get_owned_space(request, pk: int) -> Space:
+        space = Space.objects.filter(pk=pk, user=request.user).first()
+        if not space:
+            raise SpaceError('Пространство не найдено.')
+        return space
+
+
+class ApplySpaceView(SpaceActionView):
+    """Переключение активного пространства."""
+
+    def perform(self, request, *args, **kwargs):
+        space = Space.objects.filter(pk=request.POST.get('space')).first()
+        if not space:
+            raise SpaceError('Пространство не найдено.')
+        SpaceService.apply_space(request.user, space)
+
+
+class LeaveSpaceView(SpaceActionView):
+    """Участник покидает пространство."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = Space.objects.filter(pk=pk).first()
+        if not space:
+            raise SpaceError('Пространство не найдено.')
+        SpaceService.leave_space(request.user, space)
+        return f'Вы покинули пространство «{space.name}».'
+
+
+class CreateSpaceView(SpaceActionView):
     """Создание нового пространства."""
-    if request.method != 'POST':
-        return redirect('transactions:summary')
-    next_url = request.POST.get('next', '/')
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
-    space, error = services.create_space(request.user, request.POST.get('name', ''))
-    if error:
-        messages.error(request, error)
-    else:
-        messages.success(request, f'Пространство «{space.name}» создано.')
-    return redirect(next_url)
+
+    def perform(self, request, *args, **kwargs):
+        space = SpaceService.create_space(request.user, request.POST.get('name', ''))
+        return f'Пространство «{space.name}» создано.'
 
 
-@login_required
-def rename_space(request, pk):
+class RenameSpaceView(SpaceActionView):
     """Переименование пространства владельцем."""
-    if request.method != 'POST':
-        return redirect('transactions:summary')
-    next_url = request.POST.get('next', '/')
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
-    space = Space.objects.filter(pk=pk, user=request.user).first()
-    if not space:
-        messages.error(request, 'Пространство не найдено.')
-        return redirect(next_url)
-    success, error = services.rename_space(space, request.POST.get('name', ''))
-    if error:
-        messages.error(request, error)
-    else:
-        messages.success(request, f'Пространство переименовано в «{space.name}».')
-    return redirect(next_url)
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.rename_space(space, request.POST.get('name', ''))
+        return f'Пространство переименовано в «{space.name}».'
 
 
-@login_required
-def delete_space(request, pk):
+class DeleteSpaceView(SpaceActionView):
     """Удаление пространства владельцем."""
-    if request.method != 'POST':
-        return redirect('transactions:summary')
-    next_url = request.POST.get('next', '/')
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
-    space = Space.objects.filter(pk=pk, user=request.user).first()
-    if not space:
-        messages.error(request, 'Пространство не найдено.')
-        return redirect(next_url)
-    success, error = services.delete_space(space, request.user)
-    if error:
-        messages.error(request, error)
-    else:
-        messages.success(request, 'Пространство удалено.')
-    return redirect(next_url)
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.delete_space(space, request.user)
+        return 'Пространство удалено.'
 
 
 @login_required

@@ -371,6 +371,83 @@ class TestSpaceManagement:
         assert Space.objects.filter(pk=owner_space.pk).exists()
 
 
+class TestApplyAndLeaveSpace:
+    """Шаг 3b — переключение активного пространства и выход из него."""
+
+    # ------------------------------------------------------------------ apply_space
+
+    def test_apply_space_member_switches(self, no_space_user, no_space_client, owner_space):
+        """Участник (linked) может переключить current_space через apply_space."""
+        LinkedUserToSpace.objects.create(
+            space=owner_space, linked_user=no_space_user, role=LinkedUserToSpace.VIEWER,
+        )
+        no_space_client.post(reverse('transactions:apply_space'), {
+            'space': owner_space.pk, 'next': '/',
+        })
+        no_space_user.core_settings.refresh_from_db()
+        assert no_space_user.core_settings.current_space == owner_space
+
+    def test_apply_space_owner_switches(self, user_1_client, user_1, second_space):
+        """Владелец может переключить current_space на своё другое пространство."""
+        user_1_client.post(reverse('transactions:apply_space'), {
+            'space': second_space.pk, 'next': '/',
+        })
+        user_1.core_settings.refresh_from_db()
+        assert user_1.core_settings.current_space == second_space
+
+    def test_apply_space_non_member_blocked(self, no_space_user, no_space_client, owner_space):
+        """Не-участник не может переключить current_space на чужое пространство."""
+        no_space_client.post(reverse('transactions:apply_space'), {
+            'space': owner_space.pk, 'next': '/',
+        })
+        no_space_user.core_settings.refresh_from_db()
+        assert no_space_user.core_settings.current_space is None
+
+    # ------------------------------------------------------------------ leave_space
+
+    def test_leave_space_removes_link(self, viewer, viewer_client, owner_space):
+        """Участник покидает пространство — LinkedUserToSpace удаляется."""
+        viewer_client.post(
+            reverse('transactions:leave_space', args=[owner_space.pk]), {'next': '/'},
+        )
+        assert not LinkedUserToSpace.objects.filter(
+            space=owner_space, linked_user=viewer,
+        ).exists()
+
+    def test_leave_space_clears_current_space(self, viewer, viewer_client, owner_space):
+        """Участник покидает активное пространство — current_space становится None."""
+        viewer_client.post(
+            reverse('transactions:leave_space', args=[owner_space.pk]), {'next': '/'},
+        )
+        viewer.core_settings.refresh_from_db()
+        assert viewer.core_settings.current_space is None
+
+    def test_leave_space_non_active_keeps_current_space(self, viewer, viewer_client, owner_space, second_space):
+        """Участник покидает НЕ активное пространство — current_space не меняется."""
+        viewer.core_settings.current_space = None
+        viewer.core_settings.save()
+        viewer_client.post(
+            reverse('transactions:leave_space', args=[owner_space.pk]), {'next': '/'},
+        )
+        viewer.core_settings.refresh_from_db()
+        assert viewer.core_settings.current_space is None
+
+    def test_owner_cannot_leave_own_space(self, user_1_client, user_1, owner_space):
+        """Владелец не может покинуть своё пространство через leave_space."""
+        user_1_client.post(
+            reverse('transactions:leave_space', args=[owner_space.pk]), {'next': '/'},
+        )
+        assert Space.objects.filter(pk=owner_space.pk, user=user_1).exists()
+
+    def test_non_member_cannot_leave(self, non_member_client, owner_space):
+        """Не-участник не может покинуть пространство, в котором не состоит."""
+        count_before = LinkedUserToSpace.objects.filter(space=owner_space).count()
+        non_member_client.post(
+            reverse('transactions:leave_space', args=[owner_space.pk]), {'next': '/'},
+        )
+        assert LinkedUserToSpace.objects.filter(space=owner_space).count() == count_before
+
+
 class TestRoleHelpers:
 
     @pytest.mark.parametrize('role, expected', [
