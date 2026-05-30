@@ -5,13 +5,22 @@ import pytest
 from django.conf import settings
 from django.test.client import Client
 
-from transactions.models import Space, Summary, Transaction
+from transactions.models import (
+    Space, Summary, Transaction, LinkedUserToSpace
+)
 from users.models import User, TelegramSettings, CoreSettings
 
 
 @pytest.fixture
 def auth_header():
     return {'Authorization': settings.ACCESS_TOKEN}
+
+
+@pytest.fixture
+def make_user():
+    def _make(username, **kwargs):
+        return User.objects.create(username=username, **kwargs)
+    return _make
 
 
 @pytest.fixture
@@ -70,6 +79,11 @@ def user_3_shared_space(user_1):
     )
     TelegramSettings.objects.create(user=user, telegram_only=False)
     Space.objects.create(user=user, name=user.username)
+    LinkedUserToSpace.objects.create(
+        space=user_1.core_settings.current_space,
+        linked_user=user,
+        role=LinkedUserToSpace.EDITOR,
+    )
     dt = datetime.now()
     CoreSettings.objects.create(
         user=user,
