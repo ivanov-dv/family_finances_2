@@ -66,9 +66,7 @@ class TestGetSpaceRole:
 
 
 class TestEnforcement:
-    """Шаг 2 — блокировка мутаций по роли в current_space."""
-
-    # ------------------------------------------------------------------ viewer заблокирован
+    """Блокировка мутаций по роли в current_space."""
 
     def test_viewer_cannot_add_transaction(self, viewer_client, space_summary):
         """viewer POST add_transaction → редирект, Transaction не создана."""
@@ -116,8 +114,6 @@ class TestEnforcement:
         assert resp.status_code == 302
         assert Summary.objects.filter(pk=space_summary.pk).exists()
 
-    # ------------------------------------------------------------------ editor разрешено
-
     def test_editor_can_add_summary(self, editor_client):
         """editor POST add_summary → Summary создана."""
         count_before = Summary.objects.count()
@@ -135,8 +131,6 @@ class TestEnforcement:
         )
         assert not Summary.objects.filter(pk=space_summary.pk).exists()
 
-    # ------------------------------------------------------------------ owner разрешено
-
     def test_owner_can_add_summary(self, user_1_client):
         """owner POST add_summary → Summary создана."""
         count_before = Summary.objects.count()
@@ -153,8 +147,6 @@ class TestEnforcement:
             reverse('transactions:delete_summary', args=[space_summary.pk])
         )
         assert not Summary.objects.filter(pk=space_summary.pk).exists()
-
-    # ------------------------------------------------------------------ current_space=None заблокирован
 
     def test_no_space_cannot_add_summary(self, no_space_client):
         """current_space=None → POST add_summary заблокирован."""
@@ -180,8 +172,6 @@ class TestEnforcement:
         assert no_space_user.core_settings.current_month == original_month
         assert no_space_user.core_settings.current_year == original_year
 
-    # ------------------------------------------------------------------ не-участник заблокирован
-
     def test_non_member_cannot_add_summary(self, non_member_client):
         """Не-участник POST add_summary → заблокирован."""
         count_before = Summary.objects.count()
@@ -199,8 +189,6 @@ class TestEnforcement:
             reverse('transactions:delete_summary', args=[space_summary.pk])
         )
         assert Summary.objects.filter(pk=space_summary.pk).exists()
-
-    # ------------------------------------------------------------------ apply_period: разрешить при role ≠ None
 
     def test_viewer_can_apply_period(self, viewer, viewer_client):
         """viewer (role ≠ None) may apply_period."""
@@ -225,9 +213,7 @@ class TestEnforcement:
 
 
 class TestSpaceManagement:
-    """Шаг 3a — создание, переименование, удаление пространств."""
-
-    # ------------------------------------------------------------------ create_space
+    """Создание, переименование, удаление пространств."""
 
     def test_create_space_success(self, user_1_client, user_1):
         """Пользователь создаёт новое пространство — Space появляется в БД."""
@@ -278,8 +264,6 @@ class TestSpaceManagement:
         })
         assert Space.objects.filter(user=user_1).count() == count_before
 
-    # ------------------------------------------------------------------ rename_space
-
     def test_rename_space_success(self, user_1_client, owner_space):
         """Владелец успешно переименовывает пространство."""
         user_1_client.post(
@@ -318,8 +302,6 @@ class TestSpaceManagement:
         owner_space.refresh_from_db()
         assert owner_space.name == original_name
 
-    # ------------------------------------------------------------------ delete_space
-
     def test_delete_space_success(self, user_1_client, user_1, owner_space, second_space):
         """Владелец удаляет не-последнее пространство — оно исчезает из БД."""
         user_1.core_settings.current_space = second_space
@@ -342,7 +324,6 @@ class TestSpaceManagement:
         self, user_1_client, user_1, owner_space, second_space
     ):
         """Удаление активного пространства → владелец переключается на другое своё."""
-        # owner_space — активное (установлено в фикстуре user_1)
         user_1_client.post(
             reverse('transactions:delete_space', args=[owner_space.pk]),
             {'next': '/'},
@@ -373,9 +354,7 @@ class TestSpaceManagement:
 
 
 class TestApplyAndLeaveSpace:
-    """Шаг 3b — переключение активного пространства и выход из него."""
-
-    # ------------------------------------------------------------------ apply_space
+    """Переключение активного пространства и выход из него."""
 
     def test_apply_space_member_switches(self, no_space_user, no_space_client, owner_space):
         """Участник (linked) может переключить current_space через apply_space."""
@@ -403,8 +382,6 @@ class TestApplyAndLeaveSpace:
         })
         no_space_user.core_settings.refresh_from_db()
         assert no_space_user.core_settings.current_space is None
-
-    # ------------------------------------------------------------------ leave_space
 
     def test_leave_space_removes_link(self, viewer, viewer_client, owner_space):
         """Участник покидает пространство — LinkedUserToSpace удаляется."""
@@ -471,9 +448,7 @@ class TestRoleHelpers:
 
 
 class TestSpaceMembers:
-    """Шаг 3c — приглашение, смена роли и исключение участников (владелец)."""
-
-    # ------------------------------------------------------------------ invite_user
+    """Приглашение, смена роли и исключение участников (владелец)."""
 
     def test_invite_success_with_role(self, user_1_client, owner_space, make_user):
         """Владелец приглашает существующего юзера с ролью editor → доступ сразу."""
@@ -539,8 +514,6 @@ class TestSpaceMembers:
             space=owner_space, linked_user=target,
         ).exists()
 
-    # ------------------------------------------------------------------ change_member_role
-
     def test_change_role_success(self, user_1_client, owner_space, viewer):
         """Владелец меняет роль участника viewer → editor."""
         user_1_client.post(
@@ -558,8 +531,6 @@ class TestSpaceMembers:
         )
         link = LinkedUserToSpace.objects.get(space=owner_space, linked_user=viewer)
         assert link.role == LinkedUserToSpace.VIEWER
-
-    # ------------------------------------------------------------------ remove_member
 
     def test_remove_member_success(self, user_1_client, owner_space, viewer):
         """Владелец исключает участника — связь удаляется."""
@@ -593,7 +564,7 @@ class TestSpaceMembers:
 
 
 class TestSpacesContextProcessor:
-    """Шаг 4 — context-processor spaces_and_role: роль, права, список пространств."""
+    """Context-processor spaces_and_role: роль, права, список пространств."""
 
     def test_owner_role_keys(self, user_1_client):
         """Для владельца: role=own, can_edit=True, is_owner=True."""
