@@ -15,15 +15,6 @@
         </div>
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert-msg {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% endif %}">
-                <svg class="icon icon-sm"><use href="#i-check"/></svg>
-                <span>{{ message }}</span>
-            </div>
-        {% endfor %}
-    {% endif %}
-
     <div class="profile-grid">
 
         <div class="card">
@@ -101,15 +92,35 @@
                     <div class="card-title">Пространства</div>
                     <div class="card-subtitle">Доступные финансовые пространства</div>
                 </div>
+                <button type="button" class="btn btn-primary btn-sm" data-open-app-modal="createSpaceModal">
+                    <svg class="icon icon-sm"><use href="#i-plus"/></svg>
+                    <span>Создать пространство</span>
+                </button>
             </div>
             {% if available_spaces %}
                 <div class="profile-spaces">
                     {% for space in available_spaces %}
                         <div class="profile-space-row">
                             <div class="space-avatar">{{ space.name|slice:":1"|upper }}</div>
-                            <div class="profile-space-name">{{ space.name }}</div>
+                            <div class="profile-space-name">{{ space.display_name }}</div>
+                            <span class="pf-pill">{{ space.role_label }}</span>
                             {% if current_space and current_space.id == space.id %}
                                 <span class="pf-pill green">Активное</span>
+                            {% else %}
+                                <form method="post" action="{% url 'transactions:apply_space' %}" style="margin:0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="space" value="{{ space.id }}">
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" class="btn btn-ghost btn-sm">Сделать активным</button>
+                                </form>
+                            {% endif %}
+                            {% if not space.is_own %}
+                                <form method="post" action="{% url 'transactions:leave_space' space.id %}"
+                                      onsubmit="return confirm('Покинуть пространство «{{ space.display_name }}»?')" style="margin:0">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="next" value="{{ request.path }}">
+                                    <button type="submit" class="btn btn-ghost btn-sm">Покинуть</button>
+                                </form>
                             {% endif %}
                         </div>
                     {% endfor %}
@@ -118,6 +129,77 @@
                 <div class="profile-hint">Нет доступных пространств.</div>
             {% endif %}
         </div>
+
+        {% for space in owned_spaces %}
+            <div class="card">
+                <div class="card-header">
+                    <div>
+                        <div class="card-title">Управление · {{ space.name }}</div>
+                        <div class="card-subtitle">Переименование, участники, удаление</div>
+                    </div>
+                </div>
+
+                <form method="post" action="{% url 'transactions:rename_space' space.pk %}" class="profile-form-actions" style="gap:8px">
+                    {% csrf_token %}
+                    <input type="hidden" name="next" value="{{ request.path }}">
+                    <input type="text" class="form-input" name="name" value="{{ space.name }}"
+                           maxlength="20" required autocomplete="off" aria-label="Название пространства">
+                    <button type="submit" class="btn btn-ghost btn-sm">Переименовать</button>
+                </form>
+
+                <div class="profile-members">
+                    <div class="card-subtitle" style="margin-top:12px">Участники</div>
+                    {% for link in space.linkedusertospace_set.all %}
+                        <div class="profile-space-row">
+                            <div class="space-avatar">{{ link.linked_user.username|slice:":1"|upper }}</div>
+                            <div class="profile-space-name">{{ link.linked_user.username }}</div>
+                            <form method="post" action="{% url 'transactions:change_member_role' space.pk %}" style="margin:0;display:flex;gap:6px">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <input type="hidden" name="linked_user_id" value="{{ link.linked_user_id }}">
+                                <select class="form-input" name="role" onchange="this.form.submit()" aria-label="Роль участника">
+                                    <option value="view_space" {% if link.role == 'view_space' %}selected{% endif %}>Просмотр</option>
+                                    <option value="edit_space" {% if link.role == 'edit_space' %}selected{% endif %}>Редактирование</option>
+                                </select>
+                            </form>
+                            <form method="post" action="{% url 'transactions:remove_member' space.pk %}"
+                                  onsubmit="return confirm('Исключить «{{ link.linked_user.username }}»?')" style="margin:0">
+                                {% csrf_token %}
+                                <input type="hidden" name="next" value="{{ request.path }}">
+                                <input type="hidden" name="linked_user_id" value="{{ link.linked_user_id }}">
+                                <button type="submit" class="btn btn-ghost btn-sm">Исключить</button>
+                            </form>
+                        </div>
+                    {% empty %}
+                        <div class="profile-hint">Пока нет участников.</div>
+                    {% endfor %}
+
+                    <form method="post" action="{% url 'transactions:invite_user' space.pk %}" class="profile-form-actions" style="gap:8px;margin-top:8px">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <input type="text" class="form-input" name="username" placeholder="Логин" required autocomplete="off" aria-label="Логин пользователя">
+                        <select class="form-input" name="role" aria-label="Роль">
+                            <option value="view_space">Просмотр</option>
+                            <option value="edit_space">Редактирование</option>
+                        </select>
+                        <button type="submit" class="btn btn-primary btn-sm">Пригласить</button>
+                    </form>
+                </div>
+
+                {% if owned_count > 1 %}
+                    <form method="post" action="{% url 'transactions:delete_space' space.pk %}"
+                          onsubmit="return confirm('Удалить пространство «{{ space.name }}» со всеми данными?')"
+                          class="profile-form-actions" style="margin-top:12px">
+                        {% csrf_token %}
+                        <input type="hidden" name="next" value="{{ request.path }}">
+                        <button type="submit" class="btn btn-ghost btn-sm" style="color:var(--danger,#e5484d)">
+                            <svg class="icon icon-sm"><use href="#i-trash"/></svg>
+                            <span>Удалить пространство</span>
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endfor %}
 
         <div class="card">
             <div class="card-header">

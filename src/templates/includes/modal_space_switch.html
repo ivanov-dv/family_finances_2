@@ -1,0 +1,38 @@
+<div class="app-modal-backdrop" id="spaceSwitchModal" hidden>
+    <div class="app-modal" role="dialog" aria-labelledby="spaceSwitchTitle">
+        <button type="button" class="app-modal-close" data-close-app-modal aria-label="Закрыть">
+            <svg class="icon"><use href="#i-x"/></svg>
+        </button>
+        <div class="app-modal-title" id="spaceSwitchTitle">Пространства</div>
+        <div class="app-modal-subtitle">Выберите активное пространство</div>
+
+        <div class="profile-spaces">
+            {% for space in available_spaces %}
+                <div class="profile-space-row">
+                    <div class="space-avatar">{{ space.name|slice:":1"|upper }}</div>
+                    <div class="profile-space-name">{{ space.display_name }}</div>
+                    <span class="pf-pill">{{ space.role_label }}</span>
+                    {% if current_space and current_space.id == space.id %}
+                        <span class="pf-pill green">Активное</span>
+                    {% else %}
+                        <form method="post" action="{% url 'transactions:apply_space' %}" style="margin:0">
+                            {% csrf_token %}
+                            <input type="hidden" name="space" value="{{ space.id }}">
+                            <input type="hidden" name="next" value="{{ request.path }}">
+                            <button type="submit" class="btn btn-ghost btn-sm">Выбрать</button>
+                        </form>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="app-modal-subtitle" style="margin:0">
+                    У вас пока нет доступных пространств. Создайте первое.
+                </div>
+            {% endfor %}
+        </div>
+
+        <button type="button" class="submit-btn" data-open-app-modal="createSpaceModal">
+            <svg class="icon"><use href="#i-plus"/></svg>
+            <span>Создать пространство</span>
+        </button>
+    </div>
+</div>
