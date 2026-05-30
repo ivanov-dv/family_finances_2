@@ -7,10 +7,12 @@
             <div class="header-title">Статьи бюджета</div>
             <div class="header-sub">{% include 'includes/_period.html' %} · {{ current_space.name }}</div>
         </div>
+        {% if current_space_can_edit %}
         <button type="button" class="btn btn-primary" data-open-modal>
             <svg class="icon icon-sm"><use href="#i-plus"/></svg>
             <span>Новая статья</span>
         </button>
+        {% endif %}
     </div>
 
     <div class="cats-grid">
@@ -61,10 +63,12 @@
                         </div>
                     </div>
                 {% endif %}{% endfor %}
+                {% if current_space_can_edit %}
                 <button type="button" class="cat-card-add" data-open-modal data-add-type="income">
                     <svg class="icon icon-sm"><use href="#i-plus"/></svg>
                     <span>Добавить статью дохода</span>
                 </button>
+                {% endif %}
             </div>
         </div>
 
@@ -116,10 +120,12 @@
                         </div>
                     </div>
                 {% endif %}{% endfor %}
+                {% if current_space_can_edit %}
                 <button type="button" class="cat-card-add" data-open-modal data-add-type="expense">
                     <svg class="icon icon-sm"><use href="#i-plus"/></svg>
                     <span>Добавить статью расхода</span>
                 </button>
+                {% endif %}
             </div>
         </div>
     </div>

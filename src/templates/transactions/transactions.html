@@ -17,10 +17,12 @@
                 <svg class="icon icon-sm"><use href="#i-export"/></svg>
                 <span>Excel</span>
             </a>
+            {% if current_space_can_edit %}
             <a href="{% url 'transactions:add_transaction' %}" class="btn btn-primary btn-sm">
                 <svg class="icon icon-sm"><use href="#i-plus"/></svg>
                 <span>Добавить</span>
             </a>
+            {% endif %}
         </div>
     </div>
 
@@ -101,10 +103,12 @@
             </div>
             <div style="font-weight:600;font-size:16px;margin-bottom:6px">Пока нет операций</div>
             <div class="text-muted" style="font-size:13px;margin-bottom:20px">В этом периоде ещё не добавлено ни одной операции</div>
+            {% if current_space_can_edit %}
             <a href="{% url 'transactions:add_transaction' %}" class="btn btn-primary btn-sm" style="margin:0 auto">
                 <svg class="icon icon-sm"><use href="#i-plus"/></svg>
                 Добавить первую
             </a>
+            {% endif %}
         </div>
     {% endif %}
 {% endblock %}

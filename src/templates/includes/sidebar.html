@@ -22,6 +22,7 @@
         <span>Операции</span>
         {% if transactions_count %}<span class="nav-badge">{{ transactions_count }}</span>{% endif %}
     </a>
+    {% if current_space_can_edit %}
     <a class="nav-link {% if request.resolver_match.url_name == 'add_summary' %}active{% endif %}"
        href="{% url 'transactions:add_summary' %}">
         <svg class="icon"><use href="#i-layers"/></svg>
@@ -32,6 +33,7 @@
         <svg class="icon"><use href="#i-plus"/></svg>
         <span>Добавить</span>
     </a>
+    {% endif %}
 
     <span class="nav-section-label">Инструменты</span>
 
