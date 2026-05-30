@@ -13,6 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     function openAppModal(modalId) {
         const modal = document.getElementById(modalId);
         if (!modal) return;
+        document.querySelectorAll('.app-modal-backdrop:not([hidden])').forEach(el => {
+            if (el !== modal) closeAppModal(el);
+        });
         modal.removeAttribute('hidden');
         modal.hidden = false;
         document.body.style.overflow = 'hidden';
