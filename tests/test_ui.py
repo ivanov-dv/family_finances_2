@@ -103,3 +103,47 @@ class TestProfileSpacesHub:
         """Чужое пространство отображается с владельцем «· от»."""
         resp = editor_client.get(reverse('users:profile'))
         assert ' · от ' in resp.content.decode()
+
+
+class TestProfileSpaceManagement:
+    """6d — управление своими пространствами, участники, «Покинуть»."""
+
+    def test_owner_sees_rename(self, user_1_client, owner_space):
+        """Владелец видит форму переименования своего пространства."""
+        resp = user_1_client.get(reverse('users:profile'))
+        assert reverse('transactions:rename_space', args=[owner_space.pk]) in resp.content.decode()
+
+    def test_owner_sees_delete_when_multiple(self, user_1_client, owner_space, second_space):
+        """Владелец видит удаление, когда пространств больше одного."""
+        resp = user_1_client.get(reverse('users:profile'))
+        assert reverse('transactions:delete_space', args=[owner_space.pk]) in resp.content.decode()
+
+    def test_delete_hidden_when_single_owned(self, editor_client, user_3_shared_space):
+        """Единственное своё пространство нельзя удалить — кнопки нет."""
+        resp = editor_client.get(reverse('users:profile'))
+        own = user_3_shared_space.spaces.first()
+        assert reverse('transactions:delete_space', args=[own.pk]) not in resp.content.decode()
+
+    def test_owner_sees_invite_form(self, user_1_client, owner_space):
+        """Владелец видит форму приглашения участника."""
+        resp = user_1_client.get(reverse('users:profile'))
+        assert reverse('transactions:invite_user', args=[owner_space.pk]) in resp.content.decode()
+
+    def test_member_list_and_controls(self, user_1_client, owner_space, viewer):
+        """В списке участников — логин участника + смена роли и исключение."""
+        content = user_1_client.get(reverse('users:profile')).content.decode()
+        assert viewer.username in content
+        assert reverse('transactions:change_member_role', args=[owner_space.pk]) in content
+        assert reverse('transactions:remove_member', args=[owner_space.pk]) in content
+
+    def test_foreign_space_leave_button(self, editor_client, owner_space):
+        """У чужого пространства есть кнопка «Покинуть»."""
+        resp = editor_client.get(reverse('users:profile'))
+        assert reverse('transactions:leave_space', args=[owner_space.pk]) in resp.content.decode()
+
+    def test_viewer_no_management(self, viewer_client, owner_space):
+        """Не-владелец (viewer) не видит переименования/удаления/приглашения чужого."""
+        content = viewer_client.get(reverse('users:profile')).content.decode()
+        assert reverse('transactions:rename_space', args=[owner_space.pk]) not in content
+        assert reverse('transactions:invite_user', args=[owner_space.pk]) not in content
+        assert reverse('transactions:leave_space', args=[owner_space.pk]) in content

@@ -228,12 +228,20 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         user = self.request.user
         core_settings = CoreSettings.objects.filter(user=user).first()
         telegram_settings = TelegramSettings.objects.filter(user=user).first()
+        owned_spaces = (
+            Space.objects
+            .filter(user=user)
+            .prefetch_related('linkedusertospace_set__linked_user')
+            .order_by('name')
+        )
         context.update({
             'title': settings.PROJECT_TITLE,
             'current_space': core_settings.current_space if core_settings else None,
             'current_month': core_settings.current_month if core_settings else None,
             'current_year': core_settings.current_year if core_settings else None,
             'telegram_settings': telegram_settings,
+            'owned_spaces': owned_spaces,
+            'owned_count': len(owned_spaces),
             'next': self.request.path,
         })
         return context
