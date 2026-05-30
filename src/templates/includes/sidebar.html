@@ -22,6 +22,7 @@
         <span>Операции</span>
         {% if transactions_count %}<span class="nav-badge">{{ transactions_count }}</span>{% endif %}
     </a>
+    {% if current_space_can_edit %}
     <a class="nav-link {% if request.resolver_match.url_name == 'add_summary' %}active{% endif %}"
        href="{% url 'transactions:add_summary' %}">
         <svg class="icon"><use href="#i-layers"/></svg>
@@ -32,6 +33,7 @@
         <svg class="icon"><use href="#i-plus"/></svg>
         <span>Добавить</span>
     </a>
+    {% endif %}
 
     <span class="nav-section-label">Инструменты</span>
 
@@ -43,12 +45,28 @@
     <div class="sidebar-spacer"></div>
 
     {% if current_space %}
-        <div class="space-card">
+        <button type="button" class="space-card" data-open-app-modal="spaceSwitchModal"
+                style="width:100%;text-align:left;border:none;cursor:pointer">
             <div class="space-avatar">{{ current_space.name|slice:":1"|upper }}</div>
             <div style="min-width:0;flex:1">
                 <div class="space-name">{{ current_space.name }}</div>
-                <div class="space-meta">Активное пространство</div>
+                {% if current_space_is_owner %}
+                    <div class="space-meta">Сменить пространство</div>
+                {% else %}
+                    <div class="space-meta">от {{ current_space.user.first_name|default:current_space.user.username }}</div>
+                {% endif %}
             </div>
-        </div>
+            <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
+        </button>
+    {% else %}
+        <button type="button" class="space-card" data-open-app-modal="spaceSwitchModal"
+                style="width:100%;text-align:left;border:none;cursor:pointer">
+            <div class="space-avatar"><svg class="icon icon-sm"><use href="#i-plus"/></svg></div>
+            <div style="min-width:0;flex:1">
+                <div class="space-name">Нет пространства</div>
+                <div class="space-meta">Выбрать или создать</div>
+            </div>
+            <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
+        </button>
     {% endif %}
 </aside>

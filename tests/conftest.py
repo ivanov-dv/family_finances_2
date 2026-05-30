@@ -3,15 +3,24 @@ from datetime import datetime
 import pytest
 
 from django.conf import settings
-from django.test.client import Client
+from django.test import Client
 
-from transactions.models import Space, Summary, Transaction
+from transactions.models import (
+    Space, Summary, Transaction, LinkedUserToSpace
+)
 from users.models import User, TelegramSettings, CoreSettings
 
 
 @pytest.fixture
 def auth_header():
     return {'Authorization': settings.ACCESS_TOKEN}
+
+
+@pytest.fixture
+def make_user():
+    def _make(username, **kwargs):
+        return User.objects.create(username=username, **kwargs)
+    return _make
 
 
 @pytest.fixture
@@ -70,6 +79,11 @@ def user_3_shared_space(user_1):
     )
     TelegramSettings.objects.create(user=user, telegram_only=False)
     Space.objects.create(user=user, name=user.username)
+    LinkedUserToSpace.objects.create(
+        space=user_1.core_settings.current_space,
+        linked_user=user,
+        role=LinkedUserToSpace.EDITOR,
+    )
     dt = datetime.now()
     CoreSettings.objects.create(
         user=user,
@@ -191,3 +205,86 @@ def transaction_prev_year_2(user_2_tg_only, summary_prev_year_2):
 @pytest.fixture
 def many_transactions(transaction_1, transaction_2, transaction_prev_year_1, transaction_prev_year_2):
     return transaction_1, transaction_2, transaction_prev_year_1, transaction_prev_year_2
+
+
+@pytest.fixture
+def owner_space(user_1):
+    """Пространство владельца user_1."""
+    return user_1.spaces.first()
+
+
+@pytest.fixture
+def second_space(user_1):
+    """Второе пространство user_1 (для тестов, требующих 2+ пространств)."""
+    return Space.objects.create(user=user_1, name='second')
+
+
+@pytest.fixture
+def viewer(owner_space, make_user):
+    """Участник с ролью view_space в пространстве owner_space."""
+    user = make_user('enf_viewer')
+    LinkedUserToSpace.objects.create(
+        space=owner_space, linked_user=user, role=LinkedUserToSpace.VIEWER,
+    )
+    cs_ref = owner_space.user.core_settings
+    CoreSettings.objects.create(
+        user=user,
+        current_space=owner_space,
+        current_month=cs_ref.current_month,
+        current_year=cs_ref.current_year,
+    )
+    return user
+
+
+@pytest.fixture
+def viewer_client(viewer):
+    """Клиент, залогиненный как viewer."""
+    c = Client()
+    c.force_login(viewer)
+    return c
+
+
+@pytest.fixture
+def editor_client(user_3_shared_space):
+    """Клиент user_3 — edit_space в пространстве user_1."""
+    c = Client()
+    c.force_login(user_3_shared_space)
+    return c
+
+
+@pytest.fixture
+def no_space_user(make_user):
+    """Юзер с current_space=None."""
+    user = make_user('enf_no_space')
+    dt = datetime.now()
+    CoreSettings.objects.create(
+        user=user,
+        current_space=None,
+        current_month=dt.month,
+        current_year=dt.year,
+    )
+    return user
+
+
+@pytest.fixture
+def no_space_client(no_space_user):
+    """Клиент с current_space=None."""
+    c = Client()
+    c.force_login(no_space_user)
+    return c
+
+
+@pytest.fixture
+def non_member_client(owner_space, make_user):
+    """Клиент с current_space=owner_space, но без LinkedUserToSpace."""
+    user = make_user('enf_non_member')
+    cs_ref = owner_space.user.core_settings
+    CoreSettings.objects.create(
+        user=user,
+        current_space=owner_space,
+        current_month=cs_ref.current_month,
+        current_year=cs_ref.current_year,
+    )
+    c = Client()
+    c.force_login(user)
+    return c

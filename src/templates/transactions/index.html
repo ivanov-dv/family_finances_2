@@ -17,10 +17,12 @@
                     <svg class="icon icon-sm"><use href="#i-list"/></svg>
                     Детализация
                 </a>
+                {% if current_space_can_edit %}
                 <a href="{% url 'transactions:add_transaction' %}" class="btn btn-ghost">
                     <svg class="icon icon-sm"><use href="#i-plus"/></svg>
                     Добавить операцию
                 </a>
+                {% endif %}
             </div>
         {% else %}
             <p>Сервис управления семейным бюджетом. Для продолжения работы необходимо авторизоваться.</p>

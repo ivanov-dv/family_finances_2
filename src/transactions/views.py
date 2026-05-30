@@ -7,10 +7,21 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import IntegrityError, transaction as db_transaction
 from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.generic import TemplateView
+from django.views.generic import TemplateView, View
 
 from tools.transactions import get_summary_report
-from .models import Summary, Transaction
+from .models import Space, Summary, Transaction
+from .permissions import CurrentSpaceEditMixin, get_space_role, can_edit_space
+from .exceptions import PeriodError, SpaceError
+from .services import PeriodService, SpaceService
+
+
+def get_safe_next_url(request):
+    """Безопасный next_url из POST/GET (защита от open redirect)."""
+    next_url = request.POST.get('next') or request.GET.get('next') or '/'
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return '/'
+    return next_url
 
 
 class HomePageView(TemplateView):
@@ -144,7 +155,7 @@ class ChangePeriod(LoginRequiredMixin, TemplateView):
         return context
 
 
-class AddTransactionView(LoginRequiredMixin, TemplateView):
+class AddTransactionView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView):
     """Форма добавления транзакции."""
 
     template_name = 'transactions/add_transaction.html'
@@ -230,7 +241,7 @@ class AddTransactionView(LoginRequiredMixin, TemplateView):
         return redirect('transactions:add_transaction')
 
 
-class AddSummaryView(LoginRequiredMixin, TemplateView):
+class AddSummaryView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView):
     """Форма создания статьи (группы) в сводке текущего периода."""
 
     template_name = 'transactions/add_summary.html'
@@ -306,6 +317,10 @@ def delete_summary(request, pk):
     """Удаление статьи текущего пользователя."""
     if request.method != 'POST':
         return redirect('transactions:add_summary')
+    role = get_space_role(request.user, request.user.core_settings.current_space)
+    if not can_edit_space(role):
+        messages.error(request, 'Недостаточно прав для изменения данного пространства.')
+        return redirect('transactions:add_summary')
     summary = Summary.objects.filter(
         pk=pk,
         space=request.user.core_settings.current_space,
@@ -319,21 +334,122 @@ def delete_summary(request, pk):
     return redirect('transactions:add_summary')
 
 
+class SpaceActionView(LoginRequiredMixin, View):
+    """База POST-вьюх управления пространствами.
+
+    Валидирует next_url, ловит SpaceError → messages.error,
+    success-сообщение из perform() → messages.success, редиректит на next.
+    Сабкласс реализует perform() с бизнес-логикой.
+    """
+
+    def post(self, request, *args, **kwargs):
+        next_url = get_safe_next_url(request)
+        try:
+            message = self.perform(request, *args, **kwargs)
+            if message:
+                messages.success(request, message)
+        except SpaceError as e:
+            messages.error(request, str(e))
+        return redirect(next_url)
+
+    def perform(self, request, *args, **kwargs) -> str | None:
+        """Выполнить операцию. Вернуть success-сообщение либо None."""
+        raise NotImplementedError
+
+    @staticmethod
+    def _get_owned_space(request, pk: int) -> Space:
+        space = Space.objects.filter(pk=pk, user=request.user).first()
+        if not space:
+            raise SpaceError('Пространство не найдено.')
+        return space
+
+
+class ApplySpaceView(SpaceActionView):
+    """Переключение активного пространства."""
+
+    def perform(self, request, *args, **kwargs):
+        space = Space.objects.filter(pk=request.POST.get('space')).first()
+        if not space:
+            raise SpaceError('Пространство не найдено.')
+        SpaceService.apply_space(request.user, space)
+
+
+class LeaveSpaceView(SpaceActionView):
+    """Участник покидает пространство."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = Space.objects.filter(pk=pk).first()
+        if not space:
+            raise SpaceError('Пространство не найдено.')
+        SpaceService.leave_space(request.user, space)
+        return f'Вы покинули пространство «{space.name}».'
+
+
+class CreateSpaceView(SpaceActionView):
+    """Создание нового пространства."""
+
+    def perform(self, request, *args, **kwargs):
+        space = SpaceService.create_space(request.user, request.POST.get('name', ''))
+        return f'Пространство «{space.name}» создано.'
+
+
+class RenameSpaceView(SpaceActionView):
+    """Переименование пространства владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.rename_space(space, request.POST.get('name', ''))
+        return f'Пространство переименовано в «{space.name}».'
+
+
+class DeleteSpaceView(SpaceActionView):
+    """Удаление пространства владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.delete_space(space, request.user)
+        return 'Пространство удалено.'
+
+
+class InviteUserView(SpaceActionView):
+    """Приглашение участника владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        target = SpaceService.invite_user(
+            space, request.POST.get('username', ''), request.POST.get('role', ''),
+        )
+        return f'Пользователь «{target.username}» приглашён.'
+
+
+class ChangeMemberRoleView(SpaceActionView):
+    """Смена роли участника владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.change_member_role(
+            space, request.POST.get('linked_user_id'), request.POST.get('role', ''),
+        )
+        return 'Роль участника обновлена.'
+
+
+class RemoveMemberView(SpaceActionView):
+    """Исключение участника владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.remove_member(space, request.POST.get('linked_user_id'))
+        return 'Участник исключён.'
+
+
 @login_required
 def apply_period(request):
     """Применение смены периода и редирект на предыдущую страницу."""
-    period = request.GET.get('period')
-    next_url = request.GET.get('next', '/')
-
-    if period:
-        year, month = map(int, period.split('_'))
-        request.user.core_settings.current_year = year
-        request.user.core_settings.current_month = month
-        request.user.core_settings.save()
-
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
-
+    next_url = get_safe_next_url(request)
+    try:
+        PeriodService.apply_period(request.user, request.GET.get('period'))
+    except PeriodError as e:
+        messages.error(request, str(e))
     return redirect(next_url)
 
 
@@ -343,12 +459,7 @@ def create_period(request):
     if request.method != 'POST':
         return redirect('transactions:change_period')
 
-    next_url = request.POST.get('next', '/')
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
-
-    user = request.user
-    space = user.core_settings.current_space
+    next_url = get_safe_next_url(request)
 
     try:
         period_month = int(request.POST.get('period_month', ''))
@@ -357,87 +468,34 @@ def create_period(request):
         messages.error(request, 'Некорректный месяц или год.')
         return redirect(next_url)
 
-    if not (1 <= period_month <= 12) or not (2020 <= period_year <= 2099):
-        messages.error(request, 'Месяц должен быть 1–12, год 2020–2099.')
-        return redirect(next_url)
+    selected_ids = None
+    if 'copy_summary_ids' in request.POST:
+        try:
+            selected_ids = {int(pk) for pk in request.POST.getlist('copy_summary_ids') if pk}
+        except ValueError:
+            selected_ids = set()
 
-    already_exists = Summary.objects.filter(
-        space=space,
-        period_month=period_month,
-        period_year=period_year,
-    ).exists()
-
-    if already_exists:
-        user.core_settings.current_month = period_month
-        user.core_settings.current_year = period_year
-        user.core_settings.save()
-        messages.info(request, 'Этот период уже существует — переключились на него.')
-        return redirect(next_url)
-
-    last_period = (
-        Summary.objects
-        .filter(space=space)
-        .values('period_month', 'period_year')
-        .order_by('-period_year', '-period_month')
-        .first()
-    )
-
-    copied_count = 0
-    if last_period:
-        source = Summary.objects.filter(
-            space=space,
-            period_month=last_period['period_month'],
-            period_year=last_period['period_year'],
-        )
-
-        selected_ids_raw = request.POST.getlist('copy_summary_ids')
-        if 'copy_summary_ids' in request.POST:
+    plan_overrides = {}
+    for key in request.POST:
+        if key.startswith('plan_value_'):
             try:
-                selected_ids = {int(pk) for pk in selected_ids_raw if pk}
+                plan_overrides[int(key[len('plan_value_'):])] = request.POST[key]
             except ValueError:
-                selected_ids = set()
-            source = source.filter(pk__in=selected_ids)
+                pass
 
-        with db_transaction.atomic():
-            new_summaries = []
-            for s in source:
-                raw = request.POST.get(f'plan_value_{s.pk}', '').strip().replace(',', '.')
-                plan_value = s.plan_value
-                if raw:
-                    try:
-                        candidate = Decimal(raw)
-                        if candidate >= 0:
-                            plan_value = candidate
-                    except InvalidOperation:
-                        pass
-
-                new_summaries.append(
-                    Summary(
-                        space=space,
-                        period_month=period_month,
-                        period_year=period_year,
-                        type_transaction=s.type_transaction,
-                        group_name=s.group_name,
-                        plan_value=plan_value,
-                        fact_value=Decimal('0'),
-                    )
-                )
-            Summary.objects.bulk_create(new_summaries)
-            copied_count = len(new_summaries)
-
-    user.core_settings.current_month = period_month
-    user.core_settings.current_year = period_year
-    user.core_settings.save()
-
-    if copied_count:
-        messages.success(
-            request,
-            f'Период создан · скопировано статей: {copied_count}.',
+    try:
+        result = PeriodService.create_period(
+            request.user, period_month, period_year, selected_ids, plan_overrides,
         )
+    except PeriodError as e:
+        messages.error(request, str(e))
+        return redirect(next_url)
+
+    if result.already_exists:
+        messages.info(request, 'Этот период уже существует — переключились на него.')
+    elif result.copied_count:
+        messages.success(request, f'Период создан · скопировано статей: {result.copied_count}.')
     else:
-        messages.info(
-            request,
-            'Период создан. Добавьте статьи бюджета на странице «Статьи».',
-        )
+        messages.info(request, 'Период создан. Добавьте статьи бюджета на странице «Статьи».')
 
     return redirect(next_url)
