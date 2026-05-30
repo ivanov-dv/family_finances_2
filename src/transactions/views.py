@@ -10,8 +10,9 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import TemplateView
 
 from tools.transactions import get_summary_report
-from .models import Summary, Transaction
+from .models import Space, Summary, Transaction
 from .permissions import CurrentSpaceEditMixin, get_space_role, can_edit_space
+from . import services
 
 
 class HomePageView(TemplateView):
@@ -322,6 +323,62 @@ def delete_summary(request, pk):
         summary.delete()
         messages.success(request, f'Статья «{name}» удалена.')
     return redirect('transactions:add_summary')
+
+
+@login_required
+def create_space(request):
+    """Создание нового пространства."""
+    if request.method != 'POST':
+        return redirect('transactions:summary')
+    next_url = request.POST.get('next', '/')
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/'
+    space, error = services.create_space(request.user, request.POST.get('name', ''))
+    if error:
+        messages.error(request, error)
+    else:
+        messages.success(request, f'Пространство «{space.name}» создано.')
+    return redirect(next_url)
+
+
+@login_required
+def rename_space(request, pk):
+    """Переименование пространства владельцем."""
+    if request.method != 'POST':
+        return redirect('transactions:summary')
+    next_url = request.POST.get('next', '/')
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/'
+    space = Space.objects.filter(pk=pk, user=request.user).first()
+    if not space:
+        messages.error(request, 'Пространство не найдено.')
+        return redirect(next_url)
+    success, error = services.rename_space(space, request.POST.get('name', ''))
+    if error:
+        messages.error(request, error)
+    else:
+        messages.success(request, f'Пространство переименовано в «{space.name}».')
+    return redirect(next_url)
+
+
+@login_required
+def delete_space(request, pk):
+    """Удаление пространства владельцем."""
+    if request.method != 'POST':
+        return redirect('transactions:summary')
+    next_url = request.POST.get('next', '/')
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/'
+    space = Space.objects.filter(pk=pk, user=request.user).first()
+    if not space:
+        messages.error(request, 'Пространство не найдено.')
+        return redirect(next_url)
+    success, error = services.delete_space(space, request.user)
+    if error:
+        messages.error(request, error)
+    else:
+        messages.success(request, 'Пространство удалено.')
+    return redirect(next_url)
 
 
 @login_required

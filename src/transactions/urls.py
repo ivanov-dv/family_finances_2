@@ -5,6 +5,9 @@ from . import views
 app_name = 'transactions'
 
 urlpatterns = [
+    path('spaces/create/', views.create_space, name='create_space'),
+    path('spaces/<int:pk>/rename/', views.rename_space, name='rename_space'),
+    path('spaces/<int:pk>/delete/', views.delete_space, name='delete_space'),
     path('apply_period/', views.apply_period, name='apply_period'),
     path('create_period/', views.create_period, name='create_period'),
     path('change_period', views.ChangePeriod.as_view(), name='change_period'),

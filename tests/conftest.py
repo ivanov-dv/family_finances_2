@@ -214,6 +214,12 @@ def owner_space(user_1):
 
 
 @pytest.fixture
+def second_space(user_1):
+    """Второе пространство user_1 (для тестов, требующих 2+ пространств)."""
+    return Space.objects.create(user=user_1, name='second')
+
+
+@pytest.fixture
 def viewer(owner_space, make_user):
     """Участник с ролью view_space в пространстве owner_space."""
     user = make_user('enf_viewer')

@@ -2,7 +2,7 @@ import pytest
 
 from django.urls import reverse
 
-from transactions.models import LinkedUserToSpace, Summary, Transaction
+from transactions.models import LinkedUserToSpace, Space, Summary, Transaction
 from transactions.permissions import (
     get_space_role,
     can_edit_space,
@@ -221,6 +221,154 @@ class TestEnforcement:
         no_space_user.core_settings.refresh_from_db()
         assert no_space_user.core_settings.current_month == original_month
         assert no_space_user.core_settings.current_year == original_year
+
+
+class TestSpaceManagement:
+    """Шаг 3a — создание, переименование, удаление пространств."""
+
+    # ------------------------------------------------------------------ create_space
+
+    def test_create_space_success(self, user_1_client, user_1):
+        """Пользователь создаёт новое пространство — Space появляется в БД."""
+        count_before = Space.objects.filter(user=user_1).count()
+        user_1_client.post(reverse('transactions:create_space'), {
+            'name': 'newspace', 'next': '/',
+        })
+        assert Space.objects.filter(user=user_1).count() == count_before + 1
+        assert Space.objects.filter(user=user_1, name='newspace').exists()
+
+    def test_create_space_lowercase(self, user_1_client, user_1):
+        """Имя пространства сохраняется в нижнем регистре."""
+        user_1_client.post(reverse('transactions:create_space'), {
+            'name': 'MySpace', 'next': '/',
+        })
+        assert Space.objects.filter(user=user_1, name='myspace').exists()
+
+    def test_create_space_does_not_switch_current(self, user_1_client, user_1):
+        """create_space НЕ меняет текущее пространство пользователя."""
+        original = user_1.core_settings.current_space
+        user_1_client.post(reverse('transactions:create_space'), {
+            'name': 'anotherspace', 'next': '/',
+        })
+        user_1.core_settings.refresh_from_db()
+        assert user_1.core_settings.current_space == original
+
+    def test_create_space_duplicate_blocked(self, user_1_client, user_1, owner_space):
+        """Дублирующееся имя → ошибка, Space не создаётся."""
+        count_before = Space.objects.filter(user=user_1).count()
+        user_1_client.post(reverse('transactions:create_space'), {
+            'name': owner_space.name, 'next': '/',
+        })
+        assert Space.objects.filter(user=user_1).count() == count_before
+
+    def test_create_space_empty_name_blocked(self, user_1_client, user_1):
+        """Пустое имя → ошибка, Space не создаётся."""
+        count_before = Space.objects.filter(user=user_1).count()
+        user_1_client.post(reverse('transactions:create_space'), {
+            'name': '', 'next': '/',
+        })
+        assert Space.objects.filter(user=user_1).count() == count_before
+
+    def test_create_space_name_too_long_blocked(self, user_1_client, user_1):
+        """Имя длиннее 20 символов → ошибка, Space не создаётся."""
+        count_before = Space.objects.filter(user=user_1).count()
+        user_1_client.post(reverse('transactions:create_space'), {
+            'name': 'a' * 21, 'next': '/',
+        })
+        assert Space.objects.filter(user=user_1).count() == count_before
+
+    # ------------------------------------------------------------------ rename_space
+
+    def test_rename_space_success(self, user_1_client, owner_space):
+        """Владелец успешно переименовывает пространство."""
+        user_1_client.post(
+            reverse('transactions:rename_space', args=[owner_space.pk]),
+            {'name': 'renamed', 'next': '/'},
+        )
+        owner_space.refresh_from_db()
+        assert owner_space.name == 'renamed'
+
+    def test_rename_space_lowercase(self, user_1_client, owner_space):
+        """Переименование приводит имя к нижнему регистру."""
+        user_1_client.post(
+            reverse('transactions:rename_space', args=[owner_space.pk]),
+            {'name': 'MyNewName', 'next': '/'},
+        )
+        owner_space.refresh_from_db()
+        assert owner_space.name == 'mynewname'
+
+    def test_rename_space_duplicate_blocked(self, user_1_client, owner_space, second_space):
+        """Переименование в уже существующее имя → ошибка, имя не меняется."""
+        original_name = owner_space.name
+        user_1_client.post(
+            reverse('transactions:rename_space', args=[owner_space.pk]),
+            {'name': second_space.name, 'next': '/'},
+        )
+        owner_space.refresh_from_db()
+        assert owner_space.name == original_name
+
+    def test_rename_space_non_owner_blocked(self, editor_client, owner_space):
+        """Не-владелец не может переименовать чужое пространство."""
+        original_name = owner_space.name
+        editor_client.post(
+            reverse('transactions:rename_space', args=[owner_space.pk]),
+            {'name': 'hacked', 'next': '/'},
+        )
+        owner_space.refresh_from_db()
+        assert owner_space.name == original_name
+
+    # ------------------------------------------------------------------ delete_space
+
+    def test_delete_space_success(self, user_1_client, user_1, owner_space, second_space):
+        """Владелец удаляет не-последнее пространство — оно исчезает из БД."""
+        user_1.core_settings.current_space = second_space
+        user_1.core_settings.save()
+        user_1_client.post(
+            reverse('transactions:delete_space', args=[owner_space.pk]),
+            {'next': '/'},
+        )
+        assert not Space.objects.filter(pk=owner_space.pk).exists()
+
+    def test_delete_last_space_blocked(self, user_1_client, owner_space):
+        """Нельзя удалить последнее собственное пространство."""
+        user_1_client.post(
+            reverse('transactions:delete_space', args=[owner_space.pk]),
+            {'next': '/'},
+        )
+        assert Space.objects.filter(pk=owner_space.pk).exists()
+
+    def test_delete_active_space_switches_owner_current(
+        self, user_1_client, user_1, owner_space, second_space
+    ):
+        """Удаление активного пространства → владелец переключается на другое своё."""
+        # owner_space — активное (установлено в фикстуре user_1)
+        user_1_client.post(
+            reverse('transactions:delete_space', args=[owner_space.pk]),
+            {'next': '/'},
+        )
+        user_1.core_settings.refresh_from_db()
+        assert user_1.core_settings.current_space == second_space
+
+    def test_delete_space_linked_user_gets_null_current(
+        self, user_1_client, user_1, owner_space, second_space, user_3_shared_space
+    ):
+        """Удаление пространства → у linked-юзера current_space=None (SET_NULL)."""
+        user_1.core_settings.current_space = second_space
+        user_1.core_settings.save()
+        user_1_client.post(
+            reverse('transactions:delete_space', args=[owner_space.pk]),
+            {'next': '/'},
+        )
+        user_3_shared_space.core_settings.refresh_from_db()
+        assert user_3_shared_space.core_settings.current_space is None
+
+    def test_delete_space_non_owner_blocked(self, editor_client, owner_space):
+        """Не-владелец не может удалить чужое пространство."""
+        editor_client.post(
+            reverse('transactions:delete_space', args=[owner_space.pk]),
+            {'next': '/'},
+        )
+        assert Space.objects.filter(pk=owner_space.pk).exists()
 
 
 class TestRoleHelpers:
