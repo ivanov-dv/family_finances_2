@@ -1,4 +1,44 @@
-from .models import Summary
+from django.db.models import Q
+
+from .models import Space, Summary
+from .permissions import can_edit_space, get_space_role, is_space_owner
+
+
+def spaces_and_role(request):
+    """Список доступных пространств и роль в текущем space (глобально).
+
+    available_spaces — свои + чужие (через LinkedUserToSpace), с атрибутом
+    display_name: своё → имя; чужое → «имя · от <owner>».
+    current_space_role/can_edit/is_owner — права в активном пространстве.
+    """
+    user = getattr(request, 'user', None)
+    if not user or not user.is_authenticated:
+        return {}
+
+    core = getattr(user, 'core_settings', None)
+    current_space = core.current_space if core else None
+    role = get_space_role(user, current_space)
+
+    spaces = (
+        Space.objects
+        .filter(Q(user=user) | Q(available_linked_users=user))
+        .select_related('user')
+        .distinct()
+        .order_by('name')
+    )
+    for space in spaces:
+        if space.user_id == user.id:
+            space.display_name = space.name
+        else:
+            owner = space.user.first_name or space.user.username
+            space.display_name = f'{space.name} · от {owner}'
+
+    return {
+        'available_spaces': spaces,
+        'current_space_role': role,
+        'current_space_can_edit': can_edit_space(role),
+        'current_space_is_owner': is_space_owner(role),
+    }
 
 
 def last_period_summaries(request):

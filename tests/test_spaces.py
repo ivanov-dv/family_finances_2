@@ -590,3 +590,45 @@ class TestSpaceMembers:
         assert LinkedUserToSpace.objects.filter(
             space=owner_space, linked_user=viewer,
         ).exists()
+
+
+class TestSpacesContextProcessor:
+    """Шаг 4 — context-processor spaces_and_role: роль, права, список пространств."""
+
+    def test_owner_role_keys(self, user_1_client):
+        """Для владельца: role=own, can_edit=True, is_owner=True."""
+        resp = user_1_client.get(reverse('transactions:summary'))
+        assert resp.context['current_space_role'] == SPACE_ROLE_OWNER
+        assert resp.context['current_space_can_edit'] is True
+        assert resp.context['current_space_is_owner'] is True
+
+    def test_editor_role_keys(self, editor_client):
+        """Для участника-редактора: role=editor, can_edit=True, is_owner=False."""
+        resp = editor_client.get(reverse('transactions:summary'))
+        assert resp.context['current_space_role'] == SPACE_ROLE_EDITOR
+        assert resp.context['current_space_can_edit'] is True
+        assert resp.context['current_space_is_owner'] is False
+
+    def test_no_space_keys(self, no_space_client):
+        """current_space=None → role=None, can_edit=False, is_owner=False."""
+        resp = no_space_client.get(reverse('transactions:summary'))
+        assert resp.context['current_space_role'] is None
+        assert resp.context['current_space_can_edit'] is False
+        assert resp.context['current_space_is_owner'] is False
+
+    def test_available_spaces_contains_space(self, user_1_client, owner_space):
+        """available_spaces содержит пространство пользователя."""
+        resp = user_1_client.get(reverse('transactions:summary'))
+        assert owner_space.pk in {s.pk for s in resp.context['available_spaces']}
+
+    def test_own_space_plain_display_name(self, user_1_client, owner_space):
+        """Своё пространство отображается простым именем."""
+        resp = user_1_client.get(reverse('transactions:summary'))
+        spaces = {s.pk: s for s in resp.context['available_spaces']}
+        assert spaces[owner_space.pk].display_name == owner_space.name
+
+    def test_foreign_space_marked_with_owner(self, editor_client, owner_space):
+        """Чужое пространство помечено владельцем: «имя · от <owner>»."""
+        resp = editor_client.get(reverse('transactions:summary'))
+        spaces = {s.pk: s for s in resp.context['available_spaces']}
+        assert ' · от ' in spaces[owner_space.pk].display_name

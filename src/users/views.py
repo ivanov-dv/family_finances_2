@@ -10,7 +10,6 @@ from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db import transaction
-from django.db.models import Q
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
@@ -229,15 +228,11 @@ class ProfileView(LoginRequiredMixin, UpdateView):
         user = self.request.user
         core_settings = CoreSettings.objects.filter(user=user).first()
         telegram_settings = TelegramSettings.objects.filter(user=user).first()
-        available_spaces = Space.objects.filter(
-            Q(user=user) | Q(available_linked_users=user)
-        ).distinct().order_by('name')
         context.update({
             'title': settings.PROJECT_TITLE,
             'current_space': core_settings.current_space if core_settings else None,
             'current_month': core_settings.current_month if core_settings else None,
             'current_year': core_settings.current_year if core_settings else None,
-            'available_spaces': available_spaces,
             'telegram_settings': telegram_settings,
             'next': self.request.path,
         })
