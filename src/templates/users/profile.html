@@ -15,15 +15,6 @@
         </div>
     </div>
 
-    {% if messages %}
-        {% for message in messages %}
-            <div class="alert-msg {% if message.tags == 'success' %}alert-success{% elif message.tags == 'error' %}alert-error{% endif %}">
-                <svg class="icon icon-sm"><use href="#i-check"/></svg>
-                <span>{{ message }}</span>
-            </div>
-        {% endfor %}
-    {% endif %}
-
     <div class="profile-grid">
 
         <div class="card">
