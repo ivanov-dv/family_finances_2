@@ -72,6 +72,54 @@ class SpaceService:
             owner.core_settings.save()
         space.delete()
 
+    @staticmethod
+    def _validate_role(role: str) -> str:
+        """Проверить, что роль входит в допустимые. Вернуть её либо кинуть SpaceError."""
+        if role not in dict(LinkedUserToSpace.ROLE_CHOICES):
+            raise SpaceError('Недопустимая роль.')
+        return role
+
+    @staticmethod
+    def invite_user(space: Space, username: str, role: str) -> User:
+        """Пригласить существующего юзера по логину с ролью. Вернуть приглашённого."""
+        role = SpaceService._validate_role(role)
+        target = User.objects.filter(username=username.strip().lower()).first()
+        if not target:
+            raise SpaceError('Пользователь с таким логином не найден.')
+        if target.id == space.user_id:
+            raise SpaceError('Нельзя пригласить владельца пространства.')
+        if LinkedUserToSpace.objects.filter(space=space, linked_user=target).exists():
+            raise SpaceError('Пользователь уже является участником.')
+        LinkedUserToSpace.objects.create(space=space, linked_user=target, role=role)
+        return target
+
+    @staticmethod
+    def change_member_role(space: Space, linked_user_id: int | str, role: str) -> None:
+        """Сменить роль участника пространства."""
+        role = SpaceService._validate_role(role)
+        link = LinkedUserToSpace.objects.filter(
+            space=space, linked_user_id=linked_user_id,
+        ).first()
+        if not link:
+            raise SpaceError('Участник не найден.')
+        link.role = role
+        link.save()
+
+    @staticmethod
+    def remove_member(space: Space, linked_user_id: int | str) -> None:
+        """Исключить участника. Если space был его current_space — сбросить в None."""
+        link = LinkedUserToSpace.objects.filter(
+            space=space, linked_user_id=linked_user_id,
+        ).first()
+        if not link:
+            raise SpaceError('Участник не найден.')
+        member = link.linked_user
+        cs = getattr(member, 'core_settings', None)
+        if cs and cs.current_space_id == space.id:
+            cs.current_space = None
+            cs.save()
+        link.delete()
+
 
 class PeriodService:
     """Бизнес-логика операций с периодом (current_month/current_year)."""

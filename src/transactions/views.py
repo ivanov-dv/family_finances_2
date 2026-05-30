@@ -411,6 +411,37 @@ class DeleteSpaceView(SpaceActionView):
         return 'Пространство удалено.'
 
 
+class InviteUserView(SpaceActionView):
+    """Приглашение участника владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        target = SpaceService.invite_user(
+            space, request.POST.get('username', ''), request.POST.get('role', ''),
+        )
+        return f'Пользователь «{target.username}» приглашён.'
+
+
+class ChangeMemberRoleView(SpaceActionView):
+    """Смена роли участника владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.change_member_role(
+            space, request.POST.get('linked_user_id'), request.POST.get('role', ''),
+        )
+        return 'Роль участника обновлена.'
+
+
+class RemoveMemberView(SpaceActionView):
+    """Исключение участника владельцем."""
+
+    def perform(self, request, pk, *args, **kwargs):
+        space = self._get_owned_space(request, pk)
+        SpaceService.remove_member(space, request.POST.get('linked_user_id'))
+        return 'Участник исключён.'
+
+
 @login_required
 def apply_period(request):
     """Применение смены периода и редирект на предыдущую страницу."""

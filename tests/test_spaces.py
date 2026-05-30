@@ -3,6 +3,7 @@ import pytest
 from django.urls import reverse
 
 from transactions.models import LinkedUserToSpace, Space, Summary, Transaction
+from users.models import User
 from transactions.permissions import (
     get_space_role,
     can_edit_space,
@@ -467,3 +468,125 @@ class TestRoleHelpers:
     ])
     def test_is_space_owner(self, role, expected):
         assert is_space_owner(role) is expected
+
+
+class TestSpaceMembers:
+    """Шаг 3c — приглашение, смена роли и исключение участников (владелец)."""
+
+    # ------------------------------------------------------------------ invite_user
+
+    def test_invite_success_with_role(self, user_1_client, owner_space, make_user):
+        """Владелец приглашает существующего юзера с ролью editor → доступ сразу."""
+        target = make_user('inviteme')
+        user_1_client.post(
+            reverse('transactions:invite_user', args=[owner_space.pk]),
+            {'username': 'inviteme', 'role': LinkedUserToSpace.EDITOR, 'next': '/'},
+        )
+        link = LinkedUserToSpace.objects.filter(
+            space=owner_space, linked_user=target,
+        ).first()
+        assert link is not None
+        assert link.role == LinkedUserToSpace.EDITOR
+        assert get_space_role(target, owner_space) == SPACE_ROLE_EDITOR
+
+    def test_invite_lowercases_username(self, user_1_client, owner_space, make_user):
+        """Логин приводится к нижнему регистру при поиске юзера."""
+        target = make_user('inviteme')
+        user_1_client.post(
+            reverse('transactions:invite_user', args=[owner_space.pk]),
+            {'username': 'INVITEME', 'role': LinkedUserToSpace.VIEWER, 'next': '/'},
+        )
+        assert LinkedUserToSpace.objects.filter(
+            space=owner_space, linked_user=target,
+        ).exists()
+
+    def test_invite_self_blocked(self, user_1_client, user_1, owner_space):
+        """Владелец не может пригласить сам себя."""
+        user_1_client.post(
+            reverse('transactions:invite_user', args=[owner_space.pk]),
+            {'username': user_1.username, 'role': LinkedUserToSpace.VIEWER, 'next': '/'},
+        )
+        assert not LinkedUserToSpace.objects.filter(
+            space=owner_space, linked_user=user_1,
+        ).exists()
+
+    def test_invite_duplicate_blocked(self, user_1_client, owner_space, viewer):
+        """Повторное приглашение уже-участника → новой связи не появляется."""
+        count_before = LinkedUserToSpace.objects.filter(space=owner_space).count()
+        user_1_client.post(
+            reverse('transactions:invite_user', args=[owner_space.pk]),
+            {'username': viewer.username, 'role': LinkedUserToSpace.EDITOR, 'next': '/'},
+        )
+        assert LinkedUserToSpace.objects.filter(space=owner_space).count() == count_before
+
+    def test_invite_nonexistent_user_blocked(self, user_1_client, owner_space):
+        """Приглашение несуществующего логина → связи нет."""
+        user_1_client.post(
+            reverse('transactions:invite_user', args=[owner_space.pk]),
+            {'username': 'ghost', 'role': LinkedUserToSpace.VIEWER, 'next': '/'},
+        )
+        assert not LinkedUserToSpace.objects.filter(space=owner_space).exists()
+
+    def test_invite_non_owner_blocked(self, editor_client, owner_space, make_user):
+        """Не-владелец не может приглашать в чужое пространство."""
+        make_user('inviteme')
+        editor_client.post(
+            reverse('transactions:invite_user', args=[owner_space.pk]),
+            {'username': 'inviteme', 'role': LinkedUserToSpace.VIEWER, 'next': '/'},
+        )
+        target = User.objects.get(username='inviteme')
+        assert not LinkedUserToSpace.objects.filter(
+            space=owner_space, linked_user=target,
+        ).exists()
+
+    # ------------------------------------------------------------------ change_member_role
+
+    def test_change_role_success(self, user_1_client, owner_space, viewer):
+        """Владелец меняет роль участника viewer → editor."""
+        user_1_client.post(
+            reverse('transactions:change_member_role', args=[owner_space.pk]),
+            {'linked_user_id': viewer.pk, 'role': LinkedUserToSpace.EDITOR, 'next': '/'},
+        )
+        link = LinkedUserToSpace.objects.get(space=owner_space, linked_user=viewer)
+        assert link.role == LinkedUserToSpace.EDITOR
+
+    def test_change_role_non_owner_blocked(self, editor_client, owner_space, viewer):
+        """Не-владелец не может менять роли участников."""
+        editor_client.post(
+            reverse('transactions:change_member_role', args=[owner_space.pk]),
+            {'linked_user_id': viewer.pk, 'role': LinkedUserToSpace.EDITOR, 'next': '/'},
+        )
+        link = LinkedUserToSpace.objects.get(space=owner_space, linked_user=viewer)
+        assert link.role == LinkedUserToSpace.VIEWER
+
+    # ------------------------------------------------------------------ remove_member
+
+    def test_remove_member_success(self, user_1_client, owner_space, viewer):
+        """Владелец исключает участника — связь удаляется."""
+        user_1_client.post(
+            reverse('transactions:remove_member', args=[owner_space.pk]),
+            {'linked_user_id': viewer.pk, 'next': '/'},
+        )
+        assert not LinkedUserToSpace.objects.filter(
+            space=owner_space, linked_user=viewer,
+        ).exists()
+
+    def test_remove_member_resets_current_space(self, user_1_client, owner_space, viewer):
+        """Исключённый участник, у которого это было current_space → сброс в None."""
+        assert viewer.core_settings.current_space == owner_space
+        user_1_client.post(
+            reverse('transactions:remove_member', args=[owner_space.pk]),
+            {'linked_user_id': viewer.pk, 'next': '/'},
+        )
+        viewer.core_settings.refresh_from_db()
+        assert viewer.core_settings.current_space is None
+
+    def test_remove_member_non_owner_blocked(self, editor_client, owner_space, viewer):
+        """Не-владелец не может исключать участников."""
+        editor_client.post(
+            reverse('transactions:remove_member', args=[owner_space.pk]),
+            {'linked_user_id': viewer.pk, 'next': '/'},
+        )
+        assert LinkedUserToSpace.objects.filter(
+            space=owner_space, linked_user=viewer,
+        ).exists()
