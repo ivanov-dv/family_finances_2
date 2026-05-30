@@ -1,6 +1,8 @@
 import pytest
 
-from transactions.models import LinkedUserToSpace
+from django.urls import reverse
+
+from transactions.models import LinkedUserToSpace, Summary, Transaction
 from transactions.permissions import (
     get_space_role,
     can_edit_space,
@@ -14,8 +16,17 @@ pytestmark = pytest.mark.django_db(transaction=True)
 
 
 @pytest.fixture
-def owner_space(user_1):
-    return user_1.spaces.first()
+def space_summary(user_1, owner_space):
+    """Статья в пространстве owner для тестовых POST."""
+    cs = user_1.core_settings
+    return Summary.objects.create(
+        space=owner_space,
+        period_month=cs.current_month,
+        period_year=cs.current_year,
+        type_transaction='income',
+        group_name='enf_group',
+        plan_value=100,
+    )
 
 
 class TestRoleModel:
@@ -51,6 +62,165 @@ class TestGetSpaceRole:
     def test_none_for_no_space(self, user_1):
         """space=None → None."""
         assert get_space_role(user_1, None) is None
+
+
+class TestEnforcement:
+    """Шаг 2 — блокировка мутаций по роли в current_space."""
+
+    # ------------------------------------------------------------------ viewer заблокирован
+
+    def test_viewer_cannot_add_transaction(self, viewer_client, space_summary):
+        """viewer POST add_transaction → редирект, Transaction не создана."""
+        count_before = Transaction.objects.count()
+        resp = viewer_client.post(reverse('transactions:add_transaction'), {
+            'type_transaction': 'income',
+            'group_name': space_summary.group_name,
+            'value_transaction': '10',
+        })
+        assert resp.status_code == 302
+        assert Transaction.objects.count() == count_before
+
+    def test_viewer_cannot_add_summary(self, viewer_client):
+        """viewer POST add_summary → редирект, Summary не создана."""
+        count_before = Summary.objects.count()
+        resp = viewer_client.post(reverse('transactions:add_summary'), {
+            'type_transaction': 'income',
+            'group_name': 'blocked_group',
+            'plan_value': '100',
+        })
+        assert resp.status_code == 302
+        assert Summary.objects.count() == count_before
+
+    def test_viewer_cannot_create_period(self, viewer, viewer_client):
+        """viewer POST create_period → редирект, Summary не создана, период не меняется."""
+        count_before = Summary.objects.count()
+        original_month = viewer.core_settings.current_month
+        original_year = viewer.core_settings.current_year
+        resp = viewer_client.post(reverse('transactions:create_period'), {
+            'period_month': '3',
+            'period_year': '2030',
+            'next': '/',
+        })
+        assert resp.status_code == 302
+        assert Summary.objects.count() == count_before
+        viewer.core_settings.refresh_from_db()
+        assert viewer.core_settings.current_month == original_month
+        assert viewer.core_settings.current_year == original_year
+
+    def test_viewer_cannot_delete_summary(self, viewer_client, space_summary):
+        """viewer POST delete_summary → редирект, Summary остаётся."""
+        resp = viewer_client.post(
+            reverse('transactions:delete_summary', args=[space_summary.pk])
+        )
+        assert resp.status_code == 302
+        assert Summary.objects.filter(pk=space_summary.pk).exists()
+
+    # ------------------------------------------------------------------ editor разрешено
+
+    def test_editor_can_add_summary(self, editor_client):
+        """editor POST add_summary → Summary создана."""
+        count_before = Summary.objects.count()
+        editor_client.post(reverse('transactions:add_summary'), {
+            'type_transaction': 'income',
+            'group_name': 'editor_group',
+            'plan_value': '50',
+        })
+        assert Summary.objects.count() == count_before + 1
+
+    def test_editor_can_delete_summary(self, editor_client, space_summary):
+        """editor POST delete_summary → Summary удалена."""
+        editor_client.post(
+            reverse('transactions:delete_summary', args=[space_summary.pk])
+        )
+        assert not Summary.objects.filter(pk=space_summary.pk).exists()
+
+    # ------------------------------------------------------------------ owner разрешено
+
+    def test_owner_can_add_summary(self, user_1_client):
+        """owner POST add_summary → Summary создана."""
+        count_before = Summary.objects.count()
+        user_1_client.post(reverse('transactions:add_summary'), {
+            'type_transaction': 'income',
+            'group_name': 'owner_group',
+            'plan_value': '200',
+        })
+        assert Summary.objects.count() == count_before + 1
+
+    def test_owner_can_delete_summary(self, user_1_client, space_summary):
+        """owner POST delete_summary → Summary удалена."""
+        user_1_client.post(
+            reverse('transactions:delete_summary', args=[space_summary.pk])
+        )
+        assert not Summary.objects.filter(pk=space_summary.pk).exists()
+
+    # ------------------------------------------------------------------ current_space=None заблокирован
+
+    def test_no_space_cannot_add_summary(self, no_space_client):
+        """current_space=None → POST add_summary заблокирован."""
+        count_before = Summary.objects.count()
+        resp = no_space_client.post(reverse('transactions:add_summary'), {
+            'type_transaction': 'income',
+            'group_name': 'nospace_group',
+            'plan_value': '100',
+        })
+        assert resp.status_code == 302
+        assert Summary.objects.count() == count_before
+
+    def test_no_space_cannot_create_period(self, no_space_user, no_space_client):
+        """current_space=None → POST create_period заблокирован, period не меняется."""
+        original_month = no_space_user.core_settings.current_month
+        original_year = no_space_user.core_settings.current_year
+        no_space_client.post(reverse('transactions:create_period'), {
+            'period_month': '6',
+            'period_year': '2030',
+            'next': '/',
+        })
+        no_space_user.core_settings.refresh_from_db()
+        assert no_space_user.core_settings.current_month == original_month
+        assert no_space_user.core_settings.current_year == original_year
+
+    # ------------------------------------------------------------------ не-участник заблокирован
+
+    def test_non_member_cannot_add_summary(self, non_member_client):
+        """Не-участник POST add_summary → заблокирован."""
+        count_before = Summary.objects.count()
+        resp = non_member_client.post(reverse('transactions:add_summary'), {
+            'type_transaction': 'income',
+            'group_name': 'nonmember_group',
+            'plan_value': '100',
+        })
+        assert resp.status_code == 302
+        assert Summary.objects.count() == count_before
+
+    def test_non_member_cannot_delete_summary(self, non_member_client, space_summary):
+        """Не-участник POST delete_summary → Summary остаётся."""
+        non_member_client.post(
+            reverse('transactions:delete_summary', args=[space_summary.pk])
+        )
+        assert Summary.objects.filter(pk=space_summary.pk).exists()
+
+    # ------------------------------------------------------------------ apply_period: разрешить при role ≠ None
+
+    def test_viewer_can_apply_period(self, viewer, viewer_client):
+        """viewer (role ≠ None) may apply_period."""
+        resp = viewer_client.get(
+            reverse('transactions:apply_period') + '?period=2025_3&next=/'
+        )
+        assert resp.status_code == 302
+        viewer.core_settings.refresh_from_db()
+        assert viewer.core_settings.current_month == 3
+        assert viewer.core_settings.current_year == 2025
+
+    def test_no_space_cannot_apply_period(self, no_space_user, no_space_client):
+        """current_space=None (role=None) → apply_period заблокирован, period не меняется."""
+        original_month = no_space_user.core_settings.current_month
+        original_year = no_space_user.core_settings.current_year
+        no_space_client.get(
+            reverse('transactions:apply_period') + '?period=2030_9&next=/'
+        )
+        no_space_user.core_settings.refresh_from_db()
+        assert no_space_user.core_settings.current_month == original_month
+        assert no_space_user.core_settings.current_year == original_year
 
 
 class TestRoleHelpers:

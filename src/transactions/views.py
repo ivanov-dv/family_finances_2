@@ -11,6 +11,7 @@ from django.views.generic import TemplateView
 
 from tools.transactions import get_summary_report
 from .models import Summary, Transaction
+from .permissions import CurrentSpaceEditMixin, get_space_role, can_edit_space
 
 
 class HomePageView(TemplateView):
@@ -144,7 +145,7 @@ class ChangePeriod(LoginRequiredMixin, TemplateView):
         return context
 
 
-class AddTransactionView(LoginRequiredMixin, TemplateView):
+class AddTransactionView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView):
     """Форма добавления транзакции."""
 
     template_name = 'transactions/add_transaction.html'
@@ -230,7 +231,7 @@ class AddTransactionView(LoginRequiredMixin, TemplateView):
         return redirect('transactions:add_transaction')
 
 
-class AddSummaryView(LoginRequiredMixin, TemplateView):
+class AddSummaryView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView):
     """Форма создания статьи (группы) в сводке текущего периода."""
 
     template_name = 'transactions/add_summary.html'
@@ -306,6 +307,10 @@ def delete_summary(request, pk):
     """Удаление статьи текущего пользователя."""
     if request.method != 'POST':
         return redirect('transactions:add_summary')
+    role = get_space_role(request.user, request.user.core_settings.current_space)
+    if not can_edit_space(role):
+        messages.error(request, 'Недостаточно прав для изменения данного пространства.')
+        return redirect('transactions:add_summary')
     summary = Summary.objects.filter(
         pk=pk,
         space=request.user.core_settings.current_space,
@@ -325,14 +330,19 @@ def apply_period(request):
     period = request.GET.get('period')
     next_url = request.GET.get('next', '/')
 
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        next_url = '/'
+
+    role = get_space_role(request.user, request.user.core_settings.current_space)
+    if role is None:
+        messages.error(request, 'Нет доступа к текущему пространству.')
+        return redirect(next_url)
+
     if period:
         year, month = map(int, period.split('_'))
         request.user.core_settings.current_year = year
         request.user.core_settings.current_month = month
         request.user.core_settings.save()
-
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
 
     return redirect(next_url)
 
@@ -349,6 +359,9 @@ def create_period(request):
 
     user = request.user
     space = user.core_settings.current_space
+    if not can_edit_space(get_space_role(user, space)):
+        messages.error(request, 'Недостаточно прав для изменения данного пространства.')
+        return redirect(next_url)
 
     try:
         period_month = int(request.POST.get('period_month', ''))

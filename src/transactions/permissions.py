@@ -1,3 +1,6 @@
+from django.contrib import messages
+from django.shortcuts import redirect
+
 from transactions.models import LinkedUserToSpace
 
 SPACE_ROLE_OWNER = 'own_space'
@@ -25,3 +28,16 @@ def can_edit_space(role):
 
 def is_space_owner(role):
     return role == SPACE_ROLE_OWNER
+
+
+class CurrentSpaceEditMixin:
+    """Блокирует POST если роль пользователя в current_space не позволяет редактирование."""
+
+    def dispatch(self, request, *args, **kwargs):
+        if request.method == 'POST':
+            space = request.user.core_settings.current_space
+            role = get_space_role(request.user, space)
+            if not can_edit_space(role):
+                messages.error(request, 'Недостаточно прав для изменения данного пространства.')
+                return redirect(request.path)
+        return super().dispatch(request, *args, **kwargs)
