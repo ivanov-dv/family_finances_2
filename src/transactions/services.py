@@ -1,10 +1,13 @@
-from django.db import IntegrityError
+from decimal import Decimal, InvalidOperation
+
+from django.db import IntegrityError, transaction as db_transaction
 
 from users.models import User
 
-from .exceptions import SpaceError
-from .models import LinkedUserToSpace, Space
-from .permissions import get_space_role
+from .dto import PeriodCreateResult
+from .exceptions import PeriodError, SpaceError
+from .models import LinkedUserToSpace, Space, Summary
+from .permissions import can_edit_space, get_space_role
 
 
 class SpaceService:
@@ -68,3 +71,117 @@ class SpaceService:
             owner.core_settings.current_space = other
             owner.core_settings.save()
         space.delete()
+
+
+class PeriodService:
+    """Бизнес-логика операций с периодом (current_month/current_year)."""
+
+    @staticmethod
+    def apply_period(user: User, period: str | None) -> None:
+        """Переключить текущий период пользователя. period — строка 'YYYY_MM'."""
+        if get_space_role(user, user.core_settings.current_space) is None:
+            raise PeriodError('Нет доступа к текущему пространству.')
+        if not period:
+            return
+        try:
+            year, month = map(int, period.split('_'))
+        except (ValueError, AttributeError):
+            raise PeriodError('Некорректный период.')
+        PeriodService._set_current_period(user, month, year)
+
+    @staticmethod
+    def create_period(
+        user: User,
+        month: int,
+        year: int,
+        selected_ids: set[int] | None,
+        plan_overrides: dict[int, str],
+    ) -> PeriodCreateResult:
+        """Создать период с автокопированием статей из последнего.
+
+        selected_ids=None — копировать все статьи; иначе только выбранные.
+        plan_overrides — переопределения plan_value по id исходной статьи.
+        """
+        space = user.core_settings.current_space
+        if not can_edit_space(get_space_role(user, space)):
+            raise PeriodError('Недостаточно прав для изменения данного пространства.')
+        if not (1 <= month <= 12) or not (2020 <= year <= 2099):
+            raise PeriodError('Месяц должен быть 1–12, год 2020–2099.')
+
+        if Summary.objects.filter(space=space, period_month=month, period_year=year).exists():
+            PeriodService._set_current_period(user, month, year)
+            return PeriodCreateResult(already_exists=True, copied_count=0)
+
+        copied_count = PeriodService._copy_summaries(
+            space, month, year, selected_ids, plan_overrides,
+        )
+        PeriodService._set_current_period(user, month, year)
+        return PeriodCreateResult(already_exists=False, copied_count=copied_count)
+
+    @staticmethod
+    def _set_current_period(user: User, month: int, year: int) -> None:
+        """Записать текущий период в CoreSettings."""
+        user.core_settings.current_month = month
+        user.core_settings.current_year = year
+        user.core_settings.save()
+
+    @staticmethod
+    def _last_period(space: Space) -> dict | None:
+        """Самый поздний период пространства ({'period_month', 'period_year'}) либо None."""
+        return (
+            Summary.objects
+            .filter(space=space)
+            .values('period_month', 'period_year')
+            .order_by('-period_year', '-period_month')
+            .first()
+        )
+
+    @staticmethod
+    def _resolve_plan_value(summary: Summary, plan_overrides: dict[int, str]) -> Decimal:
+        """plan_value для копии: переопределение из формы либо исходное значение."""
+        raw = (plan_overrides.get(summary.pk) or '').strip().replace(',', '.')
+        if raw:
+            try:
+                candidate = Decimal(raw)
+                if candidate >= 0:
+                    return candidate
+            except InvalidOperation:
+                pass
+        return summary.plan_value
+
+    @staticmethod
+    def _copy_summaries(
+        space: Space,
+        month: int,
+        year: int,
+        selected_ids: set[int] | None,
+        plan_overrides: dict[int, str],
+    ) -> int:
+        """Скопировать статьи последнего периода в новый. Вернуть число скопированных."""
+        last_period = PeriodService._last_period(space)
+        if not last_period:
+            return 0
+
+        source = Summary.objects.filter(
+            space=space,
+            period_month=last_period['period_month'],
+            period_year=last_period['period_year'],
+        )
+        if selected_ids is not None:
+            source = source.filter(pk__in=selected_ids)
+
+        with db_transaction.atomic():
+            new_summaries = [
+                Summary(
+                    space=space,
+                    period_month=month,
+                    period_year=year,
+                    type_transaction=s.type_transaction,
+                    group_name=s.group_name,
+                    plan_value=PeriodService._resolve_plan_value(s, plan_overrides),
+                    fact_value=Decimal('0'),
+                )
+                for s in source
+            ]
+            Summary.objects.bulk_create(new_summaries)
+        return len(new_summaries)

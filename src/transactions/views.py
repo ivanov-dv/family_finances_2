@@ -12,8 +12,16 @@ from django.views.generic import TemplateView, View
 from tools.transactions import get_summary_report
 from .models import Space, Summary, Transaction
 from .permissions import CurrentSpaceEditMixin, get_space_role, can_edit_space
-from .exceptions import SpaceError
-from .services import SpaceService
+from .exceptions import PeriodError, SpaceError
+from .services import PeriodService, SpaceService
+
+
+def get_safe_next_url(request):
+    """Безопасный next_url из POST/GET (защита от open redirect)."""
+    next_url = request.POST.get('next') or request.GET.get('next') or '/'
+    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+        return '/'
+    return next_url
 
 
 class HomePageView(TemplateView):
@@ -335,9 +343,7 @@ class SpaceActionView(LoginRequiredMixin, View):
     """
 
     def post(self, request, *args, **kwargs):
-        next_url = request.POST.get('next', '/')
-        if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-            next_url = '/'
+        next_url = get_safe_next_url(request)
         try:
             message = self.perform(request, *args, **kwargs)
             if message:
@@ -408,23 +414,11 @@ class DeleteSpaceView(SpaceActionView):
 @login_required
 def apply_period(request):
     """Применение смены периода и редирект на предыдущую страницу."""
-    period = request.GET.get('period')
-    next_url = request.GET.get('next', '/')
-
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
-
-    role = get_space_role(request.user, request.user.core_settings.current_space)
-    if role is None:
-        messages.error(request, 'Нет доступа к текущему пространству.')
-        return redirect(next_url)
-
-    if period:
-        year, month = map(int, period.split('_'))
-        request.user.core_settings.current_year = year
-        request.user.core_settings.current_month = month
-        request.user.core_settings.save()
-
+    next_url = get_safe_next_url(request)
+    try:
+        PeriodService.apply_period(request.user, request.GET.get('period'))
+    except PeriodError as e:
+        messages.error(request, str(e))
     return redirect(next_url)
 
 
@@ -434,15 +428,7 @@ def create_period(request):
     if request.method != 'POST':
         return redirect('transactions:change_period')
 
-    next_url = request.POST.get('next', '/')
-    if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
-        next_url = '/'
-
-    user = request.user
-    space = user.core_settings.current_space
-    if not can_edit_space(get_space_role(user, space)):
-        messages.error(request, 'Недостаточно прав для изменения данного пространства.')
-        return redirect(next_url)
+    next_url = get_safe_next_url(request)
 
     try:
         period_month = int(request.POST.get('period_month', ''))
@@ -451,87 +437,34 @@ def create_period(request):
         messages.error(request, 'Некорректный месяц или год.')
         return redirect(next_url)
 
-    if not (1 <= period_month <= 12) or not (2020 <= period_year <= 2099):
-        messages.error(request, 'Месяц должен быть 1–12, год 2020–2099.')
-        return redirect(next_url)
+    selected_ids = None
+    if 'copy_summary_ids' in request.POST:
+        try:
+            selected_ids = {int(pk) for pk in request.POST.getlist('copy_summary_ids') if pk}
+        except ValueError:
+            selected_ids = set()
 
-    already_exists = Summary.objects.filter(
-        space=space,
-        period_month=period_month,
-        period_year=period_year,
-    ).exists()
-
-    if already_exists:
-        user.core_settings.current_month = period_month
-        user.core_settings.current_year = period_year
-        user.core_settings.save()
-        messages.info(request, 'Этот период уже существует — переключились на него.')
-        return redirect(next_url)
-
-    last_period = (
-        Summary.objects
-        .filter(space=space)
-        .values('period_month', 'period_year')
-        .order_by('-period_year', '-period_month')
-        .first()
-    )
-
-    copied_count = 0
-    if last_period:
-        source = Summary.objects.filter(
-            space=space,
-            period_month=last_period['period_month'],
-            period_year=last_period['period_year'],
-        )
-
-        selected_ids_raw = request.POST.getlist('copy_summary_ids')
-        if 'copy_summary_ids' in request.POST:
+    plan_overrides = {}
+    for key in request.POST:
+        if key.startswith('plan_value_'):
             try:
-                selected_ids = {int(pk) for pk in selected_ids_raw if pk}
+                plan_overrides[int(key[len('plan_value_'):])] = request.POST[key]
             except ValueError:
-                selected_ids = set()
-            source = source.filter(pk__in=selected_ids)
+                pass
 
-        with db_transaction.atomic():
-            new_summaries = []
-            for s in source:
-                raw = request.POST.get(f'plan_value_{s.pk}', '').strip().replace(',', '.')
-                plan_value = s.plan_value
-                if raw:
-                    try:
-                        candidate = Decimal(raw)
-                        if candidate >= 0:
-                            plan_value = candidate
-                    except InvalidOperation:
-                        pass
-
-                new_summaries.append(
-                    Summary(
-                        space=space,
-                        period_month=period_month,
-                        period_year=period_year,
-                        type_transaction=s.type_transaction,
-                        group_name=s.group_name,
-                        plan_value=plan_value,
-                        fact_value=Decimal('0'),
-                    )
-                )
-            Summary.objects.bulk_create(new_summaries)
-            copied_count = len(new_summaries)
-
-    user.core_settings.current_month = period_month
-    user.core_settings.current_year = period_year
-    user.core_settings.save()
-
-    if copied_count:
-        messages.success(
-            request,
-            f'Период создан · скопировано статей: {copied_count}.',
+    try:
+        result = PeriodService.create_period(
+            request.user, period_month, period_year, selected_ids, plan_overrides,
         )
+    except PeriodError as e:
+        messages.error(request, str(e))
+        return redirect(next_url)
+
+    if result.already_exists:
+        messages.info(request, 'Этот период уже существует — переключились на него.')
+    elif result.copied_count:
+        messages.success(request, f'Период создан · скопировано статей: {result.copied_count}.')
     else:
-        messages.info(
-            request,
-            'Период создан. Добавьте статьи бюджета на странице «Статьи».',
-        )
+        messages.info(request, 'Период создан. Добавьте статьи бюджета на странице «Статьи».')
 
     return redirect(next_url)
