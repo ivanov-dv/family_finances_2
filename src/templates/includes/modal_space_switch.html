@@ -23,6 +23,10 @@
                         </form>
                     {% endif %}
                 </div>
+            {% empty %}
+                <div class="app-modal-subtitle" style="margin:0">
+                    У вас пока нет доступных пространств. Создайте первое.
+                </div>
             {% endfor %}
         </div>
 

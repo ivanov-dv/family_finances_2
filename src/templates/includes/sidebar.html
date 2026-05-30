@@ -54,5 +54,15 @@
             </div>
             <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
         </button>
+    {% else %}
+        <button type="button" class="space-card" data-open-app-modal="spaceSwitchModal"
+                style="width:100%;text-align:left;border:none;cursor:pointer">
+            <div class="space-avatar"><svg class="icon icon-sm"><use href="#i-plus"/></svg></div>
+            <div style="min-width:0;flex:1">
+                <div class="space-name">Нет пространства</div>
+                <div class="space-meta">Выбрать или создать</div>
+            </div>
+            <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
+        </button>
     {% endif %}
 </aside>
