@@ -50,7 +50,11 @@
             <div class="space-avatar">{{ current_space.name|slice:":1"|upper }}</div>
             <div style="min-width:0;flex:1">
                 <div class="space-name">{{ current_space.name }}</div>
-                <div class="space-meta">Сменить пространство</div>
+                {% if current_space_is_owner %}
+                    <div class="space-meta">Сменить пространство</div>
+                {% else %}
+                    <div class="space-meta">от {{ current_space.user.first_name|default:current_space.user.username }}</div>
+                {% endif %}
             </div>
             <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
         </button>
