@@ -5,6 +5,7 @@ from rest_framework import filters, status
 from rest_framework.decorators import action
 from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.mixins import (
     ListModelMixin,
     CreateModelMixin,
@@ -16,6 +17,7 @@ from rest_framework.viewsets import ModelViewSet, GenericViewSet
 from tools.transactions import get_summary_report
 from transactions.models import Summary, Space
 from users.models import User
+from api.v1.permissions import CanEditCurrentSpace, IsSpaceOwner
 from .serializers import (
     TransactionCreateSerializer,
     SummaryDetailSerializer,
@@ -36,6 +38,7 @@ class TransactionViewSet(
     """Отображение и создание для transactions."""
 
     serializer_class = TransactionCreateSerializer
+    permission_classes = (IsAuthenticated, CanEditCurrentSpace)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('period_month', 'period_year', 'space__id')
     search_fields = ('^group_name',)
@@ -78,6 +81,7 @@ class TransactionViewSet(
 class SummaryViewSet(ModelViewSet):
     """Просмотр Summary (отчета), CRUD для статей (групп операций)."""
 
+    permission_classes = (IsAuthenticated, CanEditCurrentSpace)
     filter_backends = (DjangoFilterBackend, filters.SearchFilter)
     filterset_fields = ('group_name', 'type_transaction')
     search_fields = ('^group_name',)
@@ -183,6 +187,7 @@ class SpaceViewSet(ModelViewSet):
     """CRUD для пространств пользователей."""
 
     serializer_class = SpaceSerializer
+    permission_classes = (IsAuthenticated, IsSpaceOwner)
     filter_backends = (filters.SearchFilter,)
     search_fields = ('^name',)
 
@@ -225,6 +230,7 @@ class SpaceViewSet(ModelViewSet):
     )
     @action(detail=True, methods=['post'], url_path='link_user')
     def link_user(self, request, user_id, pk=None):
+        self.get_object()  # 404 + проверка владельца (IsSpaceOwner)
         serializer = LinkUserToSpaceSerializer(
             data=request.data,
             context={'space_id': pk, 'user_id': int(user_id)}
@@ -259,6 +265,7 @@ class SpaceViewSet(ModelViewSet):
     )
     @action(detail=True, methods=['post'], url_path='unlink_user')
     def unlink_user(self, request, user_id, pk=None):
+        self.get_object()  # 404 + проверка владельца (IsSpaceOwner)
         serializer = UnlinkUserToSpaceSerializer(
             data=request.data,
             context={'space_id': pk, 'user_id': int(user_id)}
