@@ -147,3 +147,22 @@ class TestProfileSpaceManagement:
         assert reverse('transactions:rename_space', args=[owner_space.pk]) not in content
         assert reverse('transactions:invite_user', args=[owner_space.pk]) not in content
         assert reverse('transactions:leave_space', args=[owner_space.pk]) in content
+
+
+class TestSpaceSwitcher:
+    """6e — переключатель пространств в sidebar + модалка."""
+
+    def test_sidebar_card_is_trigger(self, user_1_client, owner_space):
+        """Карточка активного пространства в sidebar открывает модалку переключения."""
+        resp = user_1_client.get(reverse('transactions:summary'))
+        assert 'data-open-app-modal="spaceSwitchModal"' in resp.content.decode()
+
+    def test_switch_modal_present(self, user_1_client, owner_space):
+        """Модалка переключения присутствует на странице."""
+        resp = user_1_client.get(reverse('transactions:summary'))
+        assert 'id="spaceSwitchModal"' in resp.content.decode()
+
+    def test_switch_modal_has_apply_forms(self, user_1_client, owner_space, second_space):
+        """В модалке есть формы переключения активного пространства (apply_space)."""
+        resp = user_1_client.get(reverse('transactions:summary'))
+        assert reverse('transactions:apply_space') in resp.content.decode()

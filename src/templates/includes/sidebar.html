@@ -45,12 +45,14 @@
     <div class="sidebar-spacer"></div>
 
     {% if current_space %}
-        <div class="space-card">
+        <button type="button" class="space-card" data-open-app-modal="spaceSwitchModal"
+                style="width:100%;text-align:left;border:none;cursor:pointer">
             <div class="space-avatar">{{ current_space.name|slice:":1"|upper }}</div>
             <div style="min-width:0;flex:1">
                 <div class="space-name">{{ current_space.name }}</div>
-                <div class="space-meta">Активное пространство</div>
+                <div class="space-meta">Сменить пространство</div>
             </div>
-        </div>
+            <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
+        </button>
     {% endif %}
 </aside>
