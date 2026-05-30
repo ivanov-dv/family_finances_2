@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.shortcuts import redirect
 
 from transactions.models import LinkedUserToSpace
@@ -11,7 +12,7 @@ SPACE_EDIT_ROLES = (SPACE_ROLE_OWNER, SPACE_ROLE_EDITOR)
 
 
 def get_space_role(user, space):
-    """Return owner/editor/viewer role or None for user in space."""
+    """Вернуть роль пользователя в пространстве: own_space/edit_space/view_space или None."""
     if not space:
         return None
     if space.user_id == user.id:
@@ -30,14 +31,15 @@ def is_space_owner(role):
     return role == SPACE_ROLE_OWNER
 
 
-class CurrentSpaceEditMixin:
+class CurrentSpaceEditMixin(UserPassesTestMixin):
     """Блокирует POST если роль пользователя в current_space не позволяет редактирование."""
 
-    def dispatch(self, request, *args, **kwargs):
-        if request.method == 'POST':
-            space = request.user.core_settings.current_space
-            role = get_space_role(request.user, space)
-            if not can_edit_space(role):
-                messages.error(request, 'Недостаточно прав для изменения данного пространства.')
-                return redirect(request.path)
-        return super().dispatch(request, *args, **kwargs)
+    def test_func(self):
+        if self.request.method != 'POST':
+            return True
+        space = self.request.user.core_settings.current_space
+        return can_edit_space(get_space_role(self.request.user, space))
+
+    def handle_no_permission(self):
+        messages.error(self.request, 'Недостаточно прав для изменения данного пространства.')
+        return redirect(self.request.path)
