@@ -1,7 +1,10 @@
 from django.db.models import Q
 
-from .models import Space, Summary
+from .models import LinkedUserToSpace, Space, Summary
 from .permissions import can_edit_space, get_space_role, is_space_owner
+
+ROLE_LABELS = dict(LinkedUserToSpace.ROLE_CHOICES)
+OWNER_LABEL = 'Владелец'
 
 
 def spaces_and_role(request):
@@ -28,10 +31,14 @@ def spaces_and_role(request):
     )
     for space in spaces:
         if space.user_id == user.id:
+            space.is_own = True
             space.display_name = space.name
+            space.role_label = OWNER_LABEL
         else:
+            space.is_own = False
             owner = space.user.first_name or space.user.username
             space.display_name = f'{space.name} · от {owner}'
+            space.role_label = ROLE_LABELS.get(get_space_role(user, space), '')
 
     return {
         'available_spaces': spaces,

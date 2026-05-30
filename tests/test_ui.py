@@ -67,3 +67,39 @@ class TestEntryPointVisibility:
         """Владелец видит кнопки «Добавить статью»."""
         resp = user_1_client.get(reverse('transactions:add_summary'))
         assert 'Добавить статью' in resp.content.decode()
+
+
+class TestProfileSpacesHub:
+    """6c — хаб пространств в профиле: роль, активное, создать, сделать активным."""
+
+    url = None  # см. reverse в тестах
+
+    def test_create_space_button(self, user_1_client):
+        """В профиле есть точка создания пространства (форма create_space)."""
+        resp = user_1_client.get(reverse('users:profile'))
+        assert reverse('transactions:create_space') in resp.content.decode()
+
+    def test_owner_role_badge(self, user_1_client, owner_space):
+        """Своё пространство помечено ролью «Владелец»."""
+        resp = user_1_client.get(reverse('users:profile'))
+        assert 'Владелец' in resp.content.decode()
+
+    def test_apply_button_for_non_active(self, user_1_client, second_space):
+        """У неактивного пространства есть форма «Сделать активным» (apply_space)."""
+        resp = user_1_client.get(reverse('users:profile'))
+        assert reverse('transactions:apply_space') in resp.content.decode()
+
+    def test_active_space_marked(self, user_1_client, owner_space):
+        """Активное пространство помечено меткой «Активное»."""
+        resp = user_1_client.get(reverse('users:profile'))
+        assert 'Активное' in resp.content.decode()
+
+    def test_foreign_space_role_badge(self, editor_client):
+        """Чужое пространство (для editor) помечено ролью «Редактирование»."""
+        resp = editor_client.get(reverse('users:profile'))
+        assert 'Редактирование' in resp.content.decode()
+
+    def test_foreign_space_display_name(self, editor_client):
+        """Чужое пространство отображается с владельцем «· от»."""
+        resp = editor_client.get(reverse('users:profile'))
+        assert ' · от ' in resp.content.decode()

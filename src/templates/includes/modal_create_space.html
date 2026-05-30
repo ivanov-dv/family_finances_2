@@ -1,0 +1,26 @@
+<div class="app-modal-backdrop" id="createSpaceModal" hidden>
+    <div class="app-modal" role="dialog" aria-labelledby="createSpaceTitle">
+        <button type="button" class="app-modal-close" data-close-app-modal aria-label="Закрыть">
+            <svg class="icon"><use href="#i-x"/></svg>
+        </button>
+        <div class="app-modal-title" id="createSpaceTitle">Новое пространство</div>
+        <div class="app-modal-subtitle">Создайте отдельное финансовое пространство</div>
+
+        <form method="post" action="{% url 'transactions:create_space' %}">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.path }}">
+
+            <div class="form-group">
+                <label class="form-label" for="createSpaceName">Название</label>
+                <input type="text" class="form-input" name="name" id="createSpaceName"
+                       maxlength="20" required autocomplete="off"
+                       placeholder="Например: семья">
+            </div>
+
+            <button type="submit" class="submit-btn">
+                <svg class="icon"><use href="#i-plus"/></svg>
+                <span>Создать пространство</span>
+            </button>
+        </form>
+    </div>
+</div>
