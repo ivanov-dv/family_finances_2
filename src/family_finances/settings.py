@@ -48,6 +48,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'users.middleware.EnsureCoreSettingsMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -67,6 +68,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'transactions.context_processors.project_title',
                 'transactions.context_processors.last_period_summaries',
                 'transactions.context_processors.spaces_and_role',
             ],
@@ -188,6 +190,26 @@ COL_WIDTH_GROUP = 20
 COL_WIDTH_VALUE_TRANSACTION = 10
 COL_WIDTH_DESCRIPTION = 40
 COL_WIDTH_AUTHOR = 15
+
+# При DEBUG=False Django отправляет трейсбеки 500-х только админам по почте (ADMINS не задан),
+# поэтому в логе контейнера была видна лишь строка «500». Пишем их в консоль (stderr).
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'plain': {'format': '%(asctime)s %(levelname)s %(name)s: %(message)s'},
+    },
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler', 'formatter': 'plain'},
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    },
+}
 
 SENTRY_DSN = os.getenv('SENTRY_DSN')
 if SENTRY_DSN:

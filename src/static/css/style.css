@@ -196,6 +196,27 @@ body::before {
 
 button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
 a { color: inherit; text-decoration: none; }
+
+/* Кольцо фокуса только для клавиатуры (у кнопок и ссылок собственных стилей фокуса нет) */
+:focus-visible,
+.btn:focus-visible { outline: 2px solid var(--blue-2, #5B8DFF); outline-offset: 2px; }
+
+/* Bootstrap (формы, .card, .text-muted) берёт цвета из своих переменных: привязываем их к теме приложения,
+   иначе в тёмной теме получаются белые поля и текст контрастом 1.1:1 */
+:root {
+    --bs-body-color: var(--text-primary);
+    --bs-secondary-color: var(--text-muted);
+    --bs-border-color: var(--border-md);
+}
+.form-control, .form-select {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+    border-color: var(--border-md);
+}
+.form-control:focus, .form-select:focus {
+    background-color: var(--bg-secondary);
+    color: var(--text-primary);
+}
 input, textarea, select { font-family: inherit; }
 
 .mono { font-family: 'JetBrains Mono', 'SF Mono', ui-monospace, monospace; font-variant-numeric: tabular-nums; }
@@ -437,6 +458,7 @@ body.app-shell {
     transition: background var(--t-fast);
 }
 .topbar-period:hover { background: var(--bg-secondary); }
+.topbar-period { white-space: nowrap; min-width: 0; }
 .topbar-period a { color: inherit; text-decoration: none; display: inline-flex; align-items: center; gap: 6px; }
 .topbar-space { font-size: 13px; color: var(--text-muted); margin-left: 4px; }
 
@@ -453,6 +475,7 @@ body.app-shell {
     color: var(--text-secondary);
     transition: background var(--t-fast), color var(--t-fast);
     cursor: pointer;
+    flex-shrink: 0;
 }
 .icon-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
 
@@ -528,7 +551,7 @@ body.app-shell {
     color: var(--text-primary);
 }
 
-.profile-menu { position: relative; }
+.profile-menu { position: relative; min-width: 0; }
 .profile-btn {
     display: inline-flex;
     align-items: center;
@@ -544,6 +567,13 @@ body.app-shell {
     transition: background var(--t-fast);
 }
 .profile-btn:hover { background: var(--bg-secondary); }
+.profile-btn { min-width: 0; max-width: 100%; }
+.profile-btn-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 24ch;
+}
 .profile-btn .avatar-sm {
     width: 28px;
     height: 28px;
@@ -741,6 +771,7 @@ body.app-shell {
     display: flex;
     align-items: center;
     justify-content: space-between;
+    flex-wrap: wrap;
     gap: 12px;
     margin-bottom: 16px;
 }
@@ -877,7 +908,8 @@ body.app-shell {
 @media (max-width: 960px) {
     .hero { padding: 22px; }
     .hero-grid { grid-template-columns: 1fr; gap: 20px; }
-    .hero-balance { font-size: 40px; }
+    .hero-balance { font-size: clamp(28px, 8.5vw, 40px); overflow-wrap: anywhere; }
+    .hero-grid > * { min-width: 0; }
     .hero-balance .currency { font-size: 22px; }
 }
 
@@ -1053,6 +1085,8 @@ body.app-shell {
 .tile.size-xs .tile-top { font-size: 11px; }
 .tile.size-xs .tile-bottom { font-size: 12px; }
 .tile.size-xs .tile-pct { padding: 1px 6px; font-size: 10px; }
+.tile.size-xxs { padding: 0 4px; border-radius: 6px; }
+.tile.size-xxs .tile-bottom { font-size: 10px; }
 
 @media (max-width: 600px) {
     .treemap { height: 320px; }
@@ -1091,7 +1125,8 @@ body.app-shell {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    flex-wrap: wrap;
+    gap: 4px 12px;
 }
 .pf-row-name {
     display: inline-flex;
@@ -1100,7 +1135,7 @@ body.app-shell {
     font-weight: 600;
     font-size: 15px;
     color: var(--text-primary);
-    flex: 1;
+    flex: 1 1 140px;
     min-width: 0;
 }
 .pf-row-name .name-text {
@@ -1116,6 +1151,7 @@ body.app-shell {
     text-align: right;
     white-space: nowrap;
     flex-shrink: 0;
+    margin-left: auto;
     color: var(--text-muted);
 }
 .pf-amounts .fact { font-weight: 700; color: var(--text-primary); font-size: 15px; }
@@ -1412,6 +1448,8 @@ tr:last-child td { border-bottom: none; }
     transition: background var(--t-fast), transform var(--t-fast);
 }
 .period-item:hover { background: var(--bg-secondary); transform: translateX(2px); }
+.period-item.is-current { background: var(--blue-soft); border-color: var(--blue); }
+.period-item.is-current .period-item-text { font-weight: 700; }
 
 /* =================================================================
    FORMS
@@ -1523,7 +1561,7 @@ input.amount-input::-moz-placeholder,
 /* Type toggle: two big cards (with icon + name + description) */
 .type-toggle {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
 }
 .type-toggle-btn {
@@ -1557,6 +1595,11 @@ input.amount-input::-moz-placeholder,
 .type-toggle-btn .type-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .type-toggle-btn .type-name { font-weight: 700; font-size: 15px; color: var(--text-primary); line-height: 1.2; }
 .type-toggle-btn .type-desc { font-size: 12px; color: var(--text-muted); font-weight: 400; }
+@media (max-width: 540px) {
+    .type-toggle-btn { padding: 14px 10px; gap: 10px; }
+    .type-toggle-btn .type-icon { width: 40px; height: 40px; }
+    .type-toggle-btn .type-desc { display: none; }
+}
 
 .type-toggle-btn.active[data-type="expense"] {
     border-color: var(--red);
@@ -1607,6 +1650,7 @@ input.amount-input::-moz-placeholder,
     color: var(--text-primary);
     transition: color var(--t-base);
     user-select: none;
+    max-width: 100%;
 }
 .amount-display.expense { color: var(--red); }
 .amount-display.income { color: var(--green); }
@@ -1750,6 +1794,7 @@ input.amount-input::-moz-placeholder,
 }
 .alert-success { background: var(--green-soft); color: var(--green); border-color: rgba(0, 184, 132, 0.2); }
 .alert-error { background: var(--red-soft); color: var(--red); border-color: rgba(230, 62, 62, 0.2); }
+.alert-info { background: var(--blue-soft); color: var(--text-primary); border-color: var(--border-md); }
 
 /* =================================================================
    CATEGORIES PAGE (add_summary)
@@ -1776,6 +1821,7 @@ input.amount-input::-moz-placeholder,
     letter-spacing: -0.01em;
 }
 .cats-list { display: flex; flex-direction: column; gap: 10px; }
+.cats-grid > * { min-width: 0; }
 
 .cat-card {
     background: var(--bg-primary);
@@ -1825,6 +1871,9 @@ input.amount-input::-moz-placeholder,
 }
 .cat-card:hover .cat-actions,
 .cat-card:focus-within .cat-actions { opacity: 1; }
+@media (hover: none) {
+    .cat-actions { opacity: 1; }
+}
 .cat-action-btn {
     width: 30px;
     height: 30px;
@@ -1896,6 +1945,7 @@ input.amount-input::-moz-placeholder,
     position: relative;
     animation: appModalScaleIn 240ms cubic-bezier(0.4, 0, 0.2, 1) both;
     max-height: 90vh;
+    max-height: 90dvh;
     overflow-y: auto;
     display: block;
 }
@@ -1904,9 +1954,10 @@ input.amount-input::-moz-placeholder,
     to { opacity: 1; transform: scale(1) translateY(0); }
 }
 .app-modal-close {
-    position: absolute;
+    position: sticky;
     top: 14px;
-    right: 14px;
+    float: right;
+    margin: -14px -14px 0 12px;
     width: 36px;
     height: 36px;
     border-radius: 10px;
@@ -2106,10 +2157,17 @@ input.amount-input::-moz-placeholder,
     .sidebar {
         width: 280px;
         transform: translateX(-100%);
-        transition: transform var(--t-base);
-        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        visibility: hidden;
+        box-shadow: none;
+        transition: transform var(--t-base), visibility 0s linear 240ms, box-shadow var(--t-base);
     }
-    .sidebar.is-open { transform: translateX(0); }
+    .sidebar.is-open {
+        transform: translateX(0);
+        visibility: visible;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.5);
+        transition: transform var(--t-base), visibility 0s, box-shadow var(--t-base);
+    }
+    body.sidebar-open { overflow: hidden; }
     .topbar { padding: 0 16px; gap: 8px; }
     .content { padding: 20px 16px; }
     .header-title, .ops-title { font-size: 22px; }
@@ -2233,9 +2291,19 @@ input.amount-input::-moz-placeholder,
 @media (max-width: 1100px) {
     .profile-grid { grid-template-columns: 1fr; }
 }
+@media (max-width: 480px) {
+    /* В узкой шапке остаётся аватар: обрезанное до одной буквы имя только путает */
+    .profile-btn-name { display: none; }
+}
 @media (max-width: 540px) {
     .profile-header { gap: 14px; }
     .profile-avatar-lg { width: 56px; height: 56px; font-size: 22px; }
+    .profile-space-row { flex-wrap: wrap; }
+    .profile-space-name { flex: 1 1 120px; }
+    .profile-form-actions { flex-wrap: wrap; }
+    .profile-form-actions > .form-input { flex: 1 1 140px; min-width: 0; }
+    /* 16px: меньший размер шрифта заставляет iOS Safari приближать страницу при фокусе в поле */
+    .form-input, .form-select, .copy-row-input { font-size: 16px; }
 }
 
 /* =================================================================
@@ -2243,6 +2311,18 @@ input.amount-input::-moz-placeholder,
 ================================================================= */
 
 .row { display: flex; align-items: center; gap: 8px; }
+/* Текст только для скринридеров (у страницы нет видимого заголовка) */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
 .text-muted { color: var(--text-muted); }
 .text-green { color: var(--green); }
 .text-red { color: var(--red); }

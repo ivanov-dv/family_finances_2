@@ -1,8 +1,14 @@
 {% extends 'base.html' %}
 
+{% block title %}{{ title }} — Вход{% endblock %}
+
 {% block content %}
-    <div class="container mt-4">
-        <h2>Вы не авторизованы</h2>
-        <a href={% url 'transactions:home' %}>На главную</a>
+    <div class="intro-card">
+        <h1 class="header-title">Требуется вход</h1>
+        <p>Эта страница доступна только после входа в аккаунт.</p>
+        <div style="margin-top:24px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+            <button type="button" class="btn btn-primary" data-open-app-modal="loginModal">Войти</button>
+            <a href="{% url 'transactions:home' %}" class="btn btn-ghost">На главную</a>
+        </div>
     </div>
 {% endblock %}

@@ -2,21 +2,44 @@
     const inc = JSON.parse(document.getElementById('inc-data').textContent);
     const exp = JSON.parse(document.getElementById('exp-data').textContent);
 
-    const fmt = v => Number(v).toLocaleString('ru-RU');
+    // Копейки показываем двумя цифрами («3 500,50»), целые суммы — без дробной части.
+    const fmt = v => {
+        const n = Number(v);
+        const hasFraction = Math.abs(n % 1) > 0.001;
+        return n.toLocaleString('ru-RU', {
+            minimumFractionDigits: hasFraction ? 2 : 0,
+            maximumFractionDigits: 2,
+        });
+    };
+
+    // Сокращённая сумма для узких плиток: 6 003,70 → «6 тыс», 1 250 000 → «1,3 млн» (полная — в title).
+    const fmtCompact = v => {
+        const n = Math.abs(Number(v));
+        if (n >= 1e6) return (n / 1e6).toLocaleString('ru-RU', { maximumFractionDigits: 1 }) + ' млн';
+        if (n >= 1e3) return Math.round(n / 1e3).toLocaleString('ru-RU') + ' тыс';
+        return Math.round(n).toLocaleString('ru-RU');
+    };
+
+    // Названия статей вводят пользователи: в innerHTML их нельзя подставлять как есть (XSS).
+    const HTML_ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    const esc = s => String(s).replace(/[&<>"']/g, ch => HTML_ESCAPES[ch]);
 
     function readCSS(varName) {
         return getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
     }
 
-    const isDark = matchMedia('(prefers-color-scheme:dark)').matches;
-    const tickC = readCSS('--text-muted') || (isDark ? '#8A93A8' : '#64748B');
-    const gridC = readCSS('--border') || (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.06)');
-    const surfaceC = readCSS('--bg-elevated') || (isDark ? '#1F2742' : '#FFFFFF');
-    const borderC = readCSS('--border-md') || gridC;
-    const textPrimary = readCSS('--text-primary') || (isDark ? '#F5F7FA' : '#0F172A');
-
-    Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
-    Chart.defaults.color = tickC;
+    // Цвета графиков берём из текущей темы приложения (data-theme), а не из системной.
+    function palette() {
+        const isDark = document.documentElement.dataset.theme === 'dark';
+        const grid = readCSS('--border') || (isDark ? 'rgba(255,255,255,0.07)' : 'rgba(15,23,42,0.06)');
+        return {
+            tick: readCSS('--text-muted') || (isDark ? '#8A93A8' : '#64748B'),
+            grid,
+            surface: readCSS('--bg-elevated') || (isDark ? '#1F2742' : '#FFFFFF'),
+            border: readCSS('--border-md') || grid,
+            text: readCSS('--text-primary') || (isDark ? '#F5F7FA' : '#0F172A'),
+        };
+    }
 
     // ============== Category icon + color mapping ==============
     const catRules = [
@@ -65,8 +88,9 @@
         }
         el.innerHTML = data.map((d, i) => {
             const style = getCategoryStyle(d.g, i);
-            const ratio = d.plan > 0 ? (d.fact / d.plan) * 100 : 0;
-            const widthPct = Math.min(ratio, 100);
+            // План 0 при ненулевом факте — это превышение плана, а не «ничего не сделано».
+            const ratio = d.plan > 0 ? (d.fact / d.plan) * 100 : (d.fact > 0 ? Infinity : 0);
+            const widthPct = Math.max(0, Math.min(ratio, 100));
             const cls = progressClass(ratio, isExpense);
             return `<div class="pf-row">
                 <div class="pf-row-top">
@@ -74,7 +98,7 @@
                         <span class="cat-icon-32 ${style.color}">
                             <svg class="icon icon-sm"><use href="${style.icon}"/></svg>
                         </span>
-                        <span class="name-text">${d.g}</span>
+                        <span class="name-text">${esc(d.g)}</span>
                     </div>
                     <div class="pf-amounts">
                         <span class="fact">${fmt(d.fact)}</span> / <span class="plan">${fmt(d.plan)}</span> ₽
@@ -226,26 +250,46 @@
             const pct = Math.round((t.value / total) * 100);
             const innerW = Math.max(0, t.w - PAD);
             const innerH = Math.max(0, t.h - PAD);
-            const sizeClass = pickSizeClass(innerW, innerH, t.value, total);
+            // Отступы плитки не должны превышать её размер: иначе border-box растягивает её
+            // за пределы отведённого места (мелкие статьи выходили за границы контейнера).
+            const sizeClass = (innerW < 64 || innerH < 40)
+                ? 'size-xxs'
+                : pickSizeClass(innerW, innerH, t.value, total);
 
             const tile = document.createElement('div');
             tile.className = `tile ${sizeClass}`;
             tile.style.cssText = `left:${t.x}px;top:${t.y}px;width:${innerW}px;height:${innerH}px;background:linear-gradient(135deg, ${t.color}, ${t.color}dd);`;
             tile.title = `${t.name} · ${fmt(t.value)} ₽ (${pct}%)`;
 
-            // если плитка совсем маленькая — показываем только сумму
-            if (sizeClass === 'size-xs' && innerH < 50) {
-                tile.innerHTML = `<div class="tile-bottom">${fmt(t.value)} ₽</div>`;
+            // Узкой плитке полная сумма не помещается — показываем сокращённую.
+            const amountText = innerW < 96 ? fmtCompact(t.value) : `${fmt(t.value)} ₽`;
+
+            if (sizeClass === 'size-xxs' && innerH < 14) {
+                // слишком мала для текста: остаётся плитка с подсказкой (title)
+            } else if (sizeClass === 'size-xxs' || (sizeClass === 'size-xs' && innerH < 50)) {
+                // если плитка совсем маленькая — показываем только сумму
+                tile.innerHTML = `<div class="tile-bottom">${amountText}</div>`;
             } else {
                 tile.innerHTML = `
                     <div class="tile-top">
-                        <span class="tile-name">${t.name}</span>
+                        <span class="tile-name">${esc(t.name)}</span>
                         <span class="tile-pct">${pct}%</span>
                     </div>
-                    <div class="tile-bottom">${fmt(t.value)} ₽</div>
+                    <div class="tile-bottom">${amountText}</div>
                 `;
             }
             container.appendChild(tile);
+            // Крупную сумму ужимаем по ширине плитки, чтобы многоточие её не обрезало;
+            // если и минимальный размер не помогает — сокращённая запись («30 тыс»).
+            const bottom = tile.querySelector('.tile-bottom');
+            if (bottom) {
+                let size = parseFloat(getComputedStyle(bottom).fontSize);
+                while (bottom.scrollWidth > bottom.clientWidth && size > 10) {
+                    size -= 1;
+                    bottom.style.fontSize = size + 'px';
+                }
+                if (bottom.scrollWidth > bottom.clientWidth) bottom.textContent = fmtCompact(t.value);
+            }
             // плавное появление
             setTimeout(() => tile.classList.add('is-visible'), 30 + i * 40);
         });
@@ -260,80 +304,107 @@
     });
 
     // ============== Charts (план vs факт) ==============
-    const tooltipBase = {
-        backgroundColor: surfaceC,
-        titleColor: textPrimary,
-        bodyColor: tickC,
-        borderColor: borderC,
-        borderWidth: 1,
-        padding: 12,
-        cornerRadius: 10,
-        displayColors: false,
-        titleFont: { size: 12, weight: '600' },
-        bodyFont: { size: 13 }
-    };
+    // Chart.js грузится с CDN: если библиотеки нет, остальной дашборд (списки, treemap) всё равно работает.
+    const charts = [];
 
-    const baseOpts = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                ...tooltipBase,
-                callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y ?? ctx.parsed)} ₽` }
-            }
-        },
-        scales: {
-            x: {
-                grid: { display: false },
-                ticks: { font: { size: 11 }, color: tickC, maxRotation: 30 }
-            },
-            y: {
-                beginAtZero: true,
-                grid: { color: gridC, drawBorder: false },
-                ticks: {
-                    font: { size: 11 },
-                    color: tickC,
-                    callback: v => v >= 1000 ? Math.round(v / 1000) + 'к' : v
+    function showChartMessage(canvasId, text) {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas || !canvas.parentElement) return;
+        const note = document.createElement('div');
+        note.className = 'pf-empty';
+        note.textContent = text;
+        canvas.parentElement.replaceChildren(note);
+    }
+
+    // Настройки собираются заново на каждый график: JSON-клон терял функции
+    // (подписи оси «к» и тултипы с «₽»).
+    function makeBaseOpts(colors) {
+        return {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: colors.surface,
+                    titleColor: colors.text,
+                    bodyColor: colors.tick,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                    padding: 12,
+                    cornerRadius: 10,
+                    displayColors: false,
+                    titleFont: { size: 12, weight: '600' },
+                    bodyFont: { size: 13 },
+                    callbacks: { label: ctx => ` ${ctx.dataset.label}: ${fmt(ctx.parsed.y ?? ctx.parsed)} ₽` }
                 }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { font: { size: 11 }, color: colors.tick, maxRotation: 30 }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: colors.grid, drawBorder: false },
+                    ticks: {
+                        font: { size: 11 },
+                        color: colors.tick,
+                        callback: v => v >= 1000 ? Math.round(v / 1000) + 'к' : v
+                    }
+                }
+            },
+            animation: { duration: 800, easing: 'easeOutQuart' }
+        };
+    }
+
+    function bars(label, data, color) {
+        return { label, data, backgroundColor: color, borderRadius: 6, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.6 };
+    }
+
+    function renderCharts() {
+        charts.splice(0).forEach(chart => chart.destroy());
+        const colors = palette();
+        Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+        Chart.defaults.color = colors.tick;
+        try {
+            const incCanvas = document.getElementById('incChart');
+            if (incCanvas && inc.length) {
+                charts.push(new Chart(incCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: inc.map(d => d.g),
+                        datasets: [bars('План', inc.map(d => d.plan), '#B5D4F4'), bars('Факт', inc.map(d => d.fact), '#3D6BE6')]
+                    },
+                    options: makeBaseOpts(colors)
+                }));
             }
-        },
-        animation: { duration: 800, easing: 'easeOutQuart' }
-    };
-
-    try {
-        if (inc.length) {
-            new Chart(document.getElementById('incChart'), {
-                type: 'bar',
-                data: {
-                    labels: inc.map(d => d.g),
-                    datasets: [
-                        { label: 'План', data: inc.map(d => d.plan), backgroundColor: '#B5D4F4', borderRadius: 6, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.6 },
-                        { label: 'Факт', data: inc.map(d => d.fact), backgroundColor: '#3D6BE6', borderRadius: 6, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.6 }
-                    ]
-                },
-                options: JSON.parse(JSON.stringify(baseOpts))
-            });
+            const expCanvas = document.getElementById('expChart');
+            if (expCanvas && exp.length) {
+                const expOpts = makeBaseOpts(colors);
+                expOpts.scales.x.ticks.maxRotation = 35;
+                expOpts.scales.x.ticks.font = { size: 10 };
+                charts.push(new Chart(expCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: exp.map(d => d.g),
+                        datasets: [bars('План', exp.map(d => d.plan), '#F5C4B3'), bars('Факт', exp.map(d => d.fact), '#E63E3E')]
+                    },
+                    options: expOpts
+                }));
+            }
+        } catch (e) {
+            console.error('Chart.js error:', e);
         }
+    }
 
-        if (exp.length) {
-            const expOpts = JSON.parse(JSON.stringify(baseOpts));
-            expOpts.scales.x.ticks.maxRotation = 35;
-            expOpts.scales.x.ticks.font = { size: 10 };
-
-            new Chart(document.getElementById('expChart'), {
-                type: 'bar',
-                data: {
-                    labels: exp.map(d => d.g),
-                    datasets: [
-                        { label: 'План', data: exp.map(d => d.plan), backgroundColor: '#F5C4B3', borderRadius: 6, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.6 },
-                        { label: 'Факт', data: exp.map(d => d.fact), backgroundColor: '#E63E3E', borderRadius: 6, borderSkipped: false, barPercentage: 0.7, categoryPercentage: 0.6 }
-                    ]
-                },
-                options: expOpts
-            });
-        }
-    } catch (e) {
-        console.error('Chart.js error:', e);
+    if (typeof Chart === 'undefined') {
+        showChartMessage('incChart', 'Графики недоступны: не удалось загрузить библиотеку');
+        showChartMessage('expChart', 'Графики недоступны: не удалось загрузить библиотеку');
+    } else {
+        if (!inc.length) showChartMessage('incChart', 'Нет данных за этот период');
+        if (!exp.length) showChartMessage('expChart', 'Нет данных за этот период');
+        renderCharts();
+        // Смена темы: цвета осей, сетки и тултипов зависят от неё.
+        document.addEventListener('ff:theme', renderCharts);
     }
 })();

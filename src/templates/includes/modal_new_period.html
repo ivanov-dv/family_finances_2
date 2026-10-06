@@ -1,8 +1,10 @@
 <div class="app-modal-backdrop" id="newPeriodModal" hidden
      data-current-month="{{ current_month|default:0 }}"
-     data-current-year="{{ current_year|default:0 }}">
-    <div class="app-modal" role="dialog" aria-labelledby="newPeriodTitle">
-        <button type="button" class="app-modal-close" data-close-period-modal aria-label="Закрыть">
+     data-current-year="{{ current_year|default:0 }}"
+     data-last-month="{{ last_period_month|default:0 }}"
+     data-last-year="{{ last_period_year|default:0 }}">
+    <div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="newPeriodTitle">
+        <button type="button" class="app-modal-close" data-close-app-modal aria-label="Закрыть">
             <svg class="icon"><use href="#i-x"/></svg>
         </button>
         <div class="app-modal-title" id="newPeriodTitle">Новый период</div>
@@ -14,7 +16,7 @@
             {% endif %}
         </div>
 
-        <form method="post" action="{% url 'transactions:create_period' %}">
+        <form method="post" action="{% url 'transactions:create_period' %}" data-once>
             {% csrf_token %}
             <input type="hidden" name="next" value="{{ request.path }}">
 
@@ -42,6 +44,8 @@
             </div>
 
             {% if last_period_summaries %}
+                {# Снятые флажки браузер не отправляет; маркер отличает «ничего не выбрано» от «список не показывали». #}
+                <input type="hidden" name="copy_selection" value="1">
                 <div class="form-group">
                     <div class="copy-list-header">
                         <label class="form-label" style="margin:0">Статьи и плановые суммы</label>
@@ -76,11 +80,12 @@
                                             <input type="number"
                                                    class="copy-row-input mono"
                                                    name="plan_value_{{ s.pk }}"
-                                                   value="{{ s.plan_value|floatformat:0 }}"
+                                                   value="{{ s.plan_value|floatformat:"-2u" }}"
                                                    step="0.01"
                                                    min="0"
+                                                   max="9999999999.99"
                                                    inputmode="decimal"
-                                                   data-original="{{ s.plan_value|floatformat:0 }}"
+                                                   data-original="{{ s.plan_value|floatformat:"-2u" }}"
                                                    aria-label="План для статьи {{ s.group_name }}">
                                             <span class="copy-row-currency">₽</span>
                                         </div>

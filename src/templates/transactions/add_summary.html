@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
-{% load static %}
+{% load static l10n %}
+
+{% block title %}{{ title }} — Статьи бюджета{% endblock %}
 
 {% block content %}
     <div class="header">
         <div>
-            <div class="header-title">Статьи бюджета</div>
+            <h1 class="header-title">Статьи бюджета</h1>
             <div class="header-sub">{% include 'includes/_period.html' %} · {{ current_space.name }}</div>
         </div>
         {% if current_space_can_edit %}
@@ -29,7 +31,7 @@
             </div>
             <div class="cats-list" id="inc-cats">
                 {% for s in summaries %}{% if s.type_transaction == 'income' %}
-                    <div class="cat-card" data-fact="{{ s.fact_value }}" data-plan="{{ s.plan_value }}" data-type="income">
+                    <div class="cat-card" data-fact="{{ s.fact_value|unlocalize }}" data-plan="{{ s.plan_value|unlocalize }}" data-type="income">
                         <div class="cat-top">
                             <div class="cat-name-row">
                                 <span class="cat-icon cat-icon-sm" data-cat-icon data-group="{{ s.group_name }}">
@@ -37,28 +39,32 @@
                                 </span>
                                 <span class="cat-name">{{ s.group_name }}</span>
                             </div>
+                            {% if current_space_can_edit %}
                             <div class="cat-actions">
                                 <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
-                                      onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')" style="margin:0">
+                                      data-confirm="Удалить статью «{{ s.group_name }}»?{% if s.tx_count %} Операции статьи ({{ s.tx_count }}) останутся в журнале.{% endif %}"
+                                      style="margin:0">
                                     {% csrf_token %}
-                                    <button type="submit" class="cat-action-btn danger" title="Удалить">
+                                    <button type="submit" class="cat-action-btn danger" title="Удалить"
+                                            aria-label="Удалить статью «{{ s.group_name }}»">
                                         <svg class="icon icon-sm"><use href="#i-trash"/></svg>
                                     </button>
                                 </form>
                             </div>
+                            {% endif %}
                         </div>
                         <div class="cat-bottom">
                             <div class="cat-progress">
                                 <div class="progress-bar">
                                     {% if s.plan_value > 0 %}
                                         <div class="progress-fill is-green"
-                                             data-fact="{{ s.fact_value }}"
-                                             data-plan="{{ s.plan_value }}"></div>
+                                             data-fact="{{ s.fact_value|unlocalize }}"
+                                             data-plan="{{ s.plan_value|unlocalize }}"></div>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="cat-amounts">
-                                <strong>{{ s.fact_value|floatformat:0 }}</strong> / {{ s.plan_value|floatformat:0 }} ₽
+                                <strong>{{ s.fact_value|floatformat:"-2g" }}</strong> / {{ s.plan_value|floatformat:"-2g" }} ₽
                             </div>
                         </div>
                     </div>
@@ -85,7 +91,7 @@
             </div>
             <div class="cats-list" id="exp-cats">
                 {% for s in summaries %}{% if s.type_transaction == 'expense' %}
-                    <div class="cat-card" data-fact="{{ s.fact_value }}" data-plan="{{ s.plan_value }}" data-type="expense">
+                    <div class="cat-card" data-fact="{{ s.fact_value|unlocalize }}" data-plan="{{ s.plan_value|unlocalize }}" data-type="expense">
                         <div class="cat-top">
                             <div class="cat-name-row">
                                 <span class="cat-icon cat-icon-sm" data-cat-icon data-group="{{ s.group_name }}">
@@ -93,29 +99,33 @@
                                 </span>
                                 <span class="cat-name">{{ s.group_name }}</span>
                             </div>
+                            {% if current_space_can_edit %}
                             <div class="cat-actions">
                                 <form method="post" action="{% url 'transactions:delete_summary' s.pk %}"
-                                      onsubmit="return confirm('Удалить статью «{{ s.group_name }}»?')" style="margin:0">
+                                      data-confirm="Удалить статью «{{ s.group_name }}»?{% if s.tx_count %} Операции статьи ({{ s.tx_count }}) останутся в журнале.{% endif %}"
+                                      style="margin:0">
                                     {% csrf_token %}
-                                    <button type="submit" class="cat-action-btn danger" title="Удалить">
+                                    <button type="submit" class="cat-action-btn danger" title="Удалить"
+                                            aria-label="Удалить статью «{{ s.group_name }}»">
                                         <svg class="icon icon-sm"><use href="#i-trash"/></svg>
                                     </button>
                                 </form>
                             </div>
+                            {% endif %}
                         </div>
                         <div class="cat-bottom">
                             <div class="cat-progress">
                                 <div class="progress-bar">
                                     {% if s.plan_value > 0 %}
                                         <div class="progress-fill"
-                                             data-fact="{{ s.fact_value }}"
-                                             data-plan="{{ s.plan_value }}"
+                                             data-fact="{{ s.fact_value|unlocalize }}"
+                                             data-plan="{{ s.plan_value|unlocalize }}"
                                              data-expense="1"></div>
                                     {% endif %}
                                 </div>
                             </div>
                             <div class="cat-amounts">
-                                <strong>{{ s.fact_value|floatformat:0 }}</strong> / {{ s.plan_value|floatformat:0 }} ₽
+                                <strong>{{ s.fact_value|floatformat:"-2g" }}</strong> / {{ s.plan_value|floatformat:"-2g" }} ₽
                             </div>
                         </div>
                     </div>
@@ -131,7 +141,7 @@
     </div>
 
     <div class="app-modal-backdrop" id="newSummaryModal" hidden>
-        <div class="app-modal" role="dialog" aria-labelledby="newSummaryTitle">
+        <div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="newSummaryTitle">
             <button type="button" class="app-modal-close" id="modalCloseBtn" aria-label="Закрыть">
                 <svg class="icon"><use href="#i-x"/></svg>
             </button>

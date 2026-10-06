@@ -1,5 +1,5 @@
 <div class="topbar">
-    <button class="icon-btn mobile-menu-btn" id="menuBtn" aria-label="Меню" type="button">
+    <button class="icon-btn mobile-menu-btn" id="menuBtn" aria-label="Меню" aria-controls="sidebar" aria-expanded="false" type="button">
         <svg class="icon"><use href="#i-menu"/></svg>
     </button>
 
@@ -27,12 +27,12 @@
     <div class="topbar-spacer"></div>
 
     <div class="profile-menu" id="profileMenu">
-        <button type="button" class="profile-btn" id="profileMenuBtn">
+        <button type="button" class="profile-btn" id="profileMenuBtn" aria-haspopup="true" aria-expanded="false" aria-controls="profileMenuItems">
             <span class="avatar-sm">{{ user.first_name|default:user.username|slice:":1"|upper }}</span>
-            <span>{{ user.first_name|default:user.username }}</span>
+            <span class="profile-btn-name">{{ user.first_name|default:user.username }}</span>
             <svg class="icon icon-sm"><use href="#i-chevron-down"/></svg>
         </button>
-        <div class="profile-menu-items">
+        <div class="profile-menu-items" id="profileMenuItems">
             <div class="profile-menu-section">
                 <span class="profile-menu-label">Тема</span>
                 <div class="theme-toggle theme-toggle-menu" id="themeToggle">

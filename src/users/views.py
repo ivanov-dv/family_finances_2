@@ -9,10 +9,11 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.http import JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.urls import reverse, reverse_lazy
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import UpdateView
 from django_telegram_login.authentication import verify_telegram_authentication
@@ -22,10 +23,23 @@ from django_telegram_login.errors import (
 )
 
 from transactions.models import Space
+from transactions.services import SpaceService
+from transactions.views import get_safe_next_url
 from .forms import ProfileForm, RegistrationForm
 from .models import TelegramSettings, CoreSettings
 
 User = get_user_model()
+
+
+class LoginPageView(auth_views.LoginView):
+    """Страница, на которую login_required отправляет анонима; вошедшего уводит дальше."""
+
+    redirect_authenticated_user = True
+
+    def get_redirect_url(self):
+        url = super().get_redirect_url()
+        # next на саму страницу входа дал бы для вошедшего ValueError («петля редиректов»).
+        return '' if url == self.request.path else url
 
 
 def login_ajax(request):
@@ -33,17 +47,31 @@ def login_ajax(request):
         return JsonResponse(
             {'status': 'error', 'message': 'Некорректный запрос'}
         )
-    username = request.POST.get('username')
-    password = request.POST.get('password')
+    # Логины хранятся в нижнем регистре, а на телефонах первая буква часто вводится заглавной.
+    username = (request.POST.get('username') or '').strip().lower()
+    password = request.POST.get('password') or ''
+    wrong = JsonResponse(
+        {
+            'status': 'error',
+            'message': 'Неправильное имя пользователя или пароль'}
+    )
+    # NUL в значении роняет запрос к PostgreSQL (500).
+    if not username or not password or '\x00' in username:
+        return wrong
     user = authenticate(request, username=username, password=password)
     if user is None:
-        return JsonResponse(
-            {
-                'status': 'error',
-                'message': 'Неправильное имя пользователя или пароль'}
-        )
+        # authenticate() не пускает неактивных: подсказываем про подтверждение,
+        # но только тому, кто знает пароль (иначе можно перебирать логины).
+        pending = User.objects.filter(username=username, is_active=False).first()
+        if pending and pending.check_password(password):
+            return JsonResponse(
+                {
+                    'status': 'error',
+                    'message': 'Аккаунт ещё не подтверждён администратором'}
+            )
+        return wrong
     login(request, user)
-    return JsonResponse({'status': 'success'})
+    return JsonResponse({'status': 'success', 'next': get_safe_next_url(request)})
 
 
 def registration(request):
@@ -56,32 +84,38 @@ def registration(request):
         return JsonResponse(
             {
                 'status': 'error',
-                'message': list(form.errors.values())
+                'message': [
+                    str(message)
+                    for errors in form.errors.values()
+                    for message in errors
+                ]
             }
         )
-    if form.cleaned_data['username'][0].isdigit():
+    try:
+        with transaction.atomic():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
+            user.is_active = False
+            user.save()
+            TelegramSettings.objects.create(
+                user=user,
+                telegram_only=False
+            )
+            space = Space.objects.create(
+                user=user,
+                name=SpaceService.default_name(user.username)
+            )
+            now = timezone.localtime()
+            CoreSettings.objects.create(
+                user=user,
+                current_space=space,
+                current_month=now.month,
+                current_year=now.year
+            )
+    except IntegrityError:
+        # Две одинаковые регистрации одновременно: форма дубль не увидела, поймала БД.
         return JsonResponse(
-            {'status': 'error', 'message': 'Логин не может начинаться с цифры'}
-        )
-    with transaction.atomic():
-        user = form.save(commit=False)
-        user.set_password(form.cleaned_data['password'])
-        user.is_active = False
-        user.save()
-        TelegramSettings.objects.create(
-            user=user,
-            telegram_only=False
-        )
-        space = Space.objects.create(
-            user=user,
-            name=user.username
-        )
-        dt = datetime.now()
-        CoreSettings.objects.create(
-            user=user,
-            current_space=space,
-            current_month=dt.month,
-            current_year=dt.year
+            {'status': 'error', 'message': ['Этот логин уже занят']}
         )
     return JsonResponse(
         {'status': 'success'}
@@ -212,12 +246,17 @@ def webapp_auth(request):
 
 
 class ProfileView(LoginRequiredMixin, UpdateView):
+    # По умолчанию UpdateView кладёт объект в контекст как «user» и перекрывает им
+    # request.user из шаблонов (шапка, сайдбар).
+    context_object_name = 'profile_user'
     form_class = ProfileForm
     template_name = 'users/profile.html'
     success_url = reverse_lazy('users:profile')
 
     def get_object(self, queryset=None):
-        return self.request.user
+        # Копия, а не request.user: ModelForm меняет instance при валидации, и при ошибке
+        # в форме шапка показывала бы несохранённое имя.
+        return User.objects.get(pk=self.request.user.pk)
 
     def form_valid(self, form):
         messages.success(self.request, 'Профиль обновлён')

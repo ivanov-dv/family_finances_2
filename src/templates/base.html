@@ -5,11 +5,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <script>
+        /* Тема применяется до первой отрисовки, чтобы не мигала чужая; в localStorage пишется только явный выбор. */
+        (function () {
+            var theme = null;
+            try { theme = localStorage.getItem('ff-theme'); } catch (e) { }
+            if (theme !== 'light' && theme !== 'dark') {
+                theme = window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            document.documentElement.dataset.theme = theme;
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
+    <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
     <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800|jetbrains-mono:500,600,700&display=swap" rel="stylesheet">
     {% bootstrap_css %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
-    <title>{{ title }}</title>
+    <title>{% block title %}{{ title }}{% endblock %}</title>
     {% block extra_head %}{% endblock %}
 </head>
 
@@ -35,23 +48,23 @@
             {% include 'includes/modal_registration.html' %}
         {% endif %}
 
-        <div class="content">
+        <main class="content">
             <div class="container">
-                {% if messages %}
-                    {% for message in messages %}
-                        <div class="alert-msg {% if message.tags == 'success' %}alert-success{% else %}alert-error{% endif %}">
-                            <svg class="icon icon-sm"><use href="{% if message.tags == 'success' %}#i-check{% else %}#i-info{% endif %}"/></svg>
-                            <span>{{ message }}</span>
-                        </div>
-                    {% endfor %}
-                {% endif %}
+                {% for message in messages %}
+                    <div class="alert-msg {% if message.level_tag == 'success' %}alert-success{% elif message.level_tag == 'info' %}alert-info{% else %}alert-error{% endif %}"
+                         role="{% if message.level_tag == 'error' or message.level_tag == 'warning' %}alert{% else %}status{% endif %}">
+                        <svg class="icon icon-sm"><use href="{% if message.level_tag == 'success' %}#i-check{% else %}#i-info{% endif %}"/></svg>
+                        <span>{{ message }}</span>
+                    </div>
+                {% endfor %}
                 {% block content %}{% endblock %}
             </div>
-        </div>
+        </main>
     </div>
 
-    {% bootstrap_javascript %}
+    {# Наш скрипт — до Bootstrap с CDN: интерфейс не должен зависеть от того, загрузился ли он. #}
     <script src="{% static 'js/sidebar_toggle.js' %}"></script>
+    {% bootstrap_javascript %}
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

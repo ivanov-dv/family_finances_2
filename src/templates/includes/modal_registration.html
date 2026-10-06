@@ -1,27 +1,29 @@
 <div class="app-modal-backdrop" id="registrationModal" hidden>
-    <div class="app-modal" role="dialog" aria-labelledby="registrationModalTitle">
+    <div class="app-modal" role="dialog" aria-modal="true" aria-labelledby="registrationModalTitle">
         <button type="button" class="app-modal-close" data-close-app-modal aria-label="Закрыть">
             <svg class="icon"><use href="#i-x"/></svg>
         </button>
         <div class="app-modal-title" id="registrationModalTitle">Регистрация</div>
         <div class="app-modal-subtitle">Создайте новый аккаунт</div>
 
-        <form id="registrationForm">
+        <form id="registrationForm" data-url="{% url 'users:registration' %}">
             {% csrf_token %}
             <div class="form-group">
                 <label class="form-label" for="registration_username">Логин</label>
-                <input class="form-input" type="text" id="registration_username" placeholder="Придумайте логин" required>
+                <input class="form-input" type="text" id="registration_username" name="username" placeholder="Придумайте логин"
+                       autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" required>
             </div>
             <div class="form-group">
                 <label class="form-label" for="registration_password">Пароль</label>
-                <input class="form-input" type="password" id="registration_password" placeholder="Придумайте пароль" required>
+                <input class="form-input" type="password" id="registration_password" name="password" placeholder="Придумайте пароль"
+                       autocomplete="new-password" required>
             </div>
             <button type="submit" class="submit-btn">
                 <svg class="icon"><use href="#i-plus"/></svg>
                 <span>Зарегистрироваться</span>
             </button>
         </form>
-        <div id="registrationError" style="color:var(--red);font-size:13px;margin-top:12px;font-weight:500;text-align:center;display:none"></div>
-        <div id="registrationSuccess" style="color:var(--green);font-size:13px;margin-top:12px;font-weight:500;text-align:center;display:none;padding:0 36px"></div>
+        <div id="registrationError" role="alert" style="color:var(--red);font-size:13px;margin-top:12px;font-weight:500;text-align:center;display:none;white-space:pre-line"></div>
+        <div id="registrationSuccess" role="status" style="color:var(--green);font-size:13px;margin-top:12px;font-weight:500;text-align:center;display:none;padding:0 36px"></div>
     </div>
 </div>

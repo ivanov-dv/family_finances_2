@@ -1,13 +1,15 @@
 {% extends 'base.html' %}
 {% load django_bootstrap5 %}
 
+{% block title %}{{ title }} — Профиль{% endblock %}
+
 {% block content %}
 <div class="profile-page">
 
     <div class="profile-header">
         <div class="profile-avatar-lg">{{ user.username|slice:":1"|upper }}</div>
         <div class="profile-header-info">
-            <div class="header-title">{{ user.username }}</div>
+            <h1 class="header-title">{{ user.username }}</h1>
             <div class="profile-header-meta">
                 {% if user.email %}<span>{{ user.email }}</span> · {% endif %}
                 <span>С нами с {{ user.date_joined|date:"d.m.Y" }}</span>
@@ -116,7 +118,7 @@
                             {% endif %}
                             {% if not space.is_own %}
                                 <form method="post" action="{% url 'transactions:leave_space' space.id %}"
-                                      onsubmit="return confirm('Покинуть пространство «{{ space.display_name }}»?')" style="margin:0">
+                                      data-confirm="Покинуть пространство «{{ space.display_name }}»?" style="margin:0">
                                     {% csrf_token %}
                                     <input type="hidden" name="next" value="{{ request.path }}">
                                     <button type="submit" class="btn btn-ghost btn-sm">Покинуть</button>
@@ -157,13 +159,14 @@
                                 {% csrf_token %}
                                 <input type="hidden" name="next" value="{{ request.path }}">
                                 <input type="hidden" name="linked_user_id" value="{{ link.linked_user_id }}">
-                                <select class="form-input" name="role" onchange="this.form.submit()" aria-label="Роль участника">
+                                <select class="form-input" name="role" aria-label="Роль участника {{ link.linked_user.username }}">
                                     <option value="view_space" {% if link.role == 'view_space' %}selected{% endif %}>Просмотр</option>
                                     <option value="edit_space" {% if link.role == 'edit_space' %}selected{% endif %}>Редактирование</option>
                                 </select>
+                                <button type="submit" class="btn btn-ghost btn-sm">Сохранить</button>
                             </form>
                             <form method="post" action="{% url 'transactions:remove_member' space.pk %}"
-                                  onsubmit="return confirm('Исключить «{{ link.linked_user.username }}»?')" style="margin:0">
+                                  data-confirm="Исключить «{{ link.linked_user.username }}»?" style="margin:0">
                                 {% csrf_token %}
                                 <input type="hidden" name="next" value="{{ request.path }}">
                                 <input type="hidden" name="linked_user_id" value="{{ link.linked_user_id }}">
@@ -174,7 +177,7 @@
                         <div class="profile-hint">Пока нет участников.</div>
                     {% endfor %}
 
-                    <form method="post" action="{% url 'transactions:invite_user' space.pk %}" class="profile-form-actions" style="gap:8px;margin-top:8px">
+                    <form method="post" action="{% url 'transactions:invite_user' space.pk %}" data-once class="profile-form-actions" style="gap:8px;margin-top:8px">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.path }}">
                         <input type="text" class="form-input" name="username" placeholder="Логин" required autocomplete="off" aria-label="Логин пользователя">
@@ -188,7 +191,7 @@
 
                 {% if owned_count > 1 %}
                     <form method="post" action="{% url 'transactions:delete_space' space.pk %}"
-                          onsubmit="return confirm('Удалить пространство «{{ space.name }}» со всеми данными?')"
+                          data-confirm="Удалить пространство «{{ space.name }}» со всеми данными?"
                           class="profile-form-actions" style="margin-top:12px">
                         {% csrf_token %}
                         <input type="hidden" name="next" value="{{ request.path }}">
