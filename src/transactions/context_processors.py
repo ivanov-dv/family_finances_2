@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db.models import Q
 
 from .models import LinkedUserToSpace, Space, Summary
@@ -5,6 +6,11 @@ from .permissions import can_edit_space, get_space_role, is_space_owner
 
 ROLE_LABELS = dict(LinkedUserToSpace.ROLE_CHOICES)
 OWNER_LABEL = 'Владелец'
+
+
+def project_title(request):
+    """Название проекта для <title> и бренда в шапке: нужно и страницам без своего контекста (404, вход)."""
+    return {'title': settings.PROJECT_TITLE}
 
 
 def spaces_and_role(request):
@@ -83,9 +89,14 @@ def last_period_summaries(request):
         '', 'январь', 'февраль', 'март', 'апрель', 'май', 'июнь',
         'июль', 'август', 'сентябрь', 'октябрь', 'ноябрь', 'декабрь',
     ]
-    label = f"{months[last['period_month']]} {last['period_year']}"
+    month = last['period_month']
+    # Месяц вне 1–12 не должен ронять каждую страницу (контекст-процессор глобальный).
+    month_name = months[month] if 1 <= month <= 12 else str(month)
+    label = f"{month_name} {last['period_year']}"
 
     return {
         'last_period_summaries': summaries,
         'last_period_label': label,
+        'last_period_month': month,
+        'last_period_year': last['period_year'],
     }

@@ -1,5 +1,13 @@
 (function () {
-    const fmt = v => Number(v).toLocaleString('ru-RU');
+    // Копейки показываем двумя цифрами («3 500,50»), целые суммы — без дробной части.
+    const fmt = v => {
+        const n = Number(v);
+        const hasFraction = Math.abs(n % 1) > 0.001;
+        return n.toLocaleString('ru-RU', {
+            minimumFractionDigits: hasFraction ? 2 : 0,
+            maximumFractionDigits: 2,
+        });
+    };
 
     // ============== Type toggle (внутри модалки) ==============
     const typeInput = document.getElementById('type_transaction');

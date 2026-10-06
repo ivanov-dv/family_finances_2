@@ -4,11 +4,14 @@ from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 from rest_framework import permissions
 
+from users.views import LoginPageView
+
 urlpatterns = [
     path('', include('transactions.urls', namespace='transactions')),
     path('export/', include('export.urls', namespace='export')),
     path('users/', include('users.urls', namespace='users')),
     path('api/v1/', include('api.v1.urls', namespace='api_v1')),
+    path('auth/login/', LoginPageView.as_view(), name='login'),
     path('auth/', include('django.contrib.auth.urls')),
     path('admin/', admin.site.urls),
 ]

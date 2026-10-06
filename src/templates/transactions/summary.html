@@ -2,11 +2,15 @@
 {% load humanize %}
 {% load static %}
 
+{% block title %}{{ title }} — Дашборд{% endblock %}
+
 {% block extra_head %}
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    {# defer: зависший или недоступный CDN не блокирует отрисовку страницы; dashboard.js идёт следом в том же порядке #}
+    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 {% endblock %}
 
 {% block content %}
+    <h1 class="sr-only">Дашборд</h1>
     <div class="hero">
         <div class="hero-grid">
             <div>
@@ -134,5 +138,5 @@
 {% block extra_scripts %}
     {{ incomes_json|json_script:"inc-data" }}
     {{ expenses_json|json_script:"exp-data" }}
-    <script src="{% static 'js/dashboard.js' %}"></script>
+    <script defer src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

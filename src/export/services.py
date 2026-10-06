@@ -2,11 +2,23 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db.models import QuerySet
 from django.http import HttpResponse
+from django.utils import timezone
 from openpyxl import Workbook
+from openpyxl.cell.cell import ILLEGAL_CHARACTERS_RE
 
 from transactions.models import Transaction
 
 User = get_user_model()
+
+DATE_FORMAT = 'DD.MM.YYYY'
+
+# Строка, начинающаяся с этих символов, при правке в Excel превращается в формулу.
+_FORMULA_PREFIXES = ('=', '+', '-', '@', '\t', '\r')
+
+
+def _text(value) -> str:
+    """Пользовательская строка без символов, недопустимых в XML (иначе openpyxl падает с 500)."""
+    return ILLEGAL_CHARACTERS_RE.sub('', str(value or ''))
 
 
 def _create_excel_transactions_workbook(transactions: QuerySet) -> Workbook:
@@ -30,15 +42,26 @@ def _create_excel_transactions_workbook(transactions: QuerySet) -> Workbook:
 
     # Заполнение транзакций.
     for transaction in transactions:
+        # Дата — в часовом поясе приложения (как в интерфейсе), а не в UTC.
+        created_at = timezone.localtime(transaction.created_at)
         row = [
-            transaction.created_at.strftime('%d.%m.%Y'),
+            created_at.date(),
             'Доход' if transaction.type_transaction == 'income' else 'Расход',
-            transaction.group_name,
+            _text(transaction.group_name),
             transaction.value_transaction,
-            transaction.description,
-            transaction.author.username
+            _text(transaction.description),
+            _text(transaction.author.username)
         ]
         ws.append(row)
+        row_number = ws.max_row
+        ws.cell(row_number, 1).number_format = DATE_FORMAT
+        # Пользовательский текст всегда остаётся строкой: значение «=1+1» иначе
+        # записывается в файл как формула и вычисляется при открытии.
+        for column in (3, 5, 6):
+            cell = ws.cell(row_number, column)
+            cell.data_type = 's'
+            if cell.value.startswith(_FORMULA_PREFIXES):
+                cell.quotePrefix = True
 
     # Установка ширины столбцов.
     ws.column_dimensions['A'].width = settings.COL_WIDTH_DATE
@@ -65,7 +88,7 @@ def create_export_excel_transactions_response(user: User) -> HttpResponse:
         space=user.core_settings.current_space,
         period_month=user.core_settings.current_month,
         period_year=user.core_settings.current_year
-    )
+    ).select_related('author')
 
     # Экспортируем транзакции в Excel и получаем таблицу.
     workbook = _create_excel_transactions_workbook(transactions)
