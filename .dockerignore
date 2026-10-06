@@ -1,0 +1,19 @@
+# Контекст сборки образов из корня репозитория (Dockerfile, Dockerfile.local).
+# Без него в образ через COPY попадают локальные артефакты (collected_static, __pycache__),
+# а в контекст — .git и .env с секретами.
+.git
+.github
+.idea
+.claude
+.env
+.env.*
+**/__pycache__
+**/*.pyc
+.pytest_cache
+src/collected_static
+src/db.sqlite3
+plan
+docs
+CLAUDE.md
+k8s
+scripts
