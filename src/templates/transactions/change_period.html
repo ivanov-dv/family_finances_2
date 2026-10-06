@@ -1,36 +1,30 @@
 {% extends 'base.html' %}
 
-{% block extra_scripts %}
-<script>
-const MONTH_NAMES = ['','Январь','Февраль','Март','Апрель','Май','Июнь',
-                     'Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
-document.querySelectorAll('.period-item-text').forEach(el => {
-    const [year, month] = el.textContent.trim().split('_');
-    el.textContent = MONTH_NAMES[parseInt(month)] + ' ' + year;
-});
-</script>
-{% endblock %}
+{% block title %}{{ title }} — Период{% endblock %}
 
 {% block content %}
     <div class="header">
         <div>
-            <div class="header-title">Выберите период</div>
+            <h1 class="header-title">Выберите период</h1>
             <div class="header-sub">Доступные периоды по текущему пространству</div>
         </div>
+        {% if current_space_can_edit %}
         <button type="button" class="btn btn-primary" data-open-period-modal>
             <svg class="icon icon-sm"><use href="#i-plus"/></svg>
             <span>Новый период</span>
         </button>
+        {% endif %}
     </div>
 
     <div class="card" style="max-width:520px;width:100%">
         {% if periods %}
             <div class="period-list">
                 {% for period in periods %}
-                    <a class="period-item"
-                       href="{% url 'transactions:apply_period' %}?period={{ period|urlencode }}&next={{ next|urlencode }}">
+                    <a class="period-item{% if period.is_current %} is-current{% endif %}"
+                       {% if period.is_current %}aria-current="true"{% endif %}
+                       href="{% url 'transactions:apply_period' %}?period={{ period.key|urlencode }}&next={{ next|urlencode }}">
                         <svg class="icon icon-sm" style="color:var(--text-muted)"><use href="#i-calendar"/></svg>
-                        <span class="period-item-text">{{ period }}</span>
+                        <span class="period-item-text">{{ period.label }}</span>
                         <svg class="icon icon-sm" style="color:var(--text-muted);margin-left:auto"><use href="#i-chevron-right"/></svg>
                     </a>
                 {% endfor %}

@@ -1,17 +1,29 @@
-from decimal import Decimal, InvalidOperation
+from decimal import Decimal
 
 from django.db import IntegrityError, transaction as db_transaction
+from django.db.models import Count, Sum
 
 from users.models import User
 
+from .amounts import AmountError, parse_amount
 from .dto import PeriodCreateResult
 from .exceptions import PeriodError, SpaceError
-from .models import LinkedUserToSpace, Space, Summary
+from .models import LinkedUserToSpace, Space, Summary, Transaction
 from .permissions import can_edit_space, get_space_role
+
+PERIOD_MIN_YEAR = 2020
+PERIOD_MAX_YEAR = 2099
 
 
 class SpaceService:
     """Бизнес-логика операций со Space/LinkedUserToSpace."""
+
+    NAME_MAX_LENGTH = 20  # = Space.name.max_length
+
+    @staticmethod
+    def default_name(username: str) -> str:
+        """Название первого пространства пользователя: логин, обрезанный до длины поля Space.name."""
+        return (username or '').strip().lower()[:SpaceService.NAME_MAX_LENGTH] or 'main'
 
     @staticmethod
     def create_space(user: User, name: str) -> Space:
@@ -19,7 +31,7 @@ class SpaceService:
         name = name.strip()
         if not name:
             raise SpaceError('Введите название пространства.')
-        if len(name) > 20:
+        if len(name) > SpaceService.NAME_MAX_LENGTH:
             raise SpaceError('Название не должно превышать 20 символов.')
         try:
             return Space.objects.create(user=user, name=name)
@@ -32,7 +44,7 @@ class SpaceService:
         name = name.strip()
         if not name:
             raise SpaceError('Введите название пространства.')
-        if len(name) > 20:
+        if len(name) > SpaceService.NAME_MAX_LENGTH:
             raise SpaceError('Название не должно превышать 20 символов.')
         try:
             space.name = name
@@ -94,11 +106,22 @@ class SpaceService:
         return target
 
     @staticmethod
+    def _parse_member_id(value: int | str | None) -> int:
+        """Id участника из POST → int. Нечисловой/пустой ввод — SpaceError, а не 500."""
+        try:
+            member_id = int(value)
+        except (TypeError, ValueError):
+            raise SpaceError('Участник не найден.')
+        if not 0 < member_id < 2 ** 63:
+            raise SpaceError('Участник не найден.')
+        return member_id
+
+    @staticmethod
     def change_member_role(space: Space, linked_user_id: int | str, role: str) -> None:
         """Сменить роль участника пространства."""
         role = SpaceService._validate_role(role)
         link = LinkedUserToSpace.objects.filter(
-            space=space, linked_user_id=linked_user_id,
+            space=space, linked_user_id=SpaceService._parse_member_id(linked_user_id),
         ).first()
         if not link:
             raise SpaceError('Участник не найден.')
@@ -109,7 +132,7 @@ class SpaceService:
     def remove_member(space: Space, linked_user_id: int | str) -> None:
         """Исключить участника. Если space был его current_space — сбросить в None."""
         link = LinkedUserToSpace.objects.filter(
-            space=space, linked_user_id=linked_user_id,
+            space=space, linked_user_id=SpaceService._parse_member_id(linked_user_id),
         ).first()
         if not link:
             raise SpaceError('Участник не найден.')
@@ -125,6 +148,14 @@ class PeriodService:
     """Бизнес-логика операций с периодом (current_month/current_year)."""
 
     @staticmethod
+    def validate_period(month: int, year: int) -> None:
+        """Месяц 1–12, год PERIOD_MIN_YEAR–PERIOD_MAX_YEAR — иначе PeriodError."""
+        if not (1 <= month <= 12) or not (PERIOD_MIN_YEAR <= year <= PERIOD_MAX_YEAR):
+            raise PeriodError(
+                f'Месяц должен быть 1–12, год {PERIOD_MIN_YEAR}–{PERIOD_MAX_YEAR}.'
+            )
+
+    @staticmethod
     def apply_period(user: User, period: str | None) -> None:
         """Переключить текущий период пользователя. period — строка 'YYYY_MM'."""
         if get_space_role(user, user.core_settings.current_space) is None:
@@ -135,6 +166,7 @@ class PeriodService:
             year, month = map(int, period.split('_'))
         except (ValueError, AttributeError):
             raise PeriodError('Некорректный период.')
+        PeriodService.validate_period(month, year)
         PeriodService._set_current_period(user, month, year)
 
     @staticmethod
@@ -153,16 +185,20 @@ class PeriodService:
         space = user.core_settings.current_space
         if not can_edit_space(get_space_role(user, space)):
             raise PeriodError('Недостаточно прав для изменения данного пространства.')
-        if not (1 <= month <= 12) or not (2020 <= year <= 2099):
-            raise PeriodError('Месяц должен быть 1–12, год 2020–2099.')
+        PeriodService.validate_period(month, year)
 
         if Summary.objects.filter(space=space, period_month=month, period_year=year).exists():
             PeriodService._set_current_period(user, month, year)
             return PeriodCreateResult(already_exists=True, copied_count=0)
 
-        copied_count = PeriodService._copy_summaries(
-            space, month, year, selected_ids, plan_overrides,
-        )
+        try:
+            copied_count = PeriodService._copy_summaries(
+                space, month, year, selected_ids, plan_overrides,
+            )
+        except IntegrityError:
+            # Параллельный запрос успел создать период раньше (уникальность статьи): просто переключаемся.
+            PeriodService._set_current_period(user, month, year)
+            return PeriodCreateResult(already_exists=True, copied_count=0)
         PeriodService._set_current_period(user, month, year)
         return PeriodCreateResult(already_exists=False, copied_count=copied_count)
 
@@ -186,16 +222,20 @@ class PeriodService:
 
     @staticmethod
     def _resolve_plan_value(summary: Summary, plan_overrides: dict[int, str]) -> Decimal:
-        """plan_value для копии: переопределение из формы либо исходное значение."""
-        raw = (plan_overrides.get(summary.pk) or '').strip().replace(',', '.')
-        if raw:
-            try:
-                candidate = Decimal(raw)
-                if candidate >= 0:
-                    return candidate
-            except InvalidOperation:
-                pass
-        return summary.plan_value
+        """plan_value для копии: переопределение из формы либо исходное значение.
+
+        Пустое, нечисловое и отрицательное переопределение игнорируется (берём исходный план);
+        слишком большая сумма — PeriodError (не помещается в DecimalField).
+        """
+        raw = (plan_overrides.get(summary.pk) or '').strip()
+        if not raw:
+            return summary.plan_value
+        try:
+            return parse_amount(raw, allow_zero=True)
+        except AmountError as e:
+            if e.code == 'too_large':
+                raise PeriodError(f'Статья «{summary.group_name}»: {e}')
+            return summary.plan_value
 
     @staticmethod
     def _copy_summaries(
@@ -218,6 +258,9 @@ class PeriodService:
         if selected_ids is not None:
             source = source.filter(pk__in=selected_ids)
 
+        # В новом периоде фактов нет, но «осиротевшие» операции (от удалённых статей) могли остаться.
+        stats = SummaryService.transaction_stats(space, month, year)
+
         with db_transaction.atomic():
             new_summaries = [
                 Summary(
@@ -227,9 +270,31 @@ class PeriodService:
                     type_transaction=s.type_transaction,
                     group_name=s.group_name,
                     plan_value=PeriodService._resolve_plan_value(s, plan_overrides),
-                    fact_value=Decimal('0'),
+                    fact_value=stats.get((s.type_transaction, s.group_name), {}).get('total', Decimal('0')),
                 )
                 for s in source
             ]
             Summary.objects.bulk_create(new_summaries)
         return len(new_summaries)
+
+
+class SummaryService:
+    """Бизнес-логика статей бюджета (Summary)."""
+
+    @staticmethod
+    def transaction_stats(space: Space, month: int, year: int) -> dict[tuple[str, str], dict]:
+        """Операции периода, сгруппированные по (тип, статья): {'total': Decimal, 'count': int}.
+
+        Transaction связана со Summary по совпадению полей, а не внешним ключом, поэтому
+        факт статьи, созданной заново, нужно брать из уже записанных операций.
+        """
+        rows = (
+            Transaction.objects
+            .filter(space=space, period_month=month, period_year=year)
+            .values('type_transaction', 'group_name')
+            .annotate(total=Sum('value_transaction'), count=Count('pk'))
+        )
+        return {
+            (r['type_transaction'], r['group_name']): {'total': r['total'], 'count': r['count']}
+            for r in rows
+        }

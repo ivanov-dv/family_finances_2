@@ -1,4 +1,4 @@
-from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
+from decimal import Decimal
 
 from django.conf import settings
 from django.contrib import messages
@@ -9,11 +9,14 @@ from django.shortcuts import redirect
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.generic import TemplateView, View
 
+from family_finances.constants import MONTH_NAMES
 from tools.transactions import get_summary_report
+from .amounts import MAX_AMOUNT, AmountError, parse_amount
 from .models import Space, Summary, Transaction
 from .permissions import CurrentSpaceEditMixin, get_space_role, can_edit_space
 from .exceptions import PeriodError, SpaceError
-from .services import PeriodService, SpaceService
+from .services import PeriodService, SpaceService, SummaryService
+from .text import clean_text
 
 
 def get_safe_next_url(request):
@@ -137,19 +140,28 @@ class ChangePeriod(LoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        periods = Summary.objects.filter(
-            space=self.request.user.core_settings.current_space
-        ).values('period_month', 'period_year')
-        sorted_unique_periods = sorted(
-            {f'{period["period_year"]}_{period['period_month']}' for period in periods},
-            reverse=True
+        core = self.request.user.core_settings
+        periods = (
+            Summary.objects
+            .filter(space=core.current_space)
+            .values_list('period_year', 'period_month')
+            .distinct()
+            .order_by('-period_year', '-period_month')
         )
         context.update({
             'title': settings.PROJECT_TITLE,
-            'periods': sorted_unique_periods,
-            'current_month': self.request.user.core_settings.current_month,
-            'current_year': self.request.user.core_settings.current_year,
-            'current_space': self.request.user.core_settings.current_space,
+            'periods': [
+                {
+                    'key': f'{year}_{month}',
+                    'label': f'{MONTH_NAMES[month - 1]} {year}',
+                    'is_current': (year, month) == (core.current_year, core.current_month),
+                }
+                for year, month in periods
+                if 1 <= month <= 12
+            ],
+            'current_month': core.current_month,
+            'current_year': core.current_year,
+            'current_space': core.current_space,
             'next': self.request.GET.get('next', '/'),
         })
         return context
@@ -187,9 +199,8 @@ class AddTransactionView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView
     def post(self, request, *args, **kwargs):
         user = request.user
         type_transaction = request.POST.get('type_transaction', '').strip()
-        group_name = request.POST.get('group_name', '').strip()
-        description = request.POST.get('description', '').strip()
-        value_raw = request.POST.get('value_transaction', '').strip()
+        group_name = clean_text(request.POST.get('group_name', ''))
+        description = clean_text(request.POST.get('description', ''))
 
         if type_transaction not in ('income', 'expense'):
             messages.error(request, 'Неверный тип транзакции.')
@@ -200,30 +211,35 @@ class AddTransactionView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView
             return redirect('transactions:add_transaction')
 
         try:
-            value = Decimal(value_raw.replace(',', '.'))
-            if value == 0:
-                raise InvalidOperation
-        except InvalidOperation:
-            messages.error(request, 'Введите корректную сумму (не равную нулю).')
+            value = parse_amount(request.POST.get('value_transaction', ''), allow_negative=True)
+        except AmountError as e:
+            messages.error(request, str(e))
             return redirect('transactions:add_transaction')
 
         current_space = user.core_settings.current_space
         current_month = user.core_settings.current_month
         current_year = user.core_settings.current_year
 
-        summary = Summary.objects.filter(
-            space=current_space,
-            period_month=current_month,
-            period_year=current_year,
-            type_transaction=type_transaction,
-            group_name=group_name,
-        ).first()
-
-        if not summary:
-            messages.error(request, f'Статья «{group_name}» не найдена в текущем периоде.')
-            return redirect('transactions:add_transaction')
-
         with db_transaction.atomic():
+            # Блокировка строки статьи: иначе параллельные добавления перезаписывают
+            # fact_value друг друга (read-modify-write) и факт расходится с суммой операций.
+            summary = Summary.objects.select_for_update().filter(
+                space=current_space,
+                period_month=current_month,
+                period_year=current_year,
+                type_transaction=type_transaction,
+                group_name=group_name,
+            ).first()
+
+            if not summary:
+                messages.error(request, f'Статья «{group_name}» не найдена в текущем периоде.')
+                return redirect('transactions:add_transaction')
+
+            new_fact = summary.fact_value + value
+            if abs(new_fact) > MAX_AMOUNT:
+                messages.error(request, 'Итог по статье превысит допустимое значение.')
+                return redirect('transactions:add_transaction')
+
             Transaction.objects.create(
                 author=user,
                 space=current_space,
@@ -234,8 +250,8 @@ class AddTransactionView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView
                 description=description,
                 value_transaction=value,
             )
-            summary.fact_value += value
-            summary.save()
+            summary.fact_value = new_fact
+            summary.save(update_fields=['fact_value', 'updated_at'])
 
         messages.success(request, 'Транзакция добавлена.')
         return redirect('transactions:add_transaction')
@@ -249,11 +265,19 @@ class AddSummaryView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        summaries = Summary.objects.filter(
-            space=user.core_settings.current_space,
-            period_month=user.core_settings.current_month,
-            period_year=user.core_settings.current_year,
-        ).order_by('type_transaction', 'group_name')
+        core = user.core_settings
+        summaries = list(
+            Summary.objects.filter(
+                space=core.current_space,
+                period_month=core.current_month,
+                period_year=core.current_year,
+            ).order_by('type_transaction', 'group_name')
+        )
+        # Операции не привязаны к статье внешним ключом и переживают её удаление —
+        # число операций нужно, чтобы предупредить об этом в подтверждении удаления.
+        stats = SummaryService.transaction_stats(core.current_space, core.current_month, core.current_year)
+        for summary in summaries:
+            summary.tx_count = stats.get((summary.type_transaction, summary.group_name), {}).get('count', 0)
         context.update({
             'title': settings.PROJECT_TITLE,
             'summaries': summaries,
@@ -267,8 +291,7 @@ class AddSummaryView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         user = request.user
         type_transaction = request.POST.get('type_transaction', '').strip()
-        group_name = request.POST.get('group_name', '').strip()
-        plan_raw = request.POST.get('plan_value', '').strip()
+        group_name = clean_text(request.POST.get('group_name', ''))
 
         if type_transaction not in ('income', 'expense'):
             messages.error(request, 'Неверный тип статьи.')
@@ -283,29 +306,31 @@ class AddSummaryView(LoginRequiredMixin, CurrentSpaceEditMixin, TemplateView):
             return redirect('transactions:add_summary')
 
         try:
-            plan_value = Decimal(plan_raw.replace(',', '.')).quantize(
-                Decimal('0.01'), rounding=ROUND_HALF_UP
-            )
-            if plan_value < 0:
-                raise InvalidOperation
-        except InvalidOperation:
-            messages.error(request, 'Введите корректное плановое значение (не менее 0).')
+            plan_value = parse_amount(request.POST.get('plan_value', ''), allow_zero=True)
+        except AmountError as e:
+            if e.code == 'too_large':
+                messages.error(request, str(e))
+            else:
+                messages.error(request, 'Введите корректное плановое значение (не менее 0).')
             return redirect('transactions:add_summary')
 
+        core = user.core_settings
+        # Статья могла быть удалена раньше, а её операции остались: факт берём из них.
+        existing = SummaryService.transaction_stats(
+            core.current_space, core.current_month, core.current_year
+        ).get((type_transaction, group_name))
         try:
             Summary.objects.create(
-                space=user.core_settings.current_space,
-                period_month=user.core_settings.current_month,
-                period_year=user.core_settings.current_year,
+                space=core.current_space,
+                period_month=core.current_month,
+                period_year=core.current_year,
                 type_transaction=type_transaction,
                 group_name=group_name,
                 plan_value=plan_value,
+                fact_value=existing['total'] if existing else Decimal('0'),
             )
         except IntegrityError:
-            messages.error(
-                request,
-                f'Статья «{group_name}» уже существует в текущем периоде для этого типа.'
-            )
+            messages.error(request, f'Статья «{group_name}» уже существует в текущем периоде.')
             return redirect('transactions:add_summary')
 
         messages.success(request, f'Статья «{group_name}» создана.')
@@ -368,7 +393,12 @@ class ApplySpaceView(SpaceActionView):
     """Переключение активного пространства."""
 
     def perform(self, request, *args, **kwargs):
-        space = Space.objects.filter(pk=request.POST.get('space')).first()
+        # Нечисловой id из подменённой формы — «не найдено», а не ValueError/500.
+        try:
+            space_id = int(request.POST.get('space'))
+        except (TypeError, ValueError):
+            raise SpaceError('Пространство не найдено.')
+        space = Space.objects.filter(pk=space_id).first() if 0 < space_id < 2 ** 63 else None
         if not space:
             raise SpaceError('Пространство не найдено.')
         SpaceService.apply_space(request.user, space)
@@ -468,8 +498,10 @@ def create_period(request):
         messages.error(request, 'Некорректный месяц или год.')
         return redirect(next_url)
 
+    # Снятые флажки браузер не отправляет: форма со списком статей шлёт маркер copy_selection,
+    # чтобы пустой набор означал «ничего не копировать», а не «копировать всё».
     selected_ids = None
-    if 'copy_summary_ids' in request.POST:
+    if request.POST.get('copy_selection') or 'copy_summary_ids' in request.POST:
         try:
             selected_ids = {int(pk) for pk in request.POST.getlist('copy_summary_ids') if pk}
         except ValueError:

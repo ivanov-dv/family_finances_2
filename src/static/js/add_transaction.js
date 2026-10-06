@@ -65,8 +65,9 @@
             if (!btn) return;
             const action = btn.dataset.np;
             if (action === 'back') {
-                if (inFraction && fracPart.length) {
-                    fracPart = fracPart.slice(0, -1);
+                if (inFraction) {
+                    // Внутри дробной части «стереть» не должно задевать целую.
+                    if (fracPart.length) fracPart = fracPart.slice(0, -1);
                     if (!fracPart.length) inFraction = false;
                 } else if (intPart.length > 1) {
                     intPart = intPart.slice(0, -1);
@@ -95,6 +96,9 @@
     // Поддержка ввода с физической клавиатуры
     document.addEventListener('keydown', e => {
         if (!amountDisplay) return;
+        // Сочетания с Ctrl/Alt/Cmd — горячие клавиши браузера (Ctrl+0 — масштаб, Alt+1 — вкладка),
+        // цифры из них в сумму попадать не должны.
+        if (e.ctrlKey || e.metaKey || e.altKey) return;
         // не перехватываем когда фокус в текстовом input/textarea
         const tag = (document.activeElement && document.activeElement.tagName) || '';
         if (tag === 'INPUT' && document.activeElement.type !== 'hidden') return;
@@ -135,7 +139,15 @@
             pill.type = 'button';
             pill.className = 'group-pill';
             pill.dataset.type = type;
-            pill.innerHTML = `<svg class="icon"><use href="${getIcon(g)}"/></svg><span>${g}</span>`;
+            // Названия статей вводят пользователи — никакого innerHTML с ними (XSS).
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.setAttribute('class', 'icon');
+            const use = document.createElementNS('http://www.w3.org/2000/svg', 'use');
+            use.setAttribute('href', getIcon(g));
+            svg.appendChild(use);
+            const label = document.createElement('span');
+            label.textContent = g;
+            pill.append(svg, label);
             pill.addEventListener('click', () => {
                 pillsContainer.querySelectorAll('.group-pill').forEach(p => {
                     p.classList.remove('selected');

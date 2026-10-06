@@ -32,14 +32,22 @@ def is_space_owner(role):
 
 
 class CurrentSpaceEditMixin(UserPassesTestMixin):
-    """Блокирует POST если роль пользователя в current_space не позволяет редактирование."""
+    """Блокирует POST если роль пользователя в current_space не позволяет редактирование.
+
+    Неавторизованного отправляет на страницу входа (иначе редирект на тот же URL зацикливается).
+    """
 
     def test_func(self):
         if self.request.method != 'POST':
             return True
-        space = self.request.user.core_settings.current_space
-        return can_edit_space(get_space_role(self.request.user, space))
+        user = self.request.user
+        if not user.is_authenticated:
+            return False
+        space = user.core_settings.current_space
+        return can_edit_space(get_space_role(user, space))
 
     def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return super().handle_no_permission()
         messages.error(self.request, 'Недостаточно прав для изменения данного пространства.')
         return redirect(self.request.path)

@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
-{% load humanize %}
+{% load humanize l10n %}
+
+{% block title %}{{ title }} — Операции{% endblock %}
 
 {% block content %}
     <div class="ops-header">
         <div>
-            <div class="ops-title">Операции</div>
+            <h1 class="ops-title">Операции</h1>
             <div class="header-sub">{% include 'includes/_period.html' %} · {{ current_space.name }}</div>
         </div>
         <div class="ops-meta">
@@ -54,7 +56,7 @@
                         <div class="tx-card"
                              data-type="{{ t.type_transaction }}"
                              data-group="{{ t.group_name }}"
-                             data-amount="{{ t.value_transaction }}">
+                             data-amount="{{ t.value_transaction|unlocalize }}">
                             <div class="cat-icon" data-cat-icon>
                                 <svg class="icon"><use href="#i-package"/></svg>
                             </div>
@@ -98,7 +100,7 @@
         </div>
     {% else %}
         <div class="card" style="text-align:center;padding:48px 24px">
-            <div style="display:inline-grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--bg-secondary);margin-bottom:16px">
+            <div style="display:grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--bg-secondary);margin:0 auto 16px">
                 <svg class="icon icon-lg" style="color:var(--text-muted)"><use href="#i-package"/></svg>
             </div>
             <div style="font-weight:600;font-size:16px;margin-bottom:6px">Пока нет операций</div>
@@ -116,7 +118,15 @@
 {% block extra_scripts %}
     <script>
         (function () {
-            const fmt = v => Number(v).toLocaleString('ru-RU');
+            // Копейки показываем всегда двумя цифрами («3 500,50»), целые суммы — без дробной части.
+            const fmt = v => {
+                const n = Number(v);
+                const hasFraction = Math.abs(n % 1) > 0.001;
+                return n.toLocaleString('ru-RU', {
+                    minimumFractionDigits: hasFraction ? 2 : 0,
+                    maximumFractionDigits: 2,
+                });
+            };
 
             // Маппинг категорий на иконки и цвета
             const catRules = [
@@ -157,15 +167,20 @@
                 const cards = group.querySelectorAll('.tx-card');
                 let income = 0, expense = 0;
                 cards.forEach(c => {
-                    const amount = Math.abs(parseFloat(c.dataset.amount || '0'));
+                    // Со знаком: возврат (отрицательный расход) уменьшает итог, а не увеличивает.
+                    const amount = parseFloat(c.dataset.amount || '0');
                     if (c.dataset.type === 'income') income += amount;
                     else expense += amount;
                 });
                 const sumEl = group.querySelector('.day-sum');
                 if (sumEl) {
                     const parts = [];
-                    if (income > 0) parts.push(`<span class="pos">+ ${fmt(income)} ₽</span>`);
-                    if (expense > 0) parts.push(`<span class="neg">− ${fmt(expense)} ₽</span>`);
+                    if (Math.abs(income) > 0.004) {
+                        parts.push(`<span class="${income > 0 ? 'pos' : 'neg'}">${income > 0 ? '+' : '−'} ${fmt(Math.abs(income))} ₽</span>`);
+                    }
+                    if (Math.abs(expense) > 0.004) {
+                        parts.push(`<span class="${expense > 0 ? 'neg' : 'pos'}">${expense > 0 ? '−' : '+'} ${fmt(Math.abs(expense))} ₽</span>`);
+                    }
                     sumEl.innerHTML = parts.join(' · ');
                 }
             });
@@ -194,8 +209,10 @@
                 });
             });
 
-            const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
-            [...popoverTriggerList].map(el => new bootstrap.Popover(el));
+            // Bootstrap подгружается с CDN: без него остальная страница должна работать.
+            if (typeof bootstrap !== 'undefined') {
+                document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el));
+            }
         })();
     </script>
 {% endblock %}
