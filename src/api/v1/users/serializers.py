@@ -13,6 +13,7 @@ from api.v1.transactions.validators import (
 )
 from api.v1.users.validators import not_allowed_username_validator
 from transactions.models import Space
+from transactions.services import SpaceService
 from users.models import User, TelegramSettings, CoreSettings
 
 
@@ -129,7 +130,7 @@ class UserCreateSerializer(serializers.ModelSerializer):
             )
             space = Space.objects.create(
                 user=user,
-                name=user.username
+                name=SpaceService.default_name(user.username)
             )
             dt = datetime.now()
             CoreSettings.objects.create(
