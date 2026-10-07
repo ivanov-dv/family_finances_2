@@ -140,6 +140,7 @@ class TransactionView(LoginRequiredMixin, TemplateView):
             {
                 'title': settings.PROJECT_TITLE,
                 'transactions': transactions,
+                'group_names': sorted({tx.group_name for tx in transactions}, key=str.casefold),
                 'current_month': current_month,
                 'current_year': current_year,
                 'current_space': current_space,
