@@ -140,7 +140,9 @@ class TransactionView(LoginRequiredMixin, TemplateView):
             {
                 'title': settings.PROJECT_TITLE,
                 'transactions': transactions,
-                'group_names': sorted({tx.group_name for tx in transactions}, key=str.casefold),
+                'income_groups': sorted({tx.group_name for tx in transactions if tx.type_transaction == 'income'}, key=str.casefold),
+                'expense_groups': sorted({tx.group_name for tx in transactions if tx.type_transaction != 'income'}, key=str.casefold),
+                'show_group_filter': len({(tx.type_transaction, tx.group_name) for tx in transactions}) > 1,
                 'current_month': current_month,
                 'current_year': current_year,
                 'current_space': current_space,

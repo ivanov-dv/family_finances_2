@@ -167,22 +167,31 @@ class TestHeadings:
 
 class TestOperationsGroupFilter:
 
-    def add(self, user, space, group, value='1'):
+    def add(self, user, space, group, kind='expense'):
         core = user.core_settings
         Transaction.objects.create(
             space=space, author=user, period_month=core.current_month, period_year=core.current_year,
-            type_transaction='expense', group_name=group, value_transaction=value,
+            type_transaction=kind, group_name=group, value_transaction=1,
         )
 
-    def test_select_lists_distinct_groups_sorted_and_escaped(self, user_1_client, user_1, owner_space):
-        for group in ('Яблоки', 'арбузы', 'Яблоки', '"><i>'):
-            self.add(user_1, owner_space, group)
+    def test_select_splits_income_and_expense_groups(self, user_1_client, user_1, owner_space):
+        for group, kind in (('Яблоки', 'expense'), ('арбузы', 'expense'), ('Яблоки', 'expense'),
+                            ('"><i>', 'expense'), ('Зарплата', 'income'), ('Прочее', 'income'), ('Прочее', 'expense')):
+            self.add(user_1, owner_space, group, kind)
         resp = user_1_client.get(reverse('transactions:transactions'))
-        assert resp.context['group_names'] == ['"><i>', 'арбузы', 'Яблоки']
+        assert resp.context['income_groups'] == ['Зарплата', 'Прочее']
+        assert resp.context['expense_groups'] == ['"><i>', 'арбузы', 'Прочее', 'Яблоки']
         html = resp.content.decode()
         select = html.split('id="groupFilter"')[1].split('</select>')[0]
-        assert select.count('<option value=') == 4   # + «Все статьи»
-        assert '"><i>' not in html.replace('&quot;&gt;&lt;i&gt;', '')
+        assert select.index('label="Доходы"') < select.index('label="Расходы"')
+        assert select.count('data-type="income"') == 2 and select.count('data-type="expense"') == 4
+        assert '"><i>' not in select.replace('&quot;&gt;&lt;i&gt;', '')
+
+    def test_only_present_kinds_get_a_section(self, user_1_client, user_1, owner_space):
+        self.add(user_1, owner_space, 'Продукты')
+        self.add(user_1, owner_space, 'Кафе')
+        select = user_1_client.get(reverse('transactions:transactions')).content.decode().split('id="groupFilter"')[1].split('</select>')[0]
+        assert 'label="Доходы"' not in select and 'label="Расходы"' in select
 
     def test_no_select_for_a_single_group(self, user_1_client, user_1, owner_space):
         self.add(user_1, owner_space, 'Продукты')
