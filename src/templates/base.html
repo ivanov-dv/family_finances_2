@@ -1,5 +1,4 @@
 {% load static %}
-{% load django_bootstrap5 %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -18,9 +17,13 @@
         })();
     </script>
     <link rel="icon" href="{% static 'img/favicon.svg' %}" type="image/svg+xml">
-    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
-    <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800|jetbrains-mono:500,600,700&display=swap" rel="stylesheet">
-    {% bootstrap_css %}
+    {% comment %}
+        Шрифты, Bootstrap и Chart.js — собственные копии в static/. С чужих хостов (fonts.bunny.net, CDN) они блокировали
+        первую отрисовку, а шрифты догружались уже после неё: весь текст менял вид через секунду после перехода.
+    {% endcomment %}
+    {% if user.is_authenticated %}{% include 'includes/font_preloads.html' %}{% endif %}
+    <link rel="stylesheet" href="{% static 'css/fonts.css' %}">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/5.3.3/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <title>{% block title %}{{ title }}{% endblock %}</title>
     {% block extra_head %}{% endblock %}
@@ -62,9 +65,8 @@
         </main>
     </div>
 
-    {# Наш скрипт — до Bootstrap с CDN: интерфейс не должен зависеть от того, загрузился ли он. #}
+    {# Bootstrap JS не подключаем: интерфейс (модалки, меню, подсказки) свой, а лишний блокирующий скрипт задерживал страницы. #}
     <script src="{% static 'js/sidebar_toggle.js' %}"></script>
-    {% bootstrap_javascript %}
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

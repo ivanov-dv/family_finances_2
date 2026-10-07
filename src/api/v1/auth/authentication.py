@@ -1,4 +1,7 @@
-from django.contrib.auth import get_user_model, settings
+import hmac
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -14,7 +17,10 @@ class TokenAuthentication(BaseAuthentication):
         auth_header = request.headers.get('Authorization')
         if not auth_header:
             return None
-        if auth_header != settings.ACCESS_TOKEN:
+        # Постоянное время сравнения: по задержке ответа нельзя подбирать токен по символам.
+        # Пустой/незаданный ACCESS_TOKEN никого не пускает.
+        expected = settings.ACCESS_TOKEN or ''
+        if not expected or not hmac.compare_digest(auth_header.encode(), expected.encode()):
             raise AuthenticationFailed('Неправильный токен.')
         try:
             user, created = User.objects.get_or_create(username='admin')

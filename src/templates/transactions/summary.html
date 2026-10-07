@@ -5,8 +5,10 @@
 {% block title %}{{ title }} — Дашборд{% endblock %}
 
 {% block extra_head %}
-    {# defer: зависший или недоступный CDN не блокирует отрисовку страницы; dashboard.js идёт следом в том же порядке #}
-    <script defer src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+    {# preload: dashboard.js качается параллельно со стилями и выполняется до первой отрисовки (рисует списки и treemap) #}
+    <link rel="preload" as="script" href="{% static 'js/dashboard.js' %}">
+    {# defer: Chart.js не блокирует разбор страницы; графики стартуют на DOMContentLoaded (см. dashboard.js) #}
+    <script defer src="{% static 'vendor/chartjs/4.4.1/chart.umd.js' %}"></script>
 {% endblock %}
 
 {% block content %}
@@ -38,7 +40,7 @@
             </div>
             <div class="hero-side">
                 <div class="hero-stat">
-                    <div class="hero-stat-icon" style="background:var(--green-soft);color:var(--green)">
+                    <div class="hero-stat-icon" style="background:var(--green-soft);color:var(--green-text)">
                         <svg class="icon"><use href="#i-arrow-down-circle"/></svg>
                     </div>
                     <div style="min-width:0;flex:1">
@@ -47,7 +49,7 @@
                     </div>
                 </div>
                 <div class="hero-stat">
-                    <div class="hero-stat-icon" style="background:var(--red-soft);color:var(--red)">
+                    <div class="hero-stat-icon" style="background:var(--red-soft);color:var(--red-text)">
                         <svg class="icon"><use href="#i-arrow-up-circle"/></svg>
                     </div>
                     <div style="min-width:0;flex:1">
@@ -138,5 +140,6 @@
 {% block extra_scripts %}
     {{ incomes_json|json_script:"inc-data" }}
     {{ expenses_json|json_script:"exp-data" }}
-    <script defer src="{% static 'js/dashboard.js' %}"></script>
+    {# Без defer: списки и treemap должны нарисоваться до первой отрисовки, графики дождутся Chart.js сами (см. dashboard.js) #}
+    <script src="{% static 'js/dashboard.js' %}"></script>
 {% endblock %}

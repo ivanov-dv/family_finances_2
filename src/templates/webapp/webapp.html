@@ -9,6 +9,8 @@
 <script src='https://telegram.org/js/telegram-web-app.js'></script>
 <script>
     Telegram.WebApp.ready();
+    // Помечаем вкладку: страницы сайта учитывают, что открыты внутри Telegram (например, подсказка у кнопки «Excel»).
+    try { sessionStorage.setItem('ff-telegram-webapp', '1'); } catch (e) { }
 
     const initData = Telegram.WebApp.initData;
 
