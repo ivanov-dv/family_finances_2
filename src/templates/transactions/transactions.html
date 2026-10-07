@@ -32,10 +32,15 @@
             <button type="button" class="filter-btn" data-filter="income">Доходы</button>
             <button type="button" class="filter-btn" data-filter="expense">Расходы</button>
         </div>
-        {% if group_names|length > 1 %}
+        {% if show_group_filter %}
         <select class="group-filter" id="groupFilter" aria-label="Фильтр по статье">
             <option value="">Все статьи</option>
-            {% for name in group_names %}<option value="{{ name }}">{{ name }}</option>{% endfor %}
+            {% if income_groups %}<optgroup label="Доходы">
+                {% for name in income_groups %}<option value="{{ name }}" data-type="income">{{ name }}</option>{% endfor %}
+            </optgroup>{% endif %}
+            {% if expense_groups %}<optgroup label="Расходы">
+                {% for name in expense_groups %}<option value="{{ name }}" data-type="expense">{{ name }}</option>{% endfor %}
+            </optgroup>{% endif %}
         </select>
         {% endif %}
     </div>
@@ -209,11 +214,14 @@
             let typeFilter = 'all';
 
             function applyFilters() {
-                const groupName = groupSelect ? groupSelect.value : '';
+                // Статья — пара (тип, название): «Прочее» бывает и доходной, и расходной
+                const picked = groupSelect && groupSelect.value ? groupSelect.selectedOptions[0] : null;
+                const groupName = picked ? picked.value : '';
+                const groupType = picked ? picked.dataset.type : '';
                 let shown = 0;
                 cards.forEach(card => {
                     const ok = (typeFilter === 'all' || card.dataset.type === typeFilter)
-                        && (!groupName || card.dataset.group === groupName);
+                        && (!groupName || (card.dataset.group === groupName && card.dataset.type === groupType));
                     card.style.display = ok ? '' : 'none';
                     if (ok) shown++;
                 });
