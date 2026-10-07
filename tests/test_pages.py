@@ -5,7 +5,7 @@ from django.test import Client, RequestFactory
 from django.urls import reverse
 from django.views.defaults import permission_denied
 
-from transactions.models import Summary
+from transactions.models import Summary, Transaction
 
 pytestmark = pytest.mark.django_db(transaction=True)
 
@@ -163,3 +163,27 @@ class TestHeadings:
     @pytest.mark.parametrize('url', ['/', '/auth/login/', '/no-such-page/'])
     def test_public_pages_have_exactly_one_h1(self, client, url):
         assert client.get(url).content.decode().count('<h1') == 1
+
+
+class TestOperationsGroupFilter:
+
+    def add(self, user, space, group, value='1'):
+        core = user.core_settings
+        Transaction.objects.create(
+            space=space, author=user, period_month=core.current_month, period_year=core.current_year,
+            type_transaction='expense', group_name=group, value_transaction=value,
+        )
+
+    def test_select_lists_distinct_groups_sorted_and_escaped(self, user_1_client, user_1, owner_space):
+        for group in ('Яблоки', 'арбузы', 'Яблоки', '"><i>'):
+            self.add(user_1, owner_space, group)
+        resp = user_1_client.get(reverse('transactions:transactions'))
+        assert resp.context['group_names'] == ['"><i>', 'арбузы', 'Яблоки']
+        html = resp.content.decode()
+        select = html.split('id="groupFilter"')[1].split('</select>')[0]
+        assert select.count('<option value=') == 4   # + «Все статьи»
+        assert '"><i>' not in html.replace('&quot;&gt;&lt;i&gt;', '')
+
+    def test_no_select_for_a_single_group(self, user_1_client, user_1, owner_space):
+        self.add(user_1, owner_space, 'Продукты')
+        assert 'id="groupFilter"' not in user_1_client.get(reverse('transactions:transactions')).content.decode()
