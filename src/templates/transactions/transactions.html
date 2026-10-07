@@ -10,15 +10,13 @@
             <div class="header-sub">{% include 'includes/_period.html' %} · {{ current_space.name }}</div>
         </div>
         <div class="ops-meta">
-            <a href="{% url 'export:excel' %}"
-               class="export-btn"
-               data-bs-toggle="popover"
-               data-bs-placement="bottom"
-               data-bs-trigger="focus"
-               data-bs-content="Кнопка не доступна из Telegram Webapp. Для Telegram перейдите в меню бота — 'Просмотр'.">
+            <a href="{% url 'export:excel' %}" class="export-btn" id="exportBtn">
                 <svg class="icon icon-sm"><use href="#i-export"/></svg>
                 <span>Excel</span>
             </a>
+            <div class="export-hint" id="exportHint" role="status" hidden>
+                Кнопка не доступна из Telegram Webapp. Для Telegram перейдите в меню бота — «Просмотр».
+            </div>
             {% if current_space_can_edit %}
             <a href="{% url 'transactions:add_transaction' %}" class="btn btn-primary btn-sm">
                 <svg class="icon icon-sm"><use href="#i-plus"/></svg>
@@ -81,6 +79,12 @@
                                         <span class="author-dot">{{ t.author.username|slice:":1"|upper }}</span>
                                         {{ t.author.username }}
                                     </span>
+                                    {% if t.orphan %}
+                                        <span class="orphan-badge"
+                                              title="Статьи «{{ t.group_name }}» нет в этом периоде, поэтому операция не учитывается в отчёте. Создайте статью с тем же названием — операция вернётся в отчёт.">
+                                            без статьи
+                                        </span>
+                                    {% endif %}
                                     <span class="text-muted" style="font-size:11px">{{ t.created_at|date:"H:i" }}</span>
                                 </div>
                             </div>
@@ -209,9 +213,17 @@
                 });
             });
 
-            // Bootstrap подгружается с CDN: без него остальная страница должна работать.
-            if (typeof bootstrap !== 'undefined') {
-                document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => new bootstrap.Popover(el));
+            // Внутри Telegram Webapp файл не скачать — вместо тишины показываем подсказку. Флаг в sessionStorage
+            // ставит страница входа /users/webapp/; в обычном браузере кнопка просто скачивает файл без подсказки.
+            const exportBtn = document.getElementById('exportBtn');
+            const exportHint = document.getElementById('exportHint');
+            let inTelegram = false;
+            try { inTelegram = sessionStorage.getItem('ff-telegram-webapp') === '1'; } catch (e) { /* хранилище недоступно */ }
+            if (exportBtn && exportHint && inTelegram) {
+                exportBtn.addEventListener('click', () => {
+                    exportHint.hidden = false;
+                    setTimeout(() => { exportHint.hidden = true; }, 6000);
+                });
             }
         })();
     </script>

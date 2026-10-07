@@ -28,6 +28,10 @@
     --red: #FF5C5C;
     --red-2: #E63E3E;
     --red-soft: rgba(255, 92, 92, 0.12);
+
+    /* Цвет ТЕКСТА (суммы, бейджи): на тёмном совпадает с акцентом, на светлом акцент как текст не дотягивает до 4.5:1 */
+    --green-text: var(--green);
+    --red-text: var(--red);
     --blue: #5B8DFF;
     --blue-2: #3D6BE6;
     --blue-soft: rgba(91, 141, 255, 0.14);
@@ -87,8 +91,8 @@
 
         --text-primary: #0F172A;
         --text-secondary: #475569;
-        --text-muted: #64748B;
-        --text-faint: #94A3B8;
+        --text-muted: #566680;
+        --text-faint: #5F6F86;
 
         --green: #00B884;
         --green-2: #00D9A3;
@@ -96,6 +100,10 @@
         --red: #E63E3E;
         --red-2: #FF5C5C;
         --red-soft: rgba(230, 62, 62, 0.10);
+
+        /* Цвет текста: акцентные --green/--red на белом дают 2.6:1 и 4.1:1 */
+        --green-text: #007A58;
+        --red-text: #C42B2B;
         --blue: #3D6BE6;
         --blue-2: #5B8DFF;
         --blue-soft: rgba(61, 107, 230, 0.10);
@@ -132,8 +140,8 @@
 
     --text-primary: #0F172A;
     --text-secondary: #475569;
-    --text-muted: #64748B;
-    --text-faint: #94A3B8;
+    --text-muted: #566680;
+    --text-faint: #5F6F86;
 
     --green: #00B884;
     --green-2: #00D9A3;
@@ -141,6 +149,10 @@
     --red: #E63E3E;
     --red-2: #FF5C5C;
     --red-soft: rgba(230, 62, 62, 0.10);
+
+    /* Цвет текста: акцентные --green/--red на белом дают 2.6:1 и 4.1:1 */
+    --green-text: #007A58;
+    --red-text: #C42B2B;
     --blue: #3D6BE6;
     --blue-2: #5B8DFF;
     --blue-soft: rgba(61, 107, 230, 0.10);
@@ -280,11 +292,6 @@ body.app-shell {
     display: flex;
     flex-direction: column;
     gap: 20px;
-    animation: fadeUp 380ms var(--t-base);
-}
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to { opacity: 1; transform: translateY(0); }
 }
 
 /* =================================================================
@@ -482,7 +489,7 @@ body.app-shell {
 .icon-btn-accent {
     background: linear-gradient(135deg, var(--green-soft), transparent 80%);
     border-color: rgba(0, 184, 132, 0.35);
-    color: var(--green);
+    color: var(--green-text);
     box-shadow: 0 0 0 0 rgba(0, 184, 132, 0);
 }
 .icon-btn-accent:hover {
@@ -742,8 +749,8 @@ body.app-shell {
     border: 1px solid var(--border);
     color: var(--text-secondary);
 }
-.badge-green { background: var(--green-soft); color: var(--green); border-color: transparent; }
-.badge-red { background: var(--red-soft); color: var(--red); border-color: transparent; }
+.badge-green { background: var(--green-soft); color: var(--green-text); border-color: transparent; }
+.badge-red { background: var(--red-soft); color: var(--red-text); border-color: transparent; }
 .badge-blue { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
 .badge-purple { background: var(--purple-soft); color: var(--purple); border-color: transparent; }
 
@@ -847,8 +854,8 @@ body.app-shell {
     margin: 8px 0 18px;
     color: var(--text-primary);
 }
-.hero-balance.pos { color: var(--green); }
-.hero-balance.neg { color: var(--red); }
+.hero-balance.pos { color: var(--green-text); }
+.hero-balance.neg { color: var(--red-text); }
 .hero-balance .currency {
     font-size: 32px;
     color: var(--text-muted);
@@ -943,8 +950,8 @@ body.app-shell {
     place-items: center;
     flex-shrink: 0;
 }
-.kpi-icon.green { background: var(--green-soft); color: var(--green); }
-.kpi-icon.red { background: var(--red-soft); color: var(--red); }
+.kpi-icon.green { background: var(--green-soft); color: var(--green-text); }
+.kpi-icon.red { background: var(--red-soft); color: var(--red-text); }
 .kpi-icon.blue { background: var(--blue-soft); color: var(--blue); }
 .kpi-icon.purple { background: var(--purple-soft); color: var(--purple); }
 .kpi-label {
@@ -964,8 +971,8 @@ body.app-shell {
     color: var(--text-primary);
 }
 .kpi-delta { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; }
-.pos { color: var(--green); font-weight: 600; }
-.neg { color: var(--red); font-weight: 600; }
+.pos { color: var(--green-text); font-weight: 600; }
+.neg { color: var(--red-text); font-weight: 600; }
 
 /* =================================================================
    PROGRESS
@@ -1019,10 +1026,8 @@ body.app-shell {
     overflow: hidden;
     color: #fff;
     cursor: pointer;
-    transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 180ms, opacity 240ms;
-    opacity: 0;
+    transition: transform 180ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 180ms;
 }
-.tile.is-visible { opacity: 1; }
 .tile:hover {
     transform: scale(1.012);
     z-index: 2;
@@ -1117,8 +1122,8 @@ body.app-shell {
     text-transform: uppercase;
     letter-spacing: 0.06em;
 }
-.pf-pill.green { background: var(--green-soft); color: var(--green); }
-.pf-pill.red { background: var(--red-soft); color: var(--red); }
+.pf-pill.green { background: var(--green-soft); color: var(--green-text); }
+.pf-pill.red { background: var(--red-soft); color: var(--red-text); }
 .pf-list { display: flex; flex-direction: column; gap: 16px; margin-top: 4px; }
 .pf-row { display: flex; flex-direction: column; gap: 10px; }
 .pf-row-top {
@@ -1173,13 +1178,13 @@ body.app-shell {
     place-items: center;
     flex-shrink: 0;
 }
-.cat-icon-32.green { background: var(--green-soft); color: var(--green); }
+.cat-icon-32.green { background: var(--green-soft); color: var(--green-text); }
 .cat-icon-32.blue { background: var(--blue-soft); color: var(--blue); }
 .cat-icon-32.purple { background: var(--purple-soft); color: var(--purple); }
 .cat-icon-32.orange { background: var(--orange-soft); color: var(--orange); }
 .cat-icon-32.pink { background: var(--pink-soft); color: var(--pink); }
 .cat-icon-32.cyan { background: var(--cyan-soft); color: var(--cyan); }
-.cat-icon-32.red { background: var(--red-soft); color: var(--red); }
+.cat-icon-32.red { background: var(--red-soft); color: var(--red-text); }
 .cat-icon-32.yellow { background: var(--yellow-soft); color: var(--yellow); }
 
 /* =================================================================
@@ -1257,12 +1262,31 @@ tr:last-child td { border-bottom: none; }
     letter-spacing: -0.02em;
 }
 .ops-meta {
+    position: relative;
     display: flex;
     align-items: center;
     gap: 10px;
     font-size: 13px;
     color: var(--text-muted);
 }
+/* Подсказка у кнопки «Excel» (показывается только внутри Telegram Webapp) */
+.export-hint {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 20;
+    width: max-content;
+    max-width: 280px;
+    padding: 10px 12px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-md);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-card);
+    font-size: 12.5px;
+    line-height: 1.45;
+}
+.export-hint[hidden] { display: none; }
 
 .filter-row {
     display: flex;
@@ -1288,8 +1312,8 @@ tr:last-child td { border-bottom: none; }
     cursor: pointer;
 }
 .segmented .filter-btn.active-f { background: var(--bg-tertiary); color: var(--text-primary); }
-.segmented .filter-btn[data-filter="income"].active-f { background: var(--green-soft); color: var(--green); }
-.segmented .filter-btn[data-filter="expense"].active-f { background: var(--red-soft); color: var(--red); }
+.segmented .filter-btn[data-filter="income"].active-f { background: var(--green-soft); color: var(--green-text); }
+.segmented .filter-btn[data-filter="expense"].active-f { background: var(--red-soft); color: var(--red-text); }
 
 /* Standalone filter buttons (used on index intro) */
 .filter-btn {
@@ -1358,8 +1382,8 @@ tr:last-child td { border-bottom: none; }
     text-align: right;
     white-space: nowrap;
 }
-.tx-amount.income, .val-income { color: var(--green); }
-.tx-amount.expense, .val-expense { color: var(--red); font-weight: 700; }
+.tx-amount.income, .val-income { color: var(--green-text); }
+.tx-amount.expense, .val-expense { color: var(--red-text); font-weight: 700; }
 
 /* Category icon (reused) */
 .cat-icon {
@@ -1371,13 +1395,13 @@ tr:last-child td { border-bottom: none; }
     flex-shrink: 0;
 }
 .cat-icon-sm { width: 32px; height: 32px; border-radius: 10px; }
-.cat-icon.green { background: var(--green-soft); color: var(--green); }
+.cat-icon.green { background: var(--green-soft); color: var(--green-text); }
 .cat-icon.blue { background: var(--blue-soft); color: var(--blue); }
 .cat-icon.purple { background: var(--purple-soft); color: var(--purple); }
 .cat-icon.orange { background: var(--orange-soft); color: var(--orange); }
 .cat-icon.pink { background: var(--pink-soft); color: var(--pink); }
 .cat-icon.cyan { background: var(--cyan-soft); color: var(--cyan); }
-.cat-icon.red { background: var(--red-soft); color: var(--red); }
+.cat-icon.red { background: var(--red-soft); color: var(--red-text); }
 .cat-icon.yellow { background: var(--yellow-soft); color: var(--yellow); }
 
 /* Type badges (reused on transactions list) */
@@ -1391,8 +1415,20 @@ tr:last-child td { border-bottom: none; }
     align-items: center;
     gap: 4px;
 }
-.type-income { background: var(--green-soft); color: var(--green); }
-.type-expense { background: var(--red-soft); color: var(--red); }
+.type-income { background: var(--green-soft); color: var(--green-text); }
+.type-expense { background: var(--red-soft); color: var(--red-text); }
+/* Операция, статьи которой в периоде нет (её удалили): в журнале остаётся, в отчёт не попадает */
+.orphan-badge {
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+    white-space: nowrap;
+    background: var(--yellow-soft);
+    border: 1px dashed var(--yellow);
+    color: var(--text-primary);
+    cursor: help;
+}
 
 .author-chip {
     display: inline-flex;
@@ -1590,8 +1626,8 @@ input.amount-input::-moz-placeholder,
     flex-shrink: 0;
     transition: transform var(--t-base);
 }
-.type-toggle-btn[data-type="expense"] .type-icon { background: var(--red-soft); color: var(--red); }
-.type-toggle-btn[data-type="income"] .type-icon { background: var(--green-soft); color: var(--green); }
+.type-toggle-btn[data-type="expense"] .type-icon { background: var(--red-soft); color: var(--red-text); }
+.type-toggle-btn[data-type="income"] .type-icon { background: var(--green-soft); color: var(--green-text); }
 .type-toggle-btn .type-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .type-toggle-btn .type-name { font-weight: 700; font-size: 15px; color: var(--text-primary); line-height: 1.2; }
 .type-toggle-btn .type-desc { font-size: 12px; color: var(--text-muted); font-weight: 400; }
@@ -1606,13 +1642,13 @@ input.amount-input::-moz-placeholder,
     background: linear-gradient(135deg, var(--red-soft), transparent 60%);
     box-shadow: var(--shadow-glow-red);
 }
-.type-toggle-btn.active[data-type="expense"] .type-name { color: var(--red); }
+.type-toggle-btn.active[data-type="expense"] .type-name { color: var(--red-text); }
 .type-toggle-btn.active[data-type="income"] {
     border-color: var(--green);
     background: linear-gradient(135deg, var(--green-soft), transparent 60%);
     box-shadow: var(--shadow-glow-green);
 }
-.type-toggle-btn.active[data-type="income"] .type-name { color: var(--green); }
+.type-toggle-btn.active[data-type="income"] .type-name { color: var(--green-text); }
 .type-toggle-btn.active .type-icon { transform: scale(1.06); }
 
 /* Compact variant — для add_summary.html, без описания */
@@ -1652,8 +1688,8 @@ input.amount-input::-moz-placeholder,
     user-select: none;
     max-width: 100%;
 }
-.amount-display.expense { color: var(--red); }
-.amount-display.income { color: var(--green); }
+.amount-display.expense { color: var(--red-text); }
+.amount-display.income { color: var(--green-text); }
 .amount-display .dec {
     color: var(--text-muted);
     font-size: 0.56em;
@@ -1754,12 +1790,12 @@ input.amount-input::-moz-placeholder,
 .group-pill.selected[data-type="expense"] {
     background: var(--red-soft);
     border-color: rgba(230, 62, 62, 0.4);
-    color: var(--red);
+    color: var(--red-text);
 }
 .group-pill.selected[data-type="income"] {
     background: var(--green-soft);
     border-color: rgba(0, 184, 132, 0.4);
-    color: var(--green);
+    color: var(--green-text);
 }
 .group-pill .icon { width: 16px; height: 16px; }
 
@@ -1778,7 +1814,7 @@ input.amount-input::-moz-placeholder,
     align-items: center;
     gap: 6px;
 }
-.delete-btn:hover { color: var(--red); background: var(--red-soft); border-color: transparent; }
+.delete-btn:hover { color: var(--red-text); background: var(--red-soft); border-color: transparent; }
 
 /* Alerts */
 .alert-msg {
@@ -1792,8 +1828,8 @@ input.amount-input::-moz-placeholder,
     align-items: center;
     gap: 10px;
 }
-.alert-success { background: var(--green-soft); color: var(--green); border-color: rgba(0, 184, 132, 0.2); }
-.alert-error { background: var(--red-soft); color: var(--red); border-color: rgba(230, 62, 62, 0.2); }
+.alert-success { background: var(--green-soft); color: var(--green-text); border-color: rgba(0, 184, 132, 0.2); }
+.alert-error { background: var(--red-soft); color: var(--red-text); border-color: rgba(230, 62, 62, 0.2); }
 .alert-info { background: var(--blue-soft); color: var(--text-primary); border-color: var(--border-md); }
 
 /* =================================================================
@@ -1887,7 +1923,7 @@ input.amount-input::-moz-placeholder,
     transition: background var(--t-fast), color var(--t-fast);
 }
 .cat-action-btn:hover { background: var(--bg-secondary); color: var(--text-primary); }
-.cat-action-btn.danger:hover { color: var(--red); background: var(--red-soft); }
+.cat-action-btn.danger:hover { color: var(--red-text); background: var(--red-soft); }
 
 .cat-card-add {
     display: flex;
@@ -2324,6 +2360,6 @@ input.amount-input::-moz-placeholder,
     border: 0;
 }
 .text-muted { color: var(--text-muted); }
-.text-green { color: var(--green); }
-.text-red { color: var(--red); }
+.text-green { color: var(--green-text); }
+.text-red { color: var(--red-text); }
 .ml-auto { margin-left: auto; }
