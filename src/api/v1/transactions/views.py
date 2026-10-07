@@ -15,6 +15,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
 
 from tools.transactions import get_summary_report
+from transactions.amounts import MAX_AMOUNT
 from transactions.models import Summary, Space
 from users.models import User
 from api.v1.permissions import CanEditCurrentSpace, IsSpaceOwner
@@ -58,23 +59,33 @@ class TransactionViewSet(
 
     def perform_create(self, serializer):
         user = self.get_user()
+        core = user.core_settings
         with transaction.atomic():
-            serializer.save(
-                author=user,
-                space=user.core_settings.current_space,
-                period_month=user.core_settings.current_month,
-                period_year=user.core_settings.current_year
-            )
-            summary = Summary.objects.get(
-                space=user.core_settings.current_space,
-                period_month=user.core_settings.current_month,
-                period_year=user.core_settings.current_year,
+            # Строку статьи блокируем до чтения факта: иначе два параллельных запроса (бот и веб, два бота)
+            # читают один fact_value, и одно из добавлений теряется.
+            summary = Summary.objects.select_for_update().filter(
+                space=core.current_space,
+                period_month=core.current_month,
+                period_year=core.current_year,
                 type_transaction=serializer.validated_data['type_transaction'],
                 group_name=serializer.validated_data['group_name']
+            ).first()
+            if summary is None:
+                raise ValidationError(
+                    {'group_name': f'Статья {serializer.validated_data["group_name"]} не найдена.'}
+                )
+            new_fact = summary.fact_value + serializer.validated_data['value_transaction']
+            if abs(new_fact) > MAX_AMOUNT:
+                raise ValidationError(
+                    {'value_transaction': 'Итог по статье превысит допустимое значение.'}
+                )
+            serializer.save(
+                author=user,
+                space=core.current_space,
+                period_month=core.current_month,
+                period_year=core.current_year
             )
-            summary.fact_value += serializer.validated_data[
-                'value_transaction'
-            ]
+            summary.fact_value = new_fact
             summary.save()
 
 

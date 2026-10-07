@@ -45,6 +45,25 @@ class TestErrorPages:
         assert '{%' not in content and '<link' not in content
 
 
+class TestDashboardOrder:
+
+    def test_articles_are_sorted_by_name_and_do_not_jump_after_a_change(self, user_1_client, user_1, owner_space):
+        core = user_1.core_settings
+        for name in ('Яблоки', 'арбузы', 'Бананы'):
+            Summary.objects.create(
+                space=owner_space, period_month=core.current_month, period_year=core.current_year,
+                type_transaction='expense', group_name=name, plan_value=100,
+            )
+
+        def names():
+            resp = user_1_client.get(reverse('transactions:summary'))
+            return [e['g'] for e in resp.context['expenses_json']]
+
+        assert names() == ['арбузы', 'Бананы', 'Яблоки']          # без учёта регистра
+        Summary.objects.filter(group_name='Яблоки').update(fact_value=5)   # свежее изменение не поднимает статью наверх
+        assert names() == ['арбузы', 'Бананы', 'Яблоки']
+
+
 class TestTitles:
 
     @pytest.mark.parametrize('name, expected', [

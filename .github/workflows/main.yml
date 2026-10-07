@@ -4,45 +4,39 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - main
-
-env:
-  DOCKER_REPO: ivanovdv/ff2-django
+  # Выкладка запускается вручную: Actions → CI → Run workflow (выберите ветку main).
+  workflow_dispatch:
 
 jobs:
   tests:
     if: github.event_name == 'pull_request'
-    runs-on: self-hosted
+    # Раннер GitHub: раньше здесь был self-hosted, и без поднятого раннера задачи просто висели в очереди.
+    runs-on: ubuntu-latest
     services:
-      docker:
-        image: docker:24-dind
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: django_user
+          POSTGRES_PASSWORD: django_password
+          POSTGRES_DB: django_db
         ports:
-          - 2375:2375
+          - 55432:5432
+        options: >-
+          --health-cmd "pg_isready -U django_user -d django_db"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.12
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Run image
+          python-version: '3.12'
+      - name: Install Poetry
         uses: abatilo/actions-poetry@v2
         with:
           poetry-version: 1.8.4
       - name: Install dependencies
         run: poetry install --with dev
-      - name: Start Postgres in Docker
-        run: |
-          docker rm -f postgres || true
-          docker run -d \
-            --name postgres \
-            -e POSTGRES_USER=django_user \
-            -e POSTGRES_PASSWORD=django_password \
-            -e POSTGRES_DB=django_db \
-            -p 55432:5432 \
-            postgres:17
       - name: Flake8 and tests
         env:
           POSTGRES_USER: django_user
@@ -55,30 +49,32 @@ jobs:
           poetry run flake8
           poetry run pytest
 
-  deploy_via_k8s:
-    if: github.event_name == 'push'
-    runs-on: self-hosted
+  deploy:
+    # То же, что scripts/deploy.sh на машине разработчика: образ из коммита, затем kubectl на сервере по SSH
+    # (`sudo k0s kubectl`), миграции и статика ДО перезапуска приложения. Секреты репозитория:
+    #   DEPLOY_SSH          пользователь@сервер
+    #   DEPLOY_SSH_KEY      закрытый ключ этого пользователя
+    #   DEPLOY_KNOWN_HOSTS  строка known_hosts сервера (ssh-keyscan -t ed25519 сервер)
+    #   DOCKER_USERNAME, DOCKER_PASSWORD  учётная запись Docker Hub для публикации образа
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    concurrency: deploy
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Log in to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-      - name: Build and push Docker image
+      - uses: actions/checkout@v4
+      - name: Prepare SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
         run: |
-          docker build -t $DOCKER_REPO:latest .
-          docker push $DOCKER_REPO:latest
-      - name: Set up kubectl
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy
+        env:
+          DEPLOY_SSH: ${{ secrets.DEPLOY_SSH }}
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
         run: |
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
-          kubectl version --client
-          kubectl delete job django-collectstatic --ignore-not-found
-          kubectl apply -f k8s/
-          kubectl rollout restart deployment ff2-django
-          kubectl rollout restart deployment ff2-nginx
-      - name: Wait for static Job to complete
-        run: |
-          export KUBECONFIG=$PWD/kubeconfig
-          kubectl wait --for=condition=complete --timeout=180s job/django-collectstatic
+          scripts/deploy.sh --ssh "$DEPLOY_SSH" \
+            --ssh-opts "-i $HOME/.ssh/deploy_key -o StrictHostKeyChecking=yes" --yes

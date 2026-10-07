@@ -1,0 +1,15 @@
+{% load static %}
+{% comment %}
+    Шрифты, которые нужны на каждой странице приложения: качаются параллельно со стилями, а не после первой отрисовки.
+    Остальные подмножества (latin-ext, cyrillic JetBrains Mono) подгружаются по unicode-range, когда понадобятся.
+{% endcomment %}
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-cyrillic-400-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-cyrillic-500-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-cyrillic-600-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-cyrillic-700-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-latin-400-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-latin-500-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-latin-600-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/inter-latin-700-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/jetbrains-mono-latin-500-normal.woff2' %}">
+<link rel="preload" as="font" type="font/woff2" crossorigin href="{% static 'fonts/jetbrains-mono-latin-700-normal.woff2' %}">

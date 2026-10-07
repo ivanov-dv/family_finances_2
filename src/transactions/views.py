@@ -51,6 +51,12 @@ class HomePageView(TemplateView):
         return context
 
 
+def _by_name(summary: Summary) -> tuple[str, int]:
+    """Ключ порядка статей: название без учёта регистра. Сортировка в Python, а не в БД: lower() в SQLite
+    не понижает регистр кириллицы, и порядок зависел бы от СУБД."""
+    return summary.group_name.casefold(), summary.pk
+
+
 class SummaryView(LoginRequiredMixin, TemplateView):
     """Отчет по периоду."""
 
@@ -67,8 +73,9 @@ class SummaryView(LoginRequiredMixin, TemplateView):
             space=current_space
         )
         summary_report = get_summary_report(summary)
-        incomes = summary.filter(type_transaction='income')
-        expenses = summary.filter(type_transaction='expense')
+        # По названию, а не по времени правки (порядок модели): иначе статья «прыгает» наверх после каждой операции.
+        incomes = sorted(summary.filter(type_transaction='income'), key=_by_name)
+        expenses = sorted(summary.filter(type_transaction='expense'), key=_by_name)
         balance_plan = summary_report.income_plan - summary_report.expense_plan
         balance_fact = summary_report.income_fact - summary_report.expense_fact
         expense_ratio = (
@@ -117,11 +124,18 @@ class TransactionView(LoginRequiredMixin, TemplateView):
         current_month = self.request.user.core_settings.current_month
         current_year = self.request.user.core_settings.current_year
         current_space = self.request.user.core_settings.current_space
-        transactions = Transaction.objects.filter(
-            space=self.request.user.core_settings.current_space,
-            period_month=self.request.user.core_settings.current_month,
-            period_year=self.request.user.core_settings.current_year
-        )
+        transactions = list(Transaction.objects.filter(
+            space=current_space,
+            period_month=current_month,
+            period_year=current_year
+        ).select_related('author'))
+        # Статью могли удалить: её операции остаются в журнале (связь по совпадению полей), но в отчёт не попадают.
+        # Помечаем такие операции, чтобы расхождение журнала и дашборда не выглядело потерей данных.
+        existing = set(Summary.objects.filter(
+            space=current_space, period_month=current_month, period_year=current_year,
+        ).values_list('type_transaction', 'group_name'))
+        for tx in transactions:
+            tx.orphan = (tx.type_transaction, tx.group_name) not in existing
         context.update(
             {
                 'title': settings.PROJECT_TITLE,

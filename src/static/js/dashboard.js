@@ -246,7 +246,7 @@
         const tiles = squarify(data, 0, 0, w, h);
 
         container.innerHTML = '';
-        tiles.forEach((t, i) => {
+        tiles.forEach(t => {
             const pct = Math.round((t.value / total) * 100);
             const innerW = Math.max(0, t.w - PAD);
             const innerH = Math.max(0, t.h - PAD);
@@ -290,12 +290,12 @@
                 }
                 if (bottom.scrollWidth > bottom.clientWidth) bottom.textContent = fmtCompact(t.value);
             }
-            // плавное появление
-            setTimeout(() => tile.classList.add('is-visible'), 30 + i * 40);
         });
     }
 
     renderTreemap();
+    // Подгонка размера текста в плитках зависит от шрифта: пересчитываем, когда шрифты догрузились.
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(renderTreemap);
     // переотрисовка при ресайзе (с дебаунсом)
     let resizeTimer;
     window.addEventListener('resize', () => {
@@ -304,7 +304,8 @@
     });
 
     // ============== Charts (план vs факт) ==============
-    // Chart.js грузится с CDN: если библиотеки нет, остальной дашборд (списки, treemap) всё равно работает.
+    // Chart.js — своя копия (static/vendor), подключена с defer. Если библиотеки нет, остальной дашборд
+    // (списки, treemap) всё равно работает.
     const charts = [];
 
     function showChartMessage(canvasId, text) {
@@ -353,7 +354,8 @@
                     }
                 }
             },
-            animation: { duration: 800, easing: 'easeOutQuart' }
+            // Без «вырастания» столбцов при каждой загрузке: на переходе между страницами оно выглядит как перезагрузка.
+            animation: false
         };
     }
 
@@ -397,14 +399,25 @@
         }
     }
 
-    if (typeof Chart === 'undefined') {
-        showChartMessage('incChart', 'Графики недоступны: не удалось загрузить библиотеку');
-        showChartMessage('expChart', 'Графики недоступны: не удалось загрузить библиотеку');
-    } else {
+    function initCharts() {
+        if (typeof Chart === 'undefined') {
+            showChartMessage('incChart', 'Графики недоступны: не удалось загрузить библиотеку');
+            showChartMessage('expChart', 'Графики недоступны: не удалось загрузить библиотеку');
+            return;
+        }
         if (!inc.length) showChartMessage('incChart', 'Нет данных за этот период');
         if (!exp.length) showChartMessage('expChart', 'Нет данных за этот период');
         renderCharts();
         // Смена темы: цвета осей, сетки и тултипов зависят от неё.
         document.addEventListener('ff:theme', renderCharts);
+    }
+
+    // Сам скрипт идёт в конце <body> без defer: списки и treemap выше рисуются до первой отрисовки страницы,
+    // а не после неё (иначе содержимое «выскакивает» и сдвигает всё ниже). Chart.js с defer выполняется
+    // после разбора страницы, но до DOMContentLoaded, поэтому графики стартуют на этом событии.
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initCharts);
+    } else {
+        initCharts();
     }
 })();

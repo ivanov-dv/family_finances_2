@@ -27,6 +27,26 @@ spec:
               poetry run gunicorn --bind 0.0.0.0:8000 family_finances.wsgi
           ports:
             - containerPort: 8000
+          # tcpSocket, а не httpGet: kubelet шлёт Host с IP пода, а ALLOWED_HOSTS это отвергает. Порт открыт, когда
+          # gunicorn принимает соединения, и не «залипает» из-за долгого запроса (например, выгрузки в Excel).
+          readinessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            failureThreshold: 12
+          livenessProbe:
+            tcpSocket:
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 20
+            failureThreshold: 3
+          # Только requests (без limits): под не считается «бесхозным» при нехватке памяти на узле,
+          # но и не убивается по OOM из-за угаданного потолка.
+          resources:
+            requests:
+              cpu: 50m
+              memory: 192Mi
           volumeMounts:
             - mountPath: /backend_static
               name: ff2-static

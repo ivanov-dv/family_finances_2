@@ -5,10 +5,27 @@ metadata:
   namespace: default
 data:
   default.conf: |
-    server {
-      listen 80;
-      location /static/ {
-        alias /backend_static/;
-      }
+    # Кеширование /static/. Файлы из fonts/ и vendor/ (версия зашита в путь) и любые URL с ?v=<хеш>
+    # (его добавляет family_finances.storage.VersionedStaticFilesStorage) неизменны — кешируем на год.
+    # Всё остальное браузер перепроверяет по ETag: без заголовка он по эвристике держит старые JS/CSS,
+    # и после выкладки часть пользователей работает со старым скриптом при новой вёрстке.
+    map "$uri?$arg_v" $static_cache_control {
+      default "no-cache";
+      "~^/static/(fonts|vendor)/" "public, max-age=31536000, immutable";
+      "~^/static/.+\?.+$" "public, max-age=31536000, immutable";
     }
 
+    server {
+      listen 80;
+
+      # Bootstrap и Chart.js раздаём сами (раньше их сжимал CDN); шрифты woff2 уже сжаты.
+      gzip on;
+      gzip_vary on;
+      gzip_min_length 1024;
+      gzip_types text/css text/javascript application/javascript image/svg+xml;
+
+      location /static/ {
+        alias /backend_static/;
+        add_header Cache-Control $static_cache_control;
+      }
+    }
